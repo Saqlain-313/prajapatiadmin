@@ -1,0 +1,16 @@
+const express = require("express");
+const protect = require("../middlewares/authMiddleware");
+const { createDeposit, getMyDeposits, updateDepositStatus, getAllDeposits } = require("../controllers/depositController");
+const router = express.Router();
+
+
+
+/* USER */
+// router.post("/", protect, createDeposit);
+// router.get("/my", protect, getMyDeposits);
+
+/* ADMIN */
+router.get("/deposits", protect, getAllDeposits);
+router.put("/deposits/:id",  updateDepositStatus);
+
+module.exports = router;

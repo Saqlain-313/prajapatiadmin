@@ -130,12 +130,12 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, type = 
       <div className={`${gradientCardClass} w-full max-w-md relative overflow-hidden animate-scaleIn`}>
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-white/5 rounded-full blur-3xl" />
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-white/5 rounded-full blur-3xl" />
-        
+
         <div className="relative z-10 p-6">
           <div className="flex justify-between items-start mb-4">
             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center
-              ${isClose 
-                ? "bg-red-500/20 border border-red-500/50" 
+              ${isClose
+                ? "bg-red-500/20 border border-red-500/50"
                 : "bg-emerald-500/20 border border-emerald-500/50"}`}>
               {icon}
             </div>
@@ -151,7 +151,7 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, type = 
           <h3 className="text-xl font-bold text-white mb-2 drop-shadow-[0_2px_5px_black]">
             {title}
           </h3>
-          
+
           <p className="text-white/60 text-sm mb-6">
             {message}
           </p>
@@ -429,7 +429,7 @@ const WrestlingAdmin = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-[#0A0C0F] to-[#030405] p-4 md:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
-        
+
         {/* HEADER with Back Button */}
         <div className={`${gradientCardClass} p-5 md:p-6 mb-6`}>
           <div className="flex items-center justify-between">
@@ -494,7 +494,7 @@ const WrestlingAdmin = () => {
                   {MATCH?.status}
                 </span>
               </div>
-              
+
               <div className="flex gap-2">
                 <button
                   onClick={handleOpenMatch}
@@ -558,7 +558,7 @@ const WrestlingAdmin = () => {
             </div>
 
             {/* Rate Control with +/- Buttons */}
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <label className="text-white/60 text-xs flex items-center gap-1">
                 <MdTrendingUp size={14} />
                 Rate Control
@@ -611,10 +611,64 @@ const WrestlingAdmin = () => {
                   <MdAdd size={18} />
                 </button>
               </div>
-            </div>
+            </div> */}
 
             {/* Size & Timer */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-white/60 text-xs flex items-center gap-1">
+                  <MdTrendingUp size={14} />
+                  Rate Control
+                </label>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleDecreaseRate}
+                    disabled={!tid || !boxId || MATCH?.status !== "OPEN"}
+                    className="p-3 bg-red-500/20 hover:bg-red-500/30 rounded-xl text-red-300 border border-red-500/30
+                           disabled:opacity-40 disabled:cursor-not-allowed transition"
+                  >
+                    <MdRemove size={18} />
+                  </button>
+
+                  <select
+                    value={selectedBox?.rate?.toFixed(2) || ""}
+                    onChange={(e) => {
+                      if (!MATCH || MATCH.status !== "OPEN") return;
+                      if (!tid || !boxId) return;
+                      socket.emit("admin:update-box", {
+                        matchId: MATCH._id,
+                        mid: MATCH.mid,
+                        tid,
+                        boxId,
+                        rate: Number(e.target.value),
+                        size: selectedBox?.size || 0,
+                        timer: selectedBox?.timer || 0,
+                      });
+                    }}
+                    className={selectStyleClasses}
+                    disabled={!tid || !boxId || MATCH?.status !== "OPEN"}
+                  >
+                    <option value="">Rate</option>
+                    {[...Array(181)].map((_, i) => {
+                      const value = (1 + i * 0.05).toFixed(2);
+                      return (
+                        <option key={value} value={value}>
+                          {value}
+                        </option>
+                      );
+                    })}
+                  </select>
+
+                  <button
+                    onClick={handleIncreaseRate}
+                    disabled={!tid || !boxId || MATCH?.status !== "OPEN"}
+                    className="p-3 bg-emerald-500/20 hover:bg-emerald-500/30 rounded-xl text-emerald-300 border border-emerald-500/30
+                           disabled:opacity-40 disabled:cursor-not-allowed transition"
+                  >
+                    <MdAdd size={18} />
+                  </button>
+                </div>
+              </div>
               <div className="space-y-2">
                 <label className="text-white/60 text-xs flex items-center gap-1">
                   <MdAttachMoney size={14} />
@@ -629,7 +683,7 @@ const WrestlingAdmin = () => {
                   disabled={MATCH?.status !== "OPEN"}
                 />
               </div>
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <label className="text-white/60 text-xs flex items-center gap-1">
                   <MdTimer size={14} />
                   Timer (seconds)
@@ -642,7 +696,7 @@ const WrestlingAdmin = () => {
                   className={inputStyleClasses}
                   disabled={MATCH?.status !== "OPEN"}
                 />
-              </div>
+              </div> */}
             </div>
 
             {/* Update Box Button */}
@@ -718,8 +772,8 @@ const WrestlingAdmin = () => {
                     <div
                       key={t.tid}
                       className={`p-4 rounded-xl border ${t.status === "SUSPENDED"
-                          ? "bg-orange-500/10 border-orange-500/30"
-                          : "bg-black/40 border-white/10"
+                        ? "bg-orange-500/10 border-orange-500/30"
+                        : "bg-black/40 border-white/10"
                         }`}
                     >
                       <div className="flex items-center justify-between mb-3">
@@ -840,9 +894,9 @@ const WrestlingAdmin = () => {
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 text-xs font-bold rounded-full border
                           ${bet.boxId == 3
-                              ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/50"
-                              : "bg-red-500/20 text-red-300 border-red-500/50"
-                            }`}>
+                            ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/50"
+                            : "bg-red-500/20 text-red-300 border-red-500/50"
+                          }`}>
                           {bet.boxId == 3 ? "BACK" : "LAY"}
                         </span>
                       </td>

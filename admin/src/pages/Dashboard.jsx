@@ -33,6 +33,11 @@ import {
   getAllDeposits,
 } from "../store/reducer/depositAdminSlice";
 
+import {
+  getAllWithdrawals,
+} from "../store/reducer/withdrawalReducer";
+
+
 /* --------------------------------------------------------
    TOAST CONFIG — consistent with dark theme
 -------------------------------------------------------- */
@@ -60,9 +65,7 @@ const showToast = (message, type = "success") => {
   });
 };
 
-/* --------------------------------------------------------
-   DARK GRADIENT THEME — consistent with all pages
--------------------------------------------------------- */
+
 const gradientCardClass =
   "relative bg-gradient-to-br from-[#0B0D10] via-[#15181E] to-[#070809] \
    border border-white/10 rounded-3xl shadow-[0_30px_60px_-15px_black,0_0_0_1px_rgba(255,255,255,0.02)] \
@@ -82,7 +85,7 @@ const buttonGradientClass =
 -------------------------------------------------------- */
 const StatCard = ({ title, count, icon: Icon, link, subtitle, trend, trendValue, color = "white" }) => {
   const getColorClasses = () => {
-    switch(color) {
+    switch (color) {
       case 'emerald':
         return 'from-emerald-500/20 to-emerald-900/30 border-emerald-500/30 text-emerald-400';
       case 'blue':
@@ -104,7 +107,7 @@ const StatCard = ({ title, count, icon: Icon, link, subtitle, trend, trendValue,
     <Link to={link || "#"} className="block h-full group">
       <div className={`${gradientCardClass} p-6 h-full`}>
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -mr-10 -mt-10" />
-        
+
         <div className="relative z-10">
           <div className="flex justify-between items-start">
             <div>
@@ -155,7 +158,7 @@ const StatCard = ({ title, count, icon: Icon, link, subtitle, trend, trendValue,
 -------------------------------------------------------- */
 const FinancialStatCard = ({ title, amount, icon: Icon, link, trend, percentage, color = "amber" }) => {
   const getColorClasses = () => {
-    switch(color) {
+    switch (color) {
       case 'emerald':
         return 'from-emerald-500/20 to-emerald-900/30 border-emerald-500/30 text-emerald-400';
       case 'blue':
@@ -175,7 +178,7 @@ const FinancialStatCard = ({ title, amount, icon: Icon, link, trend, percentage,
     <Link to={link || "#"} className="block h-full group">
       <div className={`${gradientCardClass} p-6 h-full`}>
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -mr-10 -mt-10" />
-        
+
         <div className="relative z-10">
           <div className="flex justify-between items-start">
             <div>
@@ -214,55 +217,96 @@ const FinancialStatCard = ({ title, amount, icon: Icon, link, trend, percentage,
 /* --------------------------------------------------------
    RECENT ACTIVITY CARD
 -------------------------------------------------------- */
-const RecentActivityCard = ({ activities }) => {
+const RecentActivityCard = ({ activities = [] }) => {
   return (
     <div className={`${gradientCardClass} p-6 h-full`}>
       <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full blur-3xl -mr-20 -mt-20" />
-      
+
       <div className="relative z-10">
+        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-900/30 
                           flex items-center justify-center border border-blue-500/30">
               <FaHistory className="text-blue-400" />
             </div>
-            <h3 className="text-lg font-semibold text-white">Recent Activity</h3>
+            <h3 className="text-lg font-semibold text-white">
+              Recent Activity
+            </h3>
           </div>
-          <Link to="/transactions/history" className="text-blue-400/70 hover:text-blue-400 text-xs flex items-center gap-1">
+
+          <Link
+            to="/transactions/history"
+            className="text-blue-400/70 hover:text-blue-400 text-xs flex items-center gap-1"
+          >
             View All <FaArrowRight size={10} />
           </Link>
         </div>
 
+        {/* Activity List */}
         <div className="space-y-4">
-          {activities.length > 0 ? (
-            activities.map((activity, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-black/40 rounded-xl border border-white/5 hover:border-white/20 transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center
-                    ${activity.type === 'deposit' ? 'bg-emerald-500/20 text-emerald-400' : 
-                      activity.type === 'withdrawal' ? 'bg-red-500/20 text-red-400' : 
-                      'bg-blue-500/20 text-blue-400'}`}>
-                    {activity.type === 'deposit' ? <FaArrowDown size={14} /> : 
-                     activity.type === 'withdrawal' ? <FaArrowUp size={14} /> : 
-                     <FaUserPlus size={14} />}
+          {activities?.length > 0 ? (
+            activities.map((activity, index) => {
+              const isDeposit = activity.type === "deposit";
+              const isWithdrawal = activity.type === "withdrawal";
+
+              return (
+                <div
+                  key={activity._id || index}
+                  className="flex items-center justify-between p-3 bg-black/40 rounded-xl border border-white/5 hover:border-white/20 transition-colors"
+                >
+                  {/* Left Side */}
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center
+                        ${isDeposit
+                          ? "bg-emerald-500/20 text-emerald-400"
+                          : isWithdrawal
+                            ? "bg-red-500/20 text-red-400"
+                            : "bg-blue-500/20 text-blue-400"
+                        }`}
+                    >
+                      {isDeposit ? (
+                        <FaArrowDown size={14} />
+                      ) : isWithdrawal ? (
+                        <FaArrowUp size={14} />
+                      ) : (
+                        <FaUserPlus size={14} />
+                      )}
+                    </div>
+
+                    <div>
+                      <p className="text-white text-sm font-medium">
+                        {activity.description || "Activity"}
+                      </p>
+                      <p className="text-white/40 text-xs">
+                        {activity.time || "Recently"}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-white text-sm font-medium">{activity.description}</p>
-                    <p className="text-white/40 text-xs">{activity.time}</p>
-                  </div>
+
+                  {/* Amount */}
+                  <span
+                    className={`text-sm font-bold ${isDeposit
+                        ? "text-emerald-400"
+                        : isWithdrawal
+                          ? "text-red-400"
+                          : "text-blue-400"
+                      }`}
+                  >
+                    {isDeposit && "+"}
+                    {isWithdrawal && "-"}
+                    ₹{Number(activity.amount || 0).toLocaleString()}
+                  </span>
                 </div>
-                <span className={`text-sm font-bold ${activity.type === 'deposit' ? 'text-emerald-400' : 
-                  activity.type === 'withdrawal' ? 'text-red-400' : 'text-blue-400'}`}>
-                  {activity.type === 'deposit' ? '+' : 
-                   activity.type === 'withdrawal' ? '-' : ''} 
-                  ₹{activity.amount?.toLocaleString()}
-                </span>
-              </div>
-            ))
+              );
+            })
           ) : (
             <div className="text-center py-8">
               <FaHistory className="text-white/20 text-3xl mx-auto mb-2" />
-              <p className="text-white/40 text-sm">No recent activity</p>
+              <p className="text-white/40 text-sm">
+                No recent activity
+              </p>
             </div>
           )}
         </div>
@@ -285,7 +329,7 @@ const QuickActionsCard = () => {
   return (
     <div className={`${gradientCardClass} p-6 h-full`}>
       <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full blur-3xl -mr-20 -mt-20" />
-      
+
       <div className="relative z-10">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-900/30 
@@ -325,39 +369,151 @@ const Dashboard = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { users = [], loading } = useSelector((state) => state.auth);
-  
+  const { withdrawals = [], error, successMessage } = useSelector(
+    (state) => state.withdrawal
+  );
+
+  const { deposits = [], success, } = useSelector(
+    (state) => state.adminDeposits
+  );
+
+  const totalDepositCount = deposits.length;
+
+  const approvedDeposits = deposits.filter(
+    (d) => d.status === "approved"
+  );
+
+  const approvedDepositCount = approvedDeposits.length;
+
+  const totalApprovedAmount = approvedDeposits.reduce(
+    (total, d) => total + d.amount,
+    0
+  );
+
+
+
   const [timeFilter, setTimeFilter] = useState('today');
   const [refreshLoading, setRefreshLoading] = useState(false);
 
-  
+
 
   useEffect(() => {
     dispatch(getAllUsers());
+    dispatch(getAllDeposits());
+    dispatch(getAllWithdrawals());
   }, [dispatch]);
 
   // User Statistics
+
   const userStats = useMemo(() => {
     const total = users.length;
+
     const completed = users.filter((u) => u.profile_complete).length;
     const notCompleted = users.filter((u) => !u.profile_complete).length;
+
     const verified = users.filter((u) => u.is_verified).length;
     const unverified = users.filter((u) => !u.is_verified).length;
-    const admins = users.filter((u) => u.role === 'admin').length;
+
+    const admins = users.filter((u) => u.role === "admin").length;
     const regularUsers = total - admins;
-    
-    const totalDeposits = 1250000; // Example: ₹12,50,000
-    const totalWithdrawals = 875000; // Example: ₹8,75,000
-    const totalProfit = 375000; // Example: ₹3,75,000
-    const totalLoss = 125000; // Example: ₹1,25,000
-    const netRevenue = totalProfit - totalLoss;
-    const pendingWithdrawals = 45000; // Example: ₹45,000
-    
-    // Recent activities - mock data
+
+    // -------------------------
+    // Approved Deposits
+    // -------------------------
+    const approvedDeposits = deposits.filter(
+      (d) => d.status === "approved"
+    );
+
+    const totalApprovedAmount = approvedDeposits.reduce(
+      (sum, d) => sum + Number(d.amount || 0),
+      0
+    );
+
+    // -------------------------
+    // Approved Withdrawals
+    // -------------------------
+    const approvedWithdrawals = withdrawals.filter(
+      (w) => w.status === "approved"
+    );
+
+    const totalWithdrawals = approvedWithdrawals.reduce(
+      (sum, w) => sum + Number(w.amount || 0),
+      0
+    );
+
+    // -------------------------
+    // Profit / Loss (Admin POV)
+    // -------------------------
+    const totalProfit =
+      totalApprovedAmount > totalWithdrawals
+        ? totalApprovedAmount - totalWithdrawals
+        : 0;
+
+    const totalLoss =
+      totalWithdrawals > totalApprovedAmount
+        ? totalWithdrawals - totalApprovedAmount
+        : 0;
+
+    const netRevenue = totalApprovedAmount - totalWithdrawals;
+
+    // -------------------------
+    // Pending Withdrawals
+    // -------------------------
+    const pendingWithdrawals = withdrawals
+      .filter((w) => w.status === "pending")
+      .reduce((sum, w) => sum + Number(w.amount || 0), 0);
+
+    // -------------------------
+    // Averages
+    // -------------------------
+    const avgDeposit =
+      approvedDeposits.length > 0
+        ? totalApprovedAmount / approvedDeposits.length
+        : 0;
+
+    const avgWithdrawal =
+      approvedWithdrawals.length > 0
+        ? totalWithdrawals / approvedWithdrawals.length
+        : 0;
+
+    // -------------------------
+    // Conversion Rate
+    // (Users who deposited / total users)
+    // -------------------------
+    const usersWithDeposit = new Set(
+      approvedDeposits.map((d) => String(d.user))
+    ).size;
+
+    const conversionRate =
+      total > 0 ? (usersWithDeposit / total) * 100 : 0;
+
+    // -------------------------
+    // Active Today
+    // -------------------------
+    const today = new Date().toDateString();
+
+    const activeToday = users.filter(
+      (u) =>
+        u.updatedAt &&
+        new Date(u.updatedAt).toDateString() === today
+    ).length;
+
+    // -------------------------
+    // Recent Activities
+    // -------------------------
     const recentActivities = [
-      { type: 'deposit', description: 'User #USR001 deposited', amount: 5000, time: '5 minutes ago' },
-      { type: 'withdrawal', description: 'User #USR023 withdrew', amount: 2000, time: '15 minutes ago' },
-      { type: 'user', description: 'New user registered', amount: 0, time: '25 minutes ago' },
-      { type: 'deposit', description: 'User #USR045 deposited', amount: 10000, time: '1 hour ago' },
+      ...approvedDeposits.slice(0, 2).map((d) => ({
+        type: "deposit",
+        description: `User deposited`,
+        amount: d.amount,
+        time: "Recently",
+      })),
+      ...approvedWithdrawals.slice(0, 2).map((w) => ({
+        type: "withdrawal",
+        description: `User withdrew`,
+        amount: w.amount,
+        time: "Recently",
+      })),
     ];
 
     return {
@@ -368,15 +524,21 @@ const Dashboard = () => {
       unverified,
       admins,
       regularUsers,
-      totalDeposits,
+      totalApprovedAmount,
       totalWithdrawals,
       totalProfit,
       totalLoss,
       netRevenue,
       pendingWithdrawals,
-      recentActivities
+      avgDeposit,
+      avgWithdrawal,
+      conversionRate,
+      activeToday,
+      approvedDepositsCount: approvedDeposits.length,
+      approvedWithdrawalsCount: approvedWithdrawals.length,
+      recentActivities,
     };
-  }, [users]);
+  }, [users, deposits, withdrawals]);
 
   const handleRefresh = async () => {
     setRefreshLoading(true);
@@ -403,7 +565,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-[#0A0C0F] to-[#030405] p-4 md:p-6 lg:p-8">
-      
+
       {/* Header Section */}
       <div className={`${gradientCardClass} p-5 md:p-6 mb-6`}>
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
@@ -432,8 +594,8 @@ const Dashboard = () => {
               <button
                 onClick={() => setTimeFilter('today')}
                 className={`px-4 py-2 rounded-lg text-xs font-medium transition-all duration-300
-                  ${timeFilter === 'today' 
-                    ? 'bg-white/20 text-white border border-white/30' 
+                  ${timeFilter === 'today'
+                    ? 'bg-white/20 text-white border border-white/30'
                     : 'text-white/60 hover:text-white/80'}`}
               >
                 Today
@@ -441,8 +603,8 @@ const Dashboard = () => {
               <button
                 onClick={() => setTimeFilter('week')}
                 className={`px-4 py-2 rounded-lg text-xs font-medium transition-all duration-300
-                  ${timeFilter === 'week' 
-                    ? 'bg-white/20 text-white border border-white/30' 
+                  ${timeFilter === 'week'
+                    ? 'bg-white/20 text-white border border-white/30'
                     : 'text-white/60 hover:text-white/80'}`}
               >
                 This Week
@@ -450,8 +612,8 @@ const Dashboard = () => {
               <button
                 onClick={() => setTimeFilter('month')}
                 className={`px-4 py-2 rounded-lg text-xs font-medium transition-all duration-300
-                  ${timeFilter === 'month' 
-                    ? 'bg-white/20 text-white border border-white/30' 
+                  ${timeFilter === 'month'
+                    ? 'bg-white/20 text-white border border-white/30'
                     : 'text-white/60 hover:text-white/80'}`}
               >
                 This Month
@@ -526,7 +688,7 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-5">
           <FinancialStatCard
             title="Total Deposits"
-            amount={userStats.totalDeposits}
+            amount={userStats.totalApprovedAmount}
             icon={FaMoneyBillWave}
             link="/transactions/deposits"
             trend="positive"
@@ -566,7 +728,7 @@ const Dashboard = () => {
           {/* Net Revenue Card */}
           <div className={`${gradientCardClass} p-6 bg-gradient-to-br from-purple-500/10 to-purple-900/20 border-purple-500/30`}>
             <div className="absolute top-0 right-0 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl -mr-20 -mt-20" />
-            
+
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
@@ -600,7 +762,7 @@ const Dashboard = () => {
                       </span>
                     </div>
                   </div>
-                  <Link 
+                  <Link
                     to="/transactions/withdrawals/pending"
                     className="px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 rounded-lg text-amber-300 text-xs font-medium border border-amber-500/30 transition-all duration-300"
                   >
@@ -614,33 +776,52 @@ const Dashboard = () => {
           {/* Quick Stats Card */}
           <div className={`${gradientCardClass} p-6`}>
             <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full blur-3xl -mr-20 -mt-20" />
-            
+
             <div className="relative z-10">
-              <h3 className="text-lg font-semibold text-white mb-4">Quick Statistics</h3>
-              
+              <h3 className="text-lg font-semibold text-white mb-4">
+                Quick Statistics
+              </h3>
+
               <div className="grid grid-cols-2 gap-4">
+
+                {/* Avg Deposit */}
                 <div className="p-4 bg-black/40 rounded-xl border border-white/10">
                   <p className="text-white/40 text-xs mb-1">Avg. Deposit</p>
                   <div className="flex items-baseline gap-1">
                     <FaRupeeSign className="text-emerald-400 text-sm" />
-                    <span className="text-emerald-400 font-bold text-xl">3,250</span>
+                    <span className="text-emerald-400 font-bold text-xl">
+                      {Math.round(userStats.avgDeposit || 0).toLocaleString()}
+                    </span>
                   </div>
                 </div>
+
+                {/* Avg Withdrawal */}
                 <div className="p-4 bg-black/40 rounded-xl border border-white/10">
                   <p className="text-white/40 text-xs mb-1">Avg. Withdrawal</p>
                   <div className="flex items-baseline gap-1">
                     <FaRupeeSign className="text-red-400 text-sm" />
-                    <span className="text-red-400 font-bold text-xl">2,180</span>
+                    <span className="text-red-400 font-bold text-xl">
+                      {Math.round(userStats.avgWithdrawal || 0).toLocaleString()}
+                    </span>
                   </div>
                 </div>
+
+                {/* Conversion Rate */}
                 <div className="p-4 bg-black/40 rounded-xl border border-white/10">
                   <p className="text-white/40 text-xs mb-1">Conversion Rate</p>
-                  <span className="text-blue-400 font-bold text-xl">68%</span>
+                  <span className="text-blue-400 font-bold text-xl">
+                    {(userStats.conversionRate || 0).toFixed(1)}%
+                  </span>
                 </div>
+
+                {/* Active Today */}
                 <div className="p-4 bg-black/40 rounded-xl border border-white/10">
                   <p className="text-white/40 text-xs mb-1">Active Today</p>
-                  <span className="text-purple-400 font-bold text-xl">156</span>
+                  <span className="text-purple-400 font-bold text-xl">
+                    {userStats.activeToday || 0}
+                  </span>
                 </div>
+
               </div>
             </div>
           </div>
@@ -651,41 +832,41 @@ const Dashboard = () => {
       <section className="mb-8">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500/20 to-emerald-900/30 
-                        flex items-center justify-center border border-emerald-500/30">
+                  flex items-center justify-center border border-emerald-500/30">
             <FaWallet className="text-emerald-400" size={16} />
           </div>
-          <h2 className="text-xl font-semibold text-white">User Financial Details</h2>
+          <h2 className="text-xl font-semibold text-white">
+            User Financial Details
+          </h2>
           <span className="text-xs text-white/40 bg-white/5 px-3 py-1 rounded-full border border-white/10">
             Click to view full details
           </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          {/* User Total Profit Card */}
+
+          {/* ---------------- PROFIT ---------------- */}
           <Link to="/users/profit" className="group">
             <div className={`${gradientCardClass} p-6 h-full hover:border-emerald-500/30`}>
               <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl -mr-10 -mt-10" />
-              
+
               <div className="relative z-10">
                 <div className="flex justify-between items-start mb-4">
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-900/30 
-                                flex items-center justify-center border border-emerald-500/30">
+                          flex items-center justify-center border border-emerald-500/30">
                     <FaArrowUp className="text-emerald-400 text-xl" />
                   </div>
                   <FaEye className="text-white/20 group-hover:text-white/40 transition-colors" size={18} />
                 </div>
-                
+
                 <p className="text-white/40 text-sm mb-1">User Total Profit</p>
                 <div className="flex items-baseline gap-1 mb-2">
                   <FaRupeeSign className="text-emerald-400 text-xl" />
-                  <h3 className="text-3xl font-bold text-white">3,75,000</h3>
+                  <h3 className="text-3xl font-bold text-white">
+                    {userStats.totalProfit.toLocaleString()}
+                  </h3>
                 </div>
-                
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="px-2 py-1 bg-emerald-500/20 rounded-lg text-emerald-300">+15.3%</span>
-                  <span className="text-white/40">vs last month</span>
-                </div>
-                
+
                 <div className="mt-4 pt-4 border-t border-white/10 flex justify-between items-center">
                   <span className="text-white/40 text-xs group-hover:text-white/60 transition-colors">
                     View Top Earners
@@ -696,31 +877,28 @@ const Dashboard = () => {
             </div>
           </Link>
 
-          {/* User Total Loss Card */}
+          {/* ---------------- LOSS ---------------- */}
           <Link to="/users/loss" className="group">
             <div className={`${gradientCardClass} p-6 h-full hover:border-red-500/30`}>
               <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-3xl -mr-10 -mt-10" />
-              
+
               <div className="relative z-10">
                 <div className="flex justify-between items-start mb-4">
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500/20 to-red-900/30 
-                                flex items-center justify-center border border-red-500/30">
+                          flex items-center justify-center border border-red-500/30">
                     <FaArrowDown className="text-red-400 text-xl" />
                   </div>
                   <FaEye className="text-white/20 group-hover:text-white/40 transition-colors" size={18} />
                 </div>
-                
+
                 <p className="text-white/40 text-sm mb-1">User Total Loss</p>
                 <div className="flex items-baseline gap-1 mb-2">
                   <FaRupeeSign className="text-red-400 text-xl" />
-                  <h3 className="text-3xl font-bold text-white">1,25,000</h3>
+                  <h3 className="text-3xl font-bold text-white">
+                    {userStats.totalLoss.toLocaleString()}
+                  </h3>
                 </div>
-                
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="px-2 py-1 bg-red-500/20 rounded-lg text-red-300">+8.7%</span>
-                  <span className="text-white/40">vs last month</span>
-                </div>
-                
+
                 <div className="mt-4 pt-4 border-t border-white/10 flex justify-between items-center">
                   <span className="text-white/40 text-xs group-hover:text-white/60 transition-colors">
                     View Top Losers
@@ -731,31 +909,32 @@ const Dashboard = () => {
             </div>
           </Link>
 
-          {/* User Deposits Card */}
+          {/* ---------------- DEPOSITS ---------------- */}
           <Link to="/transactions/deposits" className="group">
             <div className={`${gradientCardClass} p-6 h-full hover:border-blue-500/30`}>
               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-10 -mt-10" />
-              
+
               <div className="relative z-10">
                 <div className="flex justify-between items-start mb-4">
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-900/30 
-                                flex items-center justify-center border border-blue-500/30">
+                          flex items-center justify-center border border-blue-500/30">
                     <FaMoneyBillWave className="text-blue-400 text-xl" />
                   </div>
                   <FaEye className="text-white/20 group-hover:text-white/40 transition-colors" size={18} />
                 </div>
-                
+
                 <p className="text-white/40 text-sm mb-1">User Deposits</p>
                 <div className="flex items-baseline gap-1 mb-2">
                   <FaRupeeSign className="text-blue-400 text-xl" />
-                  <h3 className="text-3xl font-bold text-white">12,50,000</h3>
+                  <h3 className="text-3xl font-bold text-white">
+                    {userStats.totalApprovedAmount.toLocaleString()}
+                  </h3>
                 </div>
-                
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="px-2 py-1 bg-blue-500/20 rounded-lg text-blue-300">Total</span>
-                  <span className="text-white/40">476 transactions</span>
+
+                <div className="text-xs text-white/40">
+                  {userStats.approvedDepositsCount} transactions
                 </div>
-                
+
                 <div className="mt-4 pt-4 border-t border-white/10 flex justify-between items-center">
                   <span className="text-white/40 text-xs group-hover:text-white/60 transition-colors">
                     View All Deposits
@@ -766,31 +945,32 @@ const Dashboard = () => {
             </div>
           </Link>
 
-          {/* User Withdrawals Card */}
+          {/* ---------------- WITHDRAWALS ---------------- */}
           <Link to="/transactions/withdrawals" className="group">
             <div className={`${gradientCardClass} p-6 h-full hover:border-purple-500/30`}>
               <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl -mr-10 -mt-10" />
-              
+
               <div className="relative z-10">
                 <div className="flex justify-between items-start mb-4">
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-900/30 
-                                flex items-center justify-center border border-purple-500/30">
+                          flex items-center justify-center border border-purple-500/30">
                     <FaCreditCard className="text-purple-400 text-xl" />
                   </div>
                   <FaEye className="text-white/20 group-hover:text-white/40 transition-colors" size={18} />
                 </div>
-                
+
                 <p className="text-white/40 text-sm mb-1">User Withdrawals</p>
                 <div className="flex items-baseline gap-1 mb-2">
                   <FaRupeeSign className="text-purple-400 text-xl" />
-                  <h3 className="text-3xl font-bold text-white">8,75,000</h3>
+                  <h3 className="text-3xl font-bold text-white">
+                    {userStats.totalWithdrawals.toLocaleString()}
+                  </h3>
                 </div>
-                
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="px-2 py-1 bg-purple-500/20 rounded-lg text-purple-300">Total</span>
-                  <span className="text-white/40">324 transactions</span>
+
+                <div className="text-xs text-white/40">
+                  {userStats.approvedWithdrawalsCount} transactions
                 </div>
-                
+
                 <div className="mt-4 pt-4 border-t border-white/10 flex justify-between items-center">
                   <span className="text-white/40 text-xs group-hover:text-white/60 transition-colors">
                     View All Withdrawals
@@ -800,19 +980,25 @@ const Dashboard = () => {
               </div>
             </div>
           </Link>
+
         </div>
       </section>
 
-      {/* Recent Activity & Quick Actions */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+        {/* Recent Activity */}
         <div className="lg:col-span-2">
-          <RecentActivityCard activities={userStats.recentActivities} />
+          <RecentActivityCard
+            activities={userStats?.recentActivities || []}
+          />
         </div>
+
+        {/* Quick Actions */}
         <div>
           <QuickActionsCard />
         </div>
-      </section>
 
+      </section>
       {/* Global Animations */}
       <style jsx global>{`
         @keyframes scaleIn {

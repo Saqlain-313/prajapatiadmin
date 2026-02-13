@@ -178,9 +178,7 @@ exports.getAllUserDeposits = async (req, res) => {
   }
 };
 
-/* ======================
-   APPROVE / REJECT (ADMIN)
-====================== */
+
 exports.updateUserDepositStatus = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -188,10 +186,13 @@ exports.updateUserDepositStatus = async (req, res) => {
   try {
     const { status, remark } = req.body;
 
+    /* ---------------- VALIDATION ---------------- */
     if (!["approved", "rejected"].includes(status)) {
+      await session.abortTransaction();
       return res.status(400).json({ message: "Invalid status" });
     }
 
+    /* ---------------- UPDATE DEPOSIT ---------------- */
     const deposit = await UserDeposit.findOneAndUpdate(
       { _id: req.params.id, status: "pending" },
       {
@@ -207,24 +208,23 @@ exports.updateUserDepositStatus = async (req, res) => {
       return res.status(400).json({ message: "Deposit already processed" });
     }
 
+    /* ---------------- IF APPROVED ---------------- */
     if (status === "approved") {
       const user = await User.findByIdAndUpdate(
         deposit.user,
         { $inc: { credit: deposit.amount } },
-        { session }
+        { new: true, session }
       );
 
+      /* ---------- REFERRAL COMMISSION ---------- */
       if (user?.inviteCode) {
         const approvedCount = await UserDeposit.countDocuments(
-          { user: user._id, status: "approved" },
-          { session }
-        );
+          { user: user._id, status: "approved" }
+        ).session(session);
 
         const setting = await ReferralSetting.findOne(
-          { level: approvedCount },
-          null,
-          { session }
-        );
+          { level: approvedCount }
+        ).session(session);
 
         if (setting && setting.percent > 0) {
           const commission = (deposit.amount * setting.percent) / 100;
@@ -238,15 +238,24 @@ exports.updateUserDepositStatus = async (req, res) => {
       }
     }
 
+    /* ---------------- COMMIT ---------------- */
     await session.commitTransaction();
 
+    /* 🔥 VERY IMPORTANT — RETURN UPDATED DEPOSIT */
     res.json({
       success: true,
       message: `Deposit ${status} successfully`,
+      deposit,
     });
+
   } catch (err) {
     await session.abortTransaction();
-    res.status(500).json({ message: "Update failed" });
+    console.error("UPDATE DEPOSIT ERROR:", err);
+
+    res.status(500).json({
+      success: false,
+      message: "Update failed",
+    });
   } finally {
     session.endSession();
   }

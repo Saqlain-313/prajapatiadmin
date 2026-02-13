@@ -84,12 +84,12 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, type = 
         {/* Decorative glows */}
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-white/5 rounded-full blur-3xl" />
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-white/5 rounded-full blur-3xl" />
-        
+
         <div className="relative z-10 p-6">
           <div className="flex justify-between items-start mb-4">
             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center
-              ${isApprove 
-                ? "bg-emerald-500/20 border border-emerald-500/50" 
+              ${isApprove
+                ? "bg-emerald-500/20 border border-emerald-500/50"
                 : "bg-red-500/20 border border-red-500/50"}`}>
               {icon}
             </div>
@@ -105,9 +105,9 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, type = 
           <h3 className="text-xl font-bold text-white mb-2 drop-shadow-[0_2px_5px_black]">
             {title || (isApprove ? "Approve Request" : "Reject Request")}
           </h3>
-          
+
           <p className="text-white/60 text-sm mb-6">
-            {message || (isApprove 
+            {message || (isApprove
               ? "Are you sure you want to approve this deposit request? This action cannot be undone."
               : "Are you sure you want to reject this deposit request? This action cannot be undone.")}
           </p>
@@ -200,6 +200,9 @@ const AdminDeposits = () => {
   useEffect(() => {
     if (success) {
       setRemarks({});
+
+      dispatch(getAllDeposits());
+
       dispatch(clearDepositStatus());
       showToast("Deposit status updated successfully", "success");
     }
@@ -279,7 +282,7 @@ const AdminDeposits = () => {
         <div className={`${gradientCardClass} p-8 text-center`}>
           <FiAlertCircle size={40} className="text-red-400 mx-auto mb-3" />
           <p className="text-red-300 font-medium">{error}</p>
-          <button 
+          <button
             onClick={() => dispatch(getAllDeposits())}
             className="mt-4 px-5 py-2 bg-white/10 hover:bg-white/15 rounded-xl text-white/80 text-sm border border-white/20"
           >

@@ -52,6 +52,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     "Pending Bets": "/admin/wrestling-bets/pending",
     "Settled Bets": "/admin/wrestling-bets/settled",
     "Bet History": "/admin/wrestling-bet-history",
+    "Referral Settings": "/admin/referral-settings", // ✅ ADDED
+
 
     // ✅ Images Page
   };
@@ -130,6 +132,12 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         { name: "Bet History", page: "Bet History" },
       ],
     },
+    {
+      name: "Referral",
+      icon: Settings,
+      page: "Referral Settings",
+      type: "single",
+    },
   ];
 
   return (
@@ -189,8 +197,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
             <Image size={16} className="text-white/60" />
             <h3 className="text-white/80 text-sm font-medium">Banner Image</h3>
           </div>
-          
-          
+
+
 
           {/* Upload Button */}
           <label className="flex items-center justify-center gap-2 w-full py-2.5 px-3 
@@ -201,8 +209,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
             <Upload size={16} />
             <span>{bannerPreview ? 'Change Banner' : 'Upload Banner'}</span>
             <input
-              
-              
+
+
               className="hidden"
             />
           </label>
@@ -227,9 +235,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                   </div>
                   <ChevronDown
                     size={16}
-                    className={`transition-transform duration-300 ${
-                      openDropdown === item.name ? "rotate-180 text-white" : "text-white/40"
-                    }`}
+                    className={`transition-transform duration-300 ${openDropdown === item.name ? "rotate-180 text-white" : "text-white/40"
+                      }`}
                   />
                 </button>
 
@@ -286,7 +293,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
               <span>Help & Support</span>
             </button>
           </div>
-          
+
           <div className="mt-6 pt-4 border-t border-white/10">
             <p className="text-white/40 text-xs text-center">
               © {new Date().getFullYear()} Wrestling

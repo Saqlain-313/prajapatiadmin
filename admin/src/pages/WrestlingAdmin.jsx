@@ -204,7 +204,7 @@ const WrestlingAdmin = () => {
             </button>
           </div>
           {/* 🔥 MATCH IMAGE */}
-          {MATCH && (
+          {MATCH?.img && (
             <div className="mb-6 rounded-2xl overflow-hidden border border-gray-700">
               <img
                 src={

@@ -62,8 +62,9 @@ const wrestlingBetHistorySchema = new mongoose.Schema(
 
     result: {
       type: String,
-      enum: ["WON", "LOST", "VOID"],
-      default: null,
+      enum: ["PENDING", "WON", "LOST", "CANCELLED"],
+      default: "PENDING",
+      index: true,
     },
 
     settled: {

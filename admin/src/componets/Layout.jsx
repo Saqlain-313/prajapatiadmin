@@ -2,13 +2,13 @@
 import React, { useState } from "react";
 import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
-// other imports...
+
 
 const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-black">
       {/* Sidebar */}
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 

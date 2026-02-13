@@ -32,61 +32,80 @@ function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex h-screen ">
-      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+    <div className="flex h-screen bg-black overflow-hidden">
+      
+      {/* Sidebar */}
+      <Sidebar
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+      />
 
+      {/* Right Section */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Navbar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+        
+        {/* Navbar */}
+        <Navbar
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+        />
 
-        <main className="flex-1 overflow-y-auto  ">
-          <Routes>
-            <Route element={<PrivateRoute />}>
-              <Route index element={<Dashboard />} />
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto overflow-x-hidden bg-gray-950">
+          <div className="p-4 md:p-6">
+            <Routes>
+              <Route element={<PrivateRoute />}>
 
-              <Route
-                path="/users/active"
-                element={<ActiveUsers />}
-              />
-              <Route path="/deposit" element={<AdminDeposit />} />
-              
-              <Route path="/Withdrawals" element={<AdminWithdrawals />} />
+                <Route index element={<Dashboard />} />
 
-              {/* Wrestling */}
-              <Route path="/matches" element={<WrestlingMatches />} />
-              <Route
-                path="/admin/wrestling/:matchId"
-                element={<WrestlingAdmin />}
-              />
-              <Route
-                path="/admin/wrestling/create"
-                element={<CreateWrestlingMatch />}
-              />
+                <Route path="/users/active" element={<ActiveUsers />} />
+                <Route path="/deposit" element={<AdminDeposit />} />
+                <Route path="/Withdrawals" element={<AdminWithdrawals />} />
 
-              {/* Wrestling Bets */}
-              <Route
-                path="/admin/wrestling-bet-history"
-                element={<AdminWrestlingBetHistoryPage />}
-              />
+                {/* Wrestling */}
+                <Route path="/matches" element={<WrestlingMatches />} />
+                <Route
+                  path="/admin/wrestling/:matchId"
+                  element={<WrestlingAdmin />}
+                />
+                <Route
+                  path="/admin/wrestling/create"
+                  element={<CreateWrestlingMatch />}
+                />
 
-              <Route path="/admin/wrestling-bets/all" element={<AdminWrestlingAllBetsPage />} />
-              <Route path="/admin/wrestling-bets/pending" element={<AdminWrestlingPendingPage />} />
-              <Route path="/admin/wrestling-bets/settled" element={<AdminWrestlingSettledPage />} />
-              <Route path="/uploadbanner" element={<ImagesPage />} />
-              <Route path="/admin/referral-settings" element={<ReferralSettings/>}/>
+                {/* Wrestling Bets */}
+                <Route
+                  path="/admin/wrestling-bet-history"
+                  element={<AdminWrestlingBetHistoryPage />}
+                />
+                <Route
+                  path="/admin/wrestling-bets/all"
+                  element={<AdminWrestlingAllBetsPage />}
+                />
+                <Route
+                  path="/admin/wrestling-bets/pending"
+                  element={<AdminWrestlingPendingPage />}
+                />
+                <Route
+                  path="/admin/wrestling-bets/settled"
+                  element={<AdminWrestlingSettledPage />}
+                />
 
+                <Route path="/uploadbanner" element={<ImagesPage />} />
 
-              <Route
-                path="*"
-                element={
-                  <div className="p-8">
-                    <h1 className="text-2xl font-bold">
-                      404 - Page Not Found
-                    </h1>
-                  </div>
-                }
-              />
-            </Route>
-          </Routes>
+                {/* 404 */}
+                <Route
+                  path="*"
+                  element={
+                    <div className="p-8 text-white">
+                      <h1 className="text-2xl font-bold">
+                        404 - Page Not Found
+                      </h1>
+                    </div>
+                  }
+                />
+              </Route>
+            </Routes>
+          </div>
         </main>
       </div>
     </div>
@@ -96,11 +115,11 @@ function Layout() {
 function AppComponent() {
   return (
     <Routes>
-      {/* Public routes */}
+      {/* Public Routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/forget" element={<Forget />} />
 
-      {/* Private layout */}
+      {/* Private Layout */}
       <Route path="/*" element={<Layout />} />
     </Routes>
   );

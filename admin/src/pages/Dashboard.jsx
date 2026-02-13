@@ -551,7 +551,7 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-black via-[#0A0C0F] to-[#030405] p-4 md:p-6 lg:p-8 flex items-center justify-center">
+      <div className=" bg-gradient-to-br from-black via-[#0A0C0F] to-[#030405]  flex items-center justify-center">
         <div className="flex flex-col items-center justify-center">
           <div className="relative">
             <div className="w-16 h-16 border-2 border-white/20 border-t-white rounded-full animate-spin" />
@@ -566,8 +566,8 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-[#0A0C0F] to-[#030405] p-4 md:p-6 lg:p-8">
-
+    <div className=" bg-gradient-to-br from-black via-[#0A0C0F] to-[#030405] ">
+      
       {/* Header Section */}
       <div className={`${gradientCardClass} p-5 md:p-6 mb-6`}>
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
@@ -636,7 +636,7 @@ const Dashboard = () => {
 
       {/* User Statistics Section */}
       <section className="mb-8">
-        <div className="flex items-center gap-3 mb-5">
+        <div className="flex items-center  gap-3 mb-5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/20 to-blue-900/30 
                         flex items-center justify-center border border-blue-500/30">
             <FaUsers className="text-blue-400" size={16} />
@@ -647,7 +647,9 @@ const Dashboard = () => {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+
+
           <StatCard
             title="Total Users"
             count={userStats.total}

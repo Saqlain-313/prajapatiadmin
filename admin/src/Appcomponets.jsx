@@ -20,6 +20,7 @@ import AdminWrestlingBetHistoryPage from "./pages/AdminWrestlingBetHistoryPage";
 import AdminWrestlingAllBetsPage from "./pages/AdminWrestlingAllBetsPage";
 import AdminWrestlingPendingPage from "./pages/AdminWrestlingPendingPage";
 import AdminWrestlingSettledPage from "./pages/AdminWrestlingSettledPage";
+import ImagesPage from "./pages/ImagesPage";
 function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -57,6 +58,8 @@ function Layout() {
               <Route path="/admin/wrestling-bets/all" element={<AdminWrestlingAllBetsPage />} />
               <Route path="/admin/wrestling-bets/pending" element={<AdminWrestlingPendingPage />} />
               <Route path="/admin/wrestling-bets/settled" element={<AdminWrestlingSettledPage />} />
+              <Route path="/admin/images" element={<ImagesPage />} />
+
 
               <Route
                 path="*"

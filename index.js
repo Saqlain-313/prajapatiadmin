@@ -4,21 +4,25 @@ const initSocket = (io) => {
   io.on("connection", (socket) => {
     console.log("🟢 Socket connected:", socket.id);
 
-    /* ===== JOIN MATCH ROOM ===== */
+    /* =========================================
+       JOIN MATCH ROOM
+    ========================================= */
     socket.on("join-match", (mid) => {
       if (!mid) return;
       socket.join(String(mid));
       console.log(`📥 Joined match room: ${mid}`);
     });
 
-    /* =====================================================
-       ADMIN UPDATE BOX (PATCH STYLE)
-    ===================================================== */
+    /* =========================================
+       ADMIN UPDATE BOX (PATCH STYLE - FIXED)
+    ========================================= */
     socket.on("admin:update-box", async (data) => {
       try {
-        const { matchId, mid, tid, boxId, rate, size } = data;
+        const { matchId, mid, tid, boxId, rate, size, timer } = data;
 
-        // 🔒 Only boxId 2 or 3 allowed
+        if (!matchId || !mid || !tid || !boxId) return;
+
+        // 🔒 Only BACK(3) & LAY(4)
         if (![3, 4].includes(Number(boxId))) return;
 
         const match = await WrestlingMatch.findById(matchId);
@@ -34,7 +38,7 @@ const initSocket = (io) => {
         );
         if (!box) return;
 
-        /* ===== PATCH LOGIC ===== */
+        /* ===== PATCH VALUES ===== */
         if (rate !== undefined && rate !== null) {
           box.rate = Number(rate);
         }
@@ -43,29 +47,39 @@ const initSocket = (io) => {
           box.size = Number(size);
         }
 
+        if (timer !== undefined && timer !== null) {
+          box.timer = Number(timer);
+        }
+
         await match.save();
 
+        /* ===== BROADCAST TO ROOM (FIXED) ===== */
         io.to(String(mid)).emit("box:update", {
-          tid,
-          boxId,
+          mid: String(mid),       // 🔥 IMPORTANT
+          tid: Number(tid),
+          boxId: Number(boxId),
           rate: box.rate,
           size: box.size,
+          timer: box.timer,
         });
 
-        console.log("🔥 Box patched & broadcasted");
+        console.log(
+          `🔥 Box Updated → MID:${mid} TID:${tid} BOX:${boxId}`
+        );
 
       } catch (err) {
-        console.error("❌ Socket error:", err.message);
+        console.error("❌ admin:update-box error:", err.message);
       }
     });
 
-    /* =====================================================
-       ✅ ADMIN UPDATE TEAM STATUS (NEW)
-    ===================================================== */
+    /* =========================================
+       ADMIN UPDATE TEAM STATUS
+    ========================================= */
     socket.on("admin:update-team-status", async (data) => {
       try {
         const { matchId, mid, tid, status } = data;
 
+        if (!matchId || !mid || !tid) return;
         if (!["ACTIVE", "SUSPENDED"].includes(status)) return;
 
         const match = await WrestlingMatch.findById(matchId);
@@ -81,17 +95,23 @@ const initSocket = (io) => {
         await match.save();
 
         io.to(String(mid)).emit("team:status-update", {
-          tid,
+          mid: String(mid),   // 🔥 Added for safety
+          tid: Number(tid),
           status,
         });
 
-        console.log(`🚦 Team ${tid} status updated → ${status}`);
+        console.log(
+          `🚦 Team ${tid} Status Updated → ${status}`
+        );
 
       } catch (err) {
-        console.error("❌ Team status socket error:", err.message);
+        console.error("❌ team status error:", err.message);
       }
     });
 
+    /* =========================================
+       DISCONNECT
+    ========================================= */
     socket.on("disconnect", () => {
       console.log("🔴 Socket disconnected:", socket.id);
     });

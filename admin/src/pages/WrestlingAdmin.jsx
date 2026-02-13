@@ -38,6 +38,50 @@ const WrestlingAdmin = () => {
     if (matchId) dispatch(fetchMatch(matchId));
   }, [matchId, dispatch]);
 
+  const minRate = 1;
+  const maxRate = 10;
+  const step = 0.05;
+
+  const handleIncreaseRate = () => {
+    if (!MATCH || MATCH.status !== "OPEN") return;
+    if (!tid || !boxId) return;
+
+    const current = selectedBox?.rate ?? 1;
+    const newRate = (parseFloat(current) + step).toFixed(2);
+
+    if (parseFloat(newRate) <= maxRate) {
+      socket.emit("admin:update-box", {
+        matchId: MATCH._id,
+        mid: MATCH.mid,
+        tid,
+        boxId,
+        rate: Number(newRate),
+        size: selectedBox?.size || 0,
+        timer: selectedBox?.timer || 0,
+      });
+    }
+  };
+
+  const handleDecreaseRate = () => {
+    if (!MATCH || MATCH.status !== "OPEN") return;
+    if (!tid || !boxId) return;
+
+    const current = selectedBox?.rate ?? 1;
+    const newRate = (parseFloat(current) - step).toFixed(2);
+
+    if (parseFloat(newRate) >= minRate) {
+      socket.emit("admin:update-box", {
+        matchId: MATCH._id,
+        mid: MATCH.mid,
+        tid,
+        boxId,
+        rate: Number(newRate),
+        size: selectedBox?.size || 0,
+        timer: selectedBox?.timer || 0,
+      });
+    }
+  };
+
   useEffect(() => {
     if (MATCH?.mid) {
       dispatch(getBetHistoryByMid(MATCH.mid));
@@ -67,6 +111,7 @@ const WrestlingAdmin = () => {
       socket.off("team:status-update", teamStatusHandler);
     };
   }, [dispatch]);
+
 
 
   const exposureData = MATCH?.teams?.map((team) => {
@@ -113,7 +158,6 @@ const WrestlingAdmin = () => {
       timer: Number(timer) || 0,
     });
 
-    setRate("");
     setSize("");
     setTimer("");
   };
@@ -121,6 +165,17 @@ const WrestlingAdmin = () => {
   const selectedTeam = MATCH?.teams?.find(
     (t) => String(t.tid) === String(tid)
   );
+
+  const selectedBox = selectedTeam?.boxes?.find(
+    (b) => String(b.boxId) === String(boxId)
+  );
+
+  useEffect(() => {
+    if (selectedBox?.rate !== undefined) {
+      setRate(Number(selectedBox.rate).toFixed(2));
+    }
+  }, [selectedBox?.rate]);
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black text-white p-4 md:p-6">
@@ -212,29 +267,66 @@ const WrestlingAdmin = () => {
                 </option>
               ))}
             </select>
+
           </div>
+
 
           {/* INPUTS */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
 
             {/* RATE DROPDOWN */}
-            <select
-              value={rate}
-              onChange={(e) => setRate(e.target.value)}
-              className="p-3 rounded-xl bg-black border border-gray-700 text-white"
-            >
-              <option value="">Select Rate</option>
+            <div className="flex items-center gap-2">
 
-              {[...Array(20)].map((_, i) => {
-                const value = (1 + i * 0.25).toFixed(2); // 1.00, 1.25, 1.50 ...
-                return (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                );
-              })}
-            </select>
+              {/* ➖ Minus Button */}
+              <button
+                type="button"
+                onClick={handleDecreaseRate}
+                className="px-3 py-3 bg-red-600 hover:bg-red-700 rounded-xl text-white font-bold"
+              >
+                -
+              </button>
 
+              {/* 🔽 Dropdown */}
+              <select
+                value={selectedBox?.rate?.toFixed(2) || ""}
+                onChange={(e) => {
+                  if (!MATCH || MATCH.status !== "OPEN") return;
+                  if (!tid || !boxId) return;
+
+                  socket.emit("admin:update-box", {
+                    matchId: MATCH._id,
+                    mid: MATCH.mid,
+                    tid,
+                    boxId,
+                    rate: Number(e.target.value),
+                    size: selectedBox?.size || 0,
+                    timer: selectedBox?.timer || 0,
+                  });
+                }}
+                className="p-3 rounded-xl bg-black border border-gray-700 text-white w-full"
+              >
+                <option value="">Select Rate</option>
+
+                {[...Array(181)].map((_, i) => {
+                  const value = (1 + i * 0.05).toFixed(2);
+                  return (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  );
+                })}
+              </select>
+
+              {/* ➕ Plus Button */}
+              <button
+                type="button"
+                onClick={handleIncreaseRate}
+                className="px-3 py-3 bg-emerald-600 hover:bg-emerald-700 rounded-xl text-white font-bold"
+              >
+                +
+              </button>
+
+            </div>
             <input
               type="number"
               placeholder="Size"
@@ -347,46 +439,46 @@ const WrestlingAdmin = () => {
         ))}
       </div>
       {/* 🔥 USER BET LIST */}
-<div className="p-4 text-black bg-white border-t">
-  <h2 className="font-bold mb-3">User Bets</h2>
+      <div className="p-4 text-black bg-white border-t">
+        <h2 className="font-bold mb-3">User Bets</h2>
 
-  <table className="w-full text-sm text-center">
-    <thead className="bg-gray-800 text-white">
-      <tr>
-        <th className="p-2">User</th>
-        <th>Team</th>
-        <th>Type</th>
-        <th>Stake</th>
-        <th>Rate</th>
-      </tr>
-    </thead>
-    <tbody>
-      {bets?.map((bet) => {
-        const team = MATCH?.teams?.find(
-          (t) => String(t.tid) === String(bet.teamTid)
-        );
+        <table className="w-full text-sm text-center">
+          <thead className="bg-gray-800 text-white">
+            <tr>
+              <th className="p-2">User</th>
+              <th>Team</th>
+              <th>Type</th>
+              <th>Stake</th>
+              <th>Rate</th>
+            </tr>
+          </thead>
+          <tbody>
+            {bets?.map((bet) => {
+              const team = MATCH?.teams?.find(
+                (t) => String(t.tid) === String(bet.teamTid)
+              );
 
-        return (
-          <tr key={bet._id} className="border-t">
-            <td>{bet.user?.name || "N/A"}</td>
-            <td>{team?.tname}</td>
-            <td
-              className={
-                bet.boxId == 3
-                  ? "text-emerald-600 font-bold"
-                  : "text-red-600 font-bold"
-              }
-            >
-              {bet.boxId == 3 ? "BACK" : "LAY"}
-            </td>
-            <td>₹{bet.stake}</td>
-            <td>{Number(bet.rate).toFixed(2)}</td>
-          </tr>
-        );
-      })}
-    </tbody>
-  </table>
-</div>
+              return (
+                <tr key={bet._id} className="border-t">
+                  <td>{bet.user?.name || "N/A"}</td>
+                  <td>{team?.tname}</td>
+                  <td
+                    className={
+                      bet.boxId == 3
+                        ? "text-emerald-600 font-bold"
+                        : "text-red-600 font-bold"
+                    }
+                  >
+                    {bet.boxId == 3 ? "BACK" : "LAY"}
+                  </td>
+                  <td>₹{bet.stake}</td>
+                  <td>{Number(bet.rate).toFixed(2)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
 
   );

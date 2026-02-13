@@ -9,6 +9,7 @@ import {
   CreditCard,
   ArrowDownCircle,
   Folder,
+  Image,
 } from "lucide-react";
 
 const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
@@ -34,6 +35,9 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     "Pending Bets": "/admin/wrestling-bets/pending",
     "Settled Bets": "/admin/wrestling-bets/settled",
     "Bet History": "/admin/wrestling-bet-history",
+
+    // ✅ Images Page
+    Images: "/admin/images",
   };
 
   /* =========================
@@ -59,13 +63,12 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
   };
 
   /* =========================
-     FIXED ACTIVE LOGIC
+     ACTIVE LOGIC
   ========================= */
   const isActive = (page) => {
     const path = routeMap[page];
     if (!path) return false;
 
-    // exact match OR nested match support
     return (
       location.pathname === path ||
       location.pathname.startsWith(path + "/")
@@ -98,6 +101,12 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
       name: "Withdrawals",
       icon: ArrowDownCircle,
       page: "Withdrawals",
+      type: "single",
+    },
+    {
+      name: "Images",
+      icon: Image,
+      page: "Images",
       type: "single",
     },
     {

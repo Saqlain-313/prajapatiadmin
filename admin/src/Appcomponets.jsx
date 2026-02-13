@@ -10,17 +10,24 @@ import Forget from "./componets/Forget";
 
 import Dashboard from "./pages/Dashboard";
 import ActiveUsers from "./pages/ActiveUsers";
+import UserDetailsPage from "./pages/UserDetailsPage";
+
 import PrivateRoute from "./store/PrivateRoute";
-import AdminDeposit from './pages/AdminDeposits'
+
+import AdminDeposit from "./pages/AdminDeposits";
 import AdminWithdrawals from "./pages/AdminWithdrawals";
+
 import WrestlingMatches from "./pages/WrestlingMatches";
 import WrestlingAdmin from "./pages/WrestlingAdmin";
 import CreateWrestlingMatch from "./pages/CreateWrestlingMatch";
+
 import AdminWrestlingBetHistoryPage from "./pages/AdminWrestlingBetHistoryPage";
 import AdminWrestlingAllBetsPage from "./pages/AdminWrestlingAllBetsPage";
 import AdminWrestlingPendingPage from "./pages/AdminWrestlingPendingPage";
 import AdminWrestlingSettledPage from "./pages/AdminWrestlingSettledPage";
+
 import ImagesPage from "./pages/ImagesPage";
+
 function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -36,31 +43,47 @@ function Layout() {
             <Route element={<PrivateRoute />}>
               <Route index element={<Dashboard />} />
 
-              <Route
-                path="/users/active"
-                element={<ActiveUsers />}
-              />
+              {/* Users */}
+              <Route path="/users/active" element={<ActiveUsers />} />
+              <Route path="/users/active/:id" element={<UserDetailsPage />} />
+
+              {/* Finance */}
               <Route path="/deposit" element={<AdminDeposit />} />
               <Route path="/Withdrawals" element={<AdminWithdrawals />} />
+
+              {/* Wrestling */}
+              <Route path="/matches" element={<WrestlingMatches />} />
               <Route
                 path="/admin/wrestling/:matchId"
-                element={
-                  <WrestlingAdmin />
-                }
+                element={<WrestlingAdmin />}
               />
-              <Route path="/matches" element={<WrestlingMatches />} />
-              <Route path="/admin/wrestling/create" element={<CreateWrestlingMatch />} />
+              <Route
+                path="/admin/wrestling/create"
+                element={<CreateWrestlingMatch />}
+              />
+
+              {/* Wrestling Bets */}
               <Route
                 path="/admin/wrestling-bet-history"
                 element={<AdminWrestlingBetHistoryPage />}
               />
+              <Route
+                path="/admin/wrestling-bets/all"
+                element={<AdminWrestlingAllBetsPage />}
+              />
+              <Route
+                path="/admin/wrestling-bets/pending"
+                element={<AdminWrestlingPendingPage />}
+              />
+              <Route
+                path="/admin/wrestling-bets/settled"
+                element={<AdminWrestlingSettledPage />}
+              />
 
-              <Route path="/admin/wrestling-bets/all" element={<AdminWrestlingAllBetsPage />} />
-              <Route path="/admin/wrestling-bets/pending" element={<AdminWrestlingPendingPage />} />
-              <Route path="/admin/wrestling-bets/settled" element={<AdminWrestlingSettledPage />} />
+              {/* Images */}
               <Route path="/admin/images" element={<ImagesPage />} />
 
-
+              {/* 404 */}
               <Route
                 path="*"
                 element={

@@ -40,6 +40,8 @@ exports.updateImageByIndex = async (req, res) => {
     const { index } = req.params;
     const file = req.file;
 
+    
+
     if (!file) {
       return res.status(400).json({ message: "No image provided" });
     }

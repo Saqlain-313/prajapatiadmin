@@ -1,0 +1,31 @@
+/* App.css */
+@media (max-width: 767px) {
+  .root-main {
+    padding: 0;
+  }
+  
+  /* Ensure sidebar doesn't push content on mobile */
+  .flex {
+    position: relative;
+  }
+  
+  /* Make sure main content is full width on mobile */
+  .flex-1 {
+    width: 100%;
+  }
+  
+  /* Adjust padding for mobile */
+  main {
+    padding: 1rem;
+  }
+}
+
+/* Smooth transitions for sidebar */
+.aside {
+  transition: transform 0.3s ease-in-out;
+}
+
+/* Overlay for mobile sidebar */
+.overlay {
+  transition: opacity 0.3s ease-in-out;
+}

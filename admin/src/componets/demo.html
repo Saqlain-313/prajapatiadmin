@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin Task Control</title>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-default@5.0.15/default.min.css" rel="stylesheet" />
+
+    <link rel="stylesheet" href="/dist/css/adminlte.min.css" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback"
+    />
+    <link rel="stylesheet" href="/plugins/fontawesome-free/css/all.min.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link
+      href="//cdn.jsdelivr.net/npm/@sweetalert2/theme-dark@4/dark.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/dist/css/adminlte.min.css" />
+    <link rel="stylesheet" href="/css/admin.css" />
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <style>
+      /* Custom Dropdown Styles */
+      .tier-dropdown-btn {
+        background-color: #fff;
+        color: #015956;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        padding: 8px 16px;
+        min-width: 120px;
+        text-align: left;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.2s ease;
+      }
+      
+      .tier-dropdown-btn:hover {
+        background-color: #f8f9fa;
+        border-color: #adb5bd;
+      }
+      
+      .tier-dropdown-btn:after {
+        content: "▼";
+        font-size: 0.6em;
+        margin-left: 8px;
+        transition: transform 0.2s ease;
+      }
+      
+      .tier-dropdown-btn[aria-expanded="true"]:after {
+        transform: rotate(180deg);
+      }
+      
+      .tier-dropdown-menu {
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        padding: 0;
+        min-width: 120px;
+      }
+      
+      .dropdown-item {
+        color: #015956;
+        padding: 8px 16px;
+        transition: background-color 0.2s ease;
+      }
+      
+      .dropdown-item:hover, .dropdown-item:focus {
+        background-color: #f0f7f6;
+        color: #015956;
+      }
+      
+      .dropdown-item.active {
+        background-color: #015956;
+        color: white;
+      }
+      
+      /* Custom Button Styles */
+      .btn-primary-custom {
+        background-color: #015956;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+      }
+      
+      .btn-primary-custom:hover {
+        background-color: #014a47;
+        color: white;
+      }
+      
+      /* Form Control Styles */
+      .form-control-custom {
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        padding: 8px 12px;
+      }
+      
+      /* Card Styles */
+      .metric-card {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        height: 100%;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        text-align: center;
+        transition: transform 0.2s ease;
+      }
+      
+      .metric-card:hover {
+        transform: translateY(-2px);
+      }
+      
+      .metric-card h3 {
+        font-weight: 600;
+        color: #015956;
+        font-size: 14px;
+        margin-bottom: 10px;
+      }
+      
+      .metric-card .value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #00807c;
+        margin-bottom: 5px;
+      }
+      
+      .metric-card .subtitle {
+        color: #5ccfcb;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body class="hold-transition sidebar-mini">
+    <div class="wrapper">
+      <%- include('../nav') %>
+
+      <div class="content-wrapper">
+        <div class="container mt-4">
+          <div class="header-section" style="margin-bottom: 20px;">
+            <h1 class="h3 mb-3 mb-md-0">Agent Performance Dashboard</h1>              
+
+            <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-2">
+              <!-- Improved Tier Dropdown -->
+              <div class="dropdown">
+                <button class="tier-dropdown-btn" type="button" id="tierDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                  <span id="selectedTier">All Tiers</span>
+                </button>
+                <ul class="dropdown-menu tier-dropdown-menu" aria-labelledby="tierDropdown">
+                  <li><a class="dropdown-item active" href="#" onclick="selectTier('All Tiers')">All Tiers</a></li>
+                  <li><a class="dropdown-item" href="#" onclick="selectTier('Tier 1')">Tier 1</a></li>
+                  <li><a class="dropdown-item" href="#" onclick="selectTier('Tier 2')">Tier 2</a></li>
+                  <li><a class="dropdown-item" href="#" onclick="selectTier('Tier 3')">Tier 3</a></li>
+                  <li><a class="dropdown-item" href="#" onclick="selectTier('Tier 4')">Tier 4</a></li>
+                  <li><a class="dropdown-item" href="#" onclick="selectTier('Tier 5')">Tier 5</a></li>
+                </ul>
+              </div>
+              
+              <!-- Label -->
+              <label for="userId" class="form-label mb-0 text-muted" style="min-width: 60px;">
+                User ID
+              </label>
+
+              <!-- Input -->
+              <input
+                type="text"
+                class="form-control form-control-custom"
+                id="userId"
+                value="10003"
+                style="width: 120px; min-width: 100px;"
+              />
+
+              <!-- Button -->
+              <button
+                class="btn btn-primary-custom"
+                id="analyzeBtn"
+                style="white-space: nowrap;"
+              >
+                <i class="fas fa-chart-line me-2"></i>Analyze Performance
+              </button>
+            </div>
+          </div>
+
+          <div class="row" style="margin: 0 -10px;">
+            <!-- Total Network Size -->
+            <div class="col-md-4 col-sm-6 mb-3" style="padding: 0 10px;">
+              <div class="metric-card">
+                <h3>Total Network Size</h3>
+                <div class="value" id="networkSize">1</div>
+                <div class="subtitle">
+                  Active across <span id="networkLevels">1</span> levels
+                </div>
+              </div>
+            </div>
+
+            <!-- Net Deposits -->
+            <div class="col-md-4 col-sm-6 mb-3" style="padding: 0 10px;">
+              <div class="metric-card">
+                <h3>Net Deposits</h3>
+                <div class="value" id="netDeposits">₹4,500</div>
+                <div class="subtitle">
+                  <span id="retentionRate">90.0</span>% retention rate
+                </div>
+              </div>
+            </div>
+
+            <!-- Net Profit -->
+            <div class="col-md-4 col-sm-6 mb-3" style="padding: 0 10px;">
+              <div class="metric-card">
+                <h3>Net Profit</h3>
+                <div class="value" id="netProfit">₹93</div>
+                <div class="subtitle">
+                  <span id="winRate">95.8</span>% win rate
+                </div>
+              </div>
+            </div>
+
+            <!-- Net Withdrawal -->
+            <div class="col-md-4 col-sm-6 mb-3" style="padding: 0 10px;">
+              <div class="metric-card">
+                <h3>Net Withdrawal</h3>
+                <div class="value" id="netWithdrawal">₹0</div>
+                <div class="subtitle">
+                  <span id="withdrawalRate">0.0</span>% of total deposits
+                </div>
+              </div>
+            </div>
+
+            <!-- Commission Earned -->
+            <div class="col-md-4 col-sm-6 mb-3" style="padding: 0 10px;">
+              <div class="metric-card">
+                <h3>Commission Earned</h3>
+                <div class="value" id="commissionEarned">₹0</div>
+                <div class="subtitle">
+                  <span id="commissionRate">0.0</span>% of total bets
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <h2 class="h4 mt-4 mb-3">Level-Wise Performance Breakdown</h2>
+          <div class="chart-container" style="height: 300px">
+            <canvas id="performanceChart"></canvas>
+          </div>
+
+          <h2 class="h4 mt-4 mb-3">Level-wise Performance Details</h2>
+          <div class="table-responsive table-container">
+            <table
+              class="table table-custom table-borderless align-middle"
+              id="performanceTable"
+            >
+              <thead>
+                <tr>
+                  <th>Level</th>
+                  <th>Users</th>
+                  <th>Deposits</th>
+                  <th>Withdrawals</th>
+                  <th>Bet Amount</th>
+                  <th>Win Amount</th>
+                  <th>Profit/Loss</th>
+                </tr>
+              </thead>
+              <tbody>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 class="h4 mt-4 mb-3" style="font-weight: bold; color: #015956;">Agent Information</h2>
+          <div class="row">
+            <!-- Card Template -->
+            <div class="col-md-4 col-sm-6 mb-3">
+              <div class="metric-card">
+                <h3>User ID</h3>
+                <div class="value" id="agentId">10003</div>
+              </div>
+            </div>
+
+            <div class="col-md-4 col-sm-6 mb-3">
+              <div class="metric-card">
+                <h3>Username</h3>
+                <div class="value" id="agentUsername">MEMBER7876DFJ</div>
+              </div>
+            </div>
+
+            <div class="col-md-4 col-sm-6 mb-3">
+              <div class="metric-card">
+                <h3>Mobile</h3>
+                <div class="value" id="agentMobile">7029934287</div>
+              </div>
+            </div>
+
+            <div class="col-md-4 col-sm-6 mb-3">
+              <div class="metric-card">
+                <h3>Wallet Balance</h3>
+                <div class="value" id="agentBalance">₹ 4,500.00</div>
+              </div>
+            </div> 
+
+            <div class="col-md-4 col-sm-6 mb-3">
+              <div class="metric-card">
+                <h3>Account Type</h3>
+                <div class="value" id="agentAccountType">Agent</div>
+              </div>
+            </div>
+
+            <div class="col-md-4 col-sm-6 mb-3">
+              <div class="metric-card">
+                <h3>Created At</h3>
+                <div class="value" id="agentCreatedAt">2024-03-25</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-3">
+          <h1 class="text-start mb-4 fs-4 fw-bold">
+            Deposit Overview
+          </h1>
+          <div
+            class="global-search-section mb-4 d-flex flex-column flex-md-row align-items-center justify-content-between gap-3"
+          >
+            <label for="searchId" class="form-label mb-0 sr-only"
+              >Search by ID:</label
+            >
+            <div class="input-group w-100 w-md-50">
+              <span class="input-group-text"
+                ><i class="fas fa-search text-secondary"></i
+              ></span>
+              <input
+                type="text"
+                id="searchId"
+                placeholder="Search deposit by ID..."
+                class="form-control form-control-lg"
+                style="border: 1px solid rgb(8, 138, 145) !important;"
+              />
+            </div>
+            <button
+              id="clearSearchBtn"
+              class="btn btn-danger-custom mt-3 mt-md-0"
+            >
+              Clear
+            </button>
+          </div>
+
+          <div class="row row-cols-1 row-cols-md-3 g-4 mb-4">
+            <div class="col">
+              <div class="deposit-box">
+                <div>
+                  <h2>First Deposit</h2>
+                  <ul id="firstDepositList">
+                  </ul>
+                  <p
+                    id="firstDepositNoData"
+                    class="text-center mt-3 text-muted"
+                    style="display: none"
+                  >
+                    No matching data found.
+                  </p>
+                </div>
+                <button
+                  data-deposit-type="first"
+                  class="see-more-btn mt-4 btn"
+                >
+                  See More <i class="fas fa-chevron-down ms-2"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="col">
+              <div class="deposit-box">
+                <div>
+                  <h2>Second Deposit</h2>
+                  <ul id="secondDepositList">
+                  </ul>
+                  <p
+                    id="secondDepositNoData"
+                    class="text-center mt-3 text-muted"
+                    style="display: none"
+                  >
+                    No matching data found.
+                  </p>
+                </div>
+                <button
+                  data-deposit-type="second"
+                  class="see-more-btn mt-4 btn"
+                >
+                  See More <i class="fas fa-chevron-down ms-2"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="col">
+              <div class="deposit-box">
+                <div>
+                  <h2>Third Deposit</h2>
+                  <ul id="thirdDepositList">
+                  </ul>
+                  <p
+                    id="thirdDepositNoData"
+                    class="text-center mt-3 text-muted"
+                    style="display: none"
+                  >
+                    No matching data found.
+                  </p>
+                </div>
+                <button
+                  data-deposit-type="third"
+                  class="see-more-btn mt-4 btn"
+                >
+                  See More <i class="fas fa-chevron-down ms-2"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div
+            id="sharedDepositTableContainer"
+            class="card p-4 shadow-lg"
+            style="display: none"
+          >
+            <h2 id="sharedTableTitle" class="h5 mb-4 text-dark">
+              All Deposits
+            </h2>
+            <div class="table-responsive table-container">
+              <table class="table table-hover shared-table-custom">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Amount</th>
+                  </tr>
+                </thead>
+                <tbody id="sharedDepositTableBody">
+                </tbody>
+              </table>
+              <p
+                id="sharedDepositTableNoData"
+                class="text-center mt-4 text-muted"
+                style="display: none"
+              >
+                No matching data found in full list.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script src="/plugins/jquery/jquery.min.js"></script>
+    <script src="/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/dist/js/adminlte.min.js"></script>
+    <script src="/dist/js/adminlte.min.js"></script>
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
+
+    <script>
+      // Tier selection function
+      function selectTier(tier) {
+        document.getElementById('selectedTier').textContent = tier;
+        
+        // Remove active class from all items
+        document.querySelectorAll('.tier-dropdown-menu .dropdown-item').forEach(item => {
+          item.classList.remove('active');
+        });
+        
+        // Add active class to selected item
+        event.target.classList.add('active');
+        
+        // Here you would typically filter your data based on the selected tier
+        console.log('Selected tier:', tier);
+        // loadAgentData($('#userId').val().trim(), tier);
+      }
+      
+      // Sample Data for Deposits
+      const allDeposits = {
+        first: [
+          { id: 'FD001', amount: 150.00 },
+          { id: 'FD002', amount: 200.50 },
+          { id: 'FD003', amount: 75.25 },
+          { id: 'FD004', amount: 300.00 },
+          { id: 'FD005', amount: 120.75 },
+          { id: 'FD006', amount: 50.00 },
+          { id: 'FD007', amount: 450.00 },
+          { id: 'FD008', amount: 90.00 },
+          { id: 'FD009', amount: 210.00 },
+          { id: 'FD010', amount: 180.50 },
+          { id: 'FD011', amount: 600.00 },
+          { id: 'FD012', amount: 25.00 },
+        ],
+        second: [
+          { id: 'SD001', amount: 250.00 },
+          { id: 'SD002', amount: 350.75 },
+          { id: 'SD003', amount: 100.00 },
+          { id: 'SD004', amount: 500.00 },
+          { id: 'SD005', amount: 180.20 },
+          { id: 'SD006', amount: 75.00 },
+          { id: 'SD007', amount: 620.00 },
+          { id: 'SD008', amount: 110.00 },
+        ],
+        third: [
+          { id: 'TD001', amount: 500.00 },
+          { id: 'TD002', amount: 750.00 },
+          { id: 'TD003', amount: 200.00 },
+          { id: 'TD004', amount: 1000.00 },
+          { id: 'TD005', amount: 300.00 },
+          { id: 'TD006', amount: 150.00 },
+        ],
+      };
+
+      let currentActiveDepositType = null; // To keep track of which deposit type's table is currently shown
+
+      
+      function renderInitialDeposits(type, data) {
+        const listElement = document.getElementById(`${type}DepositList`);
+        const noDataElement = document.getElementById(`${type}DepositNoData`);
+        const seeMoreBtn = document.querySelector(
+          `.see-more-btn[data-deposit-type="${type}"]`
+        );
+
+        listElement.innerHTML = ''; // Clear previous list items
+        noDataElement.style.display = 'none'; // Hide no data message by default
+        seeMoreBtn.style.display = 'block'; // Show button by default
+
+        const displayData = data.slice(0, 5); // Get first 5 items
+
+        if (displayData.length === 0) {
+          noDataElement.style.display = 'block';
+          seeMoreBtn.style.display = 'none'; // Hide button if no data
+        } else {
+          displayData.forEach((deposit) => {
+            const listItem = document.createElement('li');
+            listItem.className = 'd-flex justify-content-between align-items-center bg-opacity-25 bg-info p-3 rounded';
+            listItem.innerHTML = `
+                        <span>ID: <strong class="fw-medium">${deposit.id}</strong></span>
+                        <span>Amount: <strong class="fw-medium">₹${deposit.amount.toFixed(
+                          2
+                        )}</strong></span>
+                    `;
+            listElement.appendChild(listItem);
+          });
+
+          // Hide "See More" button if there are 5 or fewer items
+          if (data.length <= 5) {
+            seeMoreBtn.style.display = 'none';
+          } else {
+            seeMoreBtn.innerHTML = `See More <i class="fas fa-chevron-down ms-2"></i>`;
+            seeMoreBtn.classList.remove('active'); // Ensure button is not in 'active' state
+          }
+        }
+      }
+
+      
+      function renderSharedTable(data) {
+        const tableBody = document.getElementById('sharedDepositTableBody');
+        const tableNoData = document.getElementById('sharedDepositTableNoData');
+        tableBody.innerHTML = ''; // Clear previous table rows
+        tableNoData.style.display = 'none'; // Hide no data message by default
+
+        if (data.length === 0) {
+          tableNoData.style.display = 'block';
+        } else {
+          data.forEach((deposit) => {
+            const row = document.createElement('tr');
+            row.className = 'table-light'; // Bootstrap class for light row hover
+            row.innerHTML = `
+                        <td class="py-3 px-4 text-nowrap">${deposit.id}</td>
+                        <td class="py-3 px-4 text-nowrap">₹${deposit.amount.toFixed(
+                          2
+                        )}</td>
+                    `;
+            tableBody.appendChild(row);
+          });
+        }
+      }
+
+      
+      function handleSeeMoreClick(type, clickedButton) {
+        const sharedTableContainer = document.getElementById(
+          'sharedDepositTableContainer'
+        );
+        const sharedTableTitle = document.getElementById('sharedTableTitle');
+
+        // Reset all "See More" buttons to default state
+        document.querySelectorAll('.see-more-btn').forEach((btn) => {
+          btn.innerHTML = `See More <i class="fas fa-chevron-down ms-2"></i>`;
+          btn.classList.remove('active');
+        });
+
+        if (currentActiveDepositType === type) {
+          // If the same button is clicked again, hide the shared table
+          sharedTableContainer.style.display = 'none';
+          currentActiveDepositType = null;
+        } else {
+          // Show the shared table and populate it with the selected data
+          sharedTableContainer.style.display = 'block';
+          currentActiveDepositType = type;
+
+          // Update the title of the shared table
+          const titleMap = {
+            first: 'All First Deposits',
+            second: 'All Second Deposits',
+            third: 'All Third Deposits',
+          };
+          sharedTableTitle.textContent = titleMap[type];
+
+          // Render the shared table with filtered data
+          const searchTerm = document
+            .getElementById('searchId')
+            .value.toLowerCase();
+          const filteredData = searchTerm
+            ? allDeposits[type].filter((d) =>
+                d.id.toLowerCase().includes(searchTerm)
+              )
+            : allDeposits[type];
+          renderSharedTable(filteredData);
+
+          // Update the clicked button's text to "Hide"
+          clickedButton.innerHTML = `Hide <i class="fas fa-chevron-up ms-2"></i>`;
+          clickedButton.classList.add('active');
+        }
+      }
+
+      /**
+       * Filters the deposit data based on the search term and re-renders the lists/tables.
+       */
+      function filterDeposits() {
+        const searchTerm = document
+          .getElementById('searchId')
+          .value.toLowerCase();
+
+        // Always update the initial 5 lists in the boxes
+        ['first', 'second', 'third'].forEach((type) => {
+          const filteredData = allDeposits[type].filter((deposit) =>
+            deposit.id.toLowerCase().includes(searchTerm)
+          );
+          renderInitialDeposits(type, filteredData);
+        });
+
+        // If the shared table is currently visible, update its content based on the active type
+        if (currentActiveDepositType) {
+          const filteredSharedData = allDeposits[
+            currentActiveDepositType
+          ].filter((deposit) => deposit.id.toLowerCase().includes(searchTerm));
+          renderSharedTable(filteredSharedData);
+        }
+      }
+
+      // Event Listeners
+      document.addEventListener('DOMContentLoaded', () => {
+        // Initial render of all deposit types
+        renderInitialDeposits('first', allDeposits.first);
+        renderInitialDeposits('second', allDeposits.second);
+        renderInitialDeposits('third', allDeposits.third);
+
+        // Attach event listeners to "See More" buttons
+        document.querySelectorAll('.see-more-btn').forEach((button) => {
+          button.addEventListener('click', (event) => {
+            const type = event.target.dataset.depositType;
+            handleSeeMoreClick(type, event.target);
+          });
+        });
+
+        // Attach event listener for global search input
+        document.getElementById('searchId').addEventListener('keyup', filterDeposits);
+
+        // Attach event listener for clear search button
+        document.getElementById('clearSearchBtn').addEventListener('click', () => {
+          document.getElementById('searchId').value = ''; // Clear input
+          filterDeposits(); // Re-run filter to show all data
+        });
+      });
+
+      $(document).ready(function () {
+        // Initialize Chart
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        const performanceChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: ['Level 1'],
+            datasets: [
+              {
+                label: 'Deposits',
+                data: [5000],
+                backgroundColor: '#5ccfcb',
+              },
+              {
+                label: 'Withdrawals',
+                data: [500],
+                backgroundColor: '#00807c',
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                beginAtZero: true,
+              },
+            },
+          },
+        });
+
+        // Load initial data
+        loadAgentData();
+
+        // Analyze button click handler
+        $('#analyzeBtn').click(function () {
+          const userId = $('#userId').val().trim();
+          const selectedTier = $('#selectedTier').text();
+
+          if (!userId) {
+            Swal.fire({
+              title: 'Error!',
+              text: 'Please enter a valid User ID',
+              icon: 'error',
+              confirmButtonText: 'OK',
+            });
+            return;
+          }
+
+          Swal.fire({
+            title: 'Loading Data',
+            html: 'Please wait while we fetch agent performance data...',
+            allowOutsideClick: false,
+            didOpen: () => {
+              Swal.showLoading();
+            },
+          });
+
+          // Simulate API call (replace with actual API call)
+          setTimeout(() => {
+            Swal.close();
+            loadAgentData(userId, selectedTier);
+          }, 1500);
+        });
+
+        function loadAgentData(userId = '10003', tier = 'All Tiers') {
+          $.get(`/api/agent-downline-dashboard?userId=${userId}&tier=${tier}`, function(data) {
+            // Update top metrics
+            $('#networkSize').text(data.networkSize);
+            $('#networkLevels').text(data.networkLevels);
+
+            // Sum across all levels for totals
+            const totalDeposits = data.levelDetails.reduce((a, l) => a + Number(l.deposits), 0);
+            const totalWithdrawals = data.levelDetails.reduce((a, l) => a + Number(l.withdrawals), 0);
+            const totalProfit = data.levelDetails.reduce((a, l) => a + Number(l.profitLoss), 0);
+
+            $('#netDeposits').text('₹' + totalDeposits);
+            $('#netWithdrawal').text('₹' + totalWithdrawals);
+            $('#netProfit').text('₹' + totalProfit);
+
+            // Calculate and display rates
+            $('#retentionRate').text(((totalDeposits / (totalDeposits + totalWithdrawals)) * 100).toFixed(1));
+            $('#winRate').text(data.winRate || '95.8');
+            $('#withdrawalRate').text(((totalWithdrawals / totalDeposits) * 100).toFixed(1));
+            $('#commissionRate').text(data.commissionRate || '0.0');
+
+            // Agent info
+            $('#agentId').text(data.agentInfo.id);
+            $('#agentUsername').text(data.agentInfo.username);
+            $('#agentMobile').text(data.agentInfo.mobile);
+            $('#agentBalance').text('₹' + (data.agentInfo.balance || '4,500.00'));
+            $('#agentAccountType').text(data.agentInfo.accountType || 'Agent');
+            $('#agentCreatedAt').text(data.agentInfo.createdAt || '2024-03-25');
+
+            // Performance table (6 levels)
+            const tableBody = $('#performanceTable tbody');
+            tableBody.empty();
+            data.levelDetails.forEach((level) => {
+              tableBody.append(`
+                <tr>
+                  <td>${level.level}</td>
+                  <td>${level.users}</td>
+                  <td>₹${level.deposits}</td>
+                  <td>₹${level.withdrawals}</td>
+                  <td>₹${level.betAmount}</td>
+                  <td>₹${level.winAmount}</td>
+                  <td><span class="text-success">₹${level.profitLoss}</span></td>
+                </tr>
+              `);
+            });
+
+            // Chart (Bar for Deposits & Withdrawals per level)
+            performanceChart.data.labels = data.levelDetails.map(l => 'Level ' + l.level);
+            performanceChart.data.datasets[0].data = data.levelDetails.map(l => l.deposits);
+            performanceChart.data.datasets[1].data = data.levelDetails.map(l => l.withdrawals);
+            performanceChart.update();
+
+            // Deposit lists for Level 1
+            function renderDepositList(list, elementId) {
+              const el = $(`#${elementId}`);
+              el.empty();
+              if (!list || list.length === 0) {
+                el.append('<li class="text-muted">No data</li>');
+                return;
+              }
+              list.slice(0, 5).forEach(dep => {
+                el.append(`
+                  <li class="d-flex justify-content-between align-items-center bg-opacity-25 bg-info p-3 rounded">
+                    <span>User ID: <strong>${dep.userId}</strong></span>
+                    <span>Amount: <strong>₹${dep.amount}</strong></span>
+                  </li>
+                `);
+              });
+            }
+            
+            // Level 1 deposits
+            if (data.levelDetails[0]) {
+              renderDepositList(data.levelDetails[0].firstDeposits, 'firstDepositList');
+              renderDepositList(data.levelDetails[0].secondDeposits, 'secondDepositList');
+              renderDepositList(data.levelDetails[0].thirdDeposits, 'thirdDepositList');
+            }
+          })
+          .fail(function() {
+            Swal.fire({
+              title: 'Error!',
+              text: 'Failed to load agent data. Please try again.',
+              icon: 'error',
+              confirmButtonText: 'OK'
+            });
+          });
+        }
+      });
+    </script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="/plugins/jquery/jquery.min.js"></script>
+    <script src="/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/dist/js/adminlte.min.js"></script>
+    <script src="/js/admin/admin.js"></script>
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
+  </body>
+</html>

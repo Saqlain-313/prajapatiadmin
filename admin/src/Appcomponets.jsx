@@ -89,6 +89,7 @@ function Layout() {
                   path="/admin/wrestling-bets/settled"
                   element={<AdminWrestlingSettledPage />}
                 />
+                <Route path="/admin/referral-settings" element={<ReferralSettings/>}/>
 
                 <Route path="/uploadbanner" element={<ImagesPage />} />
 

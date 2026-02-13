@@ -592,7 +592,7 @@ const Dashboard = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="flex items-center bg-black/40 rounded-xl border border-white/10 p-1">
+            {/* <div className="flex items-center bg-black/40 rounded-xl border border-white/10 p-1">
               <button
                 onClick={() => setTimeFilter('today')}
                 className={`px-4 py-2 rounded-lg text-xs font-medium transition-all duration-300
@@ -620,7 +620,7 @@ const Dashboard = () => {
               >
                 This Month
               </button>
-            </div>
+            </div> */}
 
             <button
               onClick={handleRefresh}
@@ -694,7 +694,7 @@ const Dashboard = () => {
             title="Total Deposits"
             amount={userStats.totalApprovedAmount}
             icon={FaMoneyBillWave}
-            link="/transactions/deposits"
+            link="/deposit"
             trend="positive"
             percentage="+18"
             color="emerald"
@@ -703,7 +703,7 @@ const Dashboard = () => {
             title="Total Withdrawals"
             amount={userStats.totalWithdrawals}
             icon={FaCreditCard}
-            link="/transactions/withdrawals"
+            link="/withdrawals"
             trend="negative"
             percentage="-7"
             color="red"
@@ -712,7 +712,6 @@ const Dashboard = () => {
             title="Total Profit"
             amount={userStats.totalProfit}
             icon={FaArrowUp}
-            link="/transactions/profit"
             trend="positive"
             percentage="+12"
             color="amber"
@@ -721,7 +720,6 @@ const Dashboard = () => {
             title="Total Loss"
             amount={userStats.totalLoss}
             icon={FaArrowDown}
-            link="/transactions/loss"
             trend="negative"
             percentage="-4"
             color="red"

@@ -29,6 +29,9 @@ import { getAllUsers } from "../store/reducer/authReducer";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { FiAlertCircle, FiCheckCircle, FiXCircle } from "react-icons/fi";
+import {
+  getAllDeposits,
+} from "../store/reducer/depositAdminSlice";
 
 /* --------------------------------------------------------
    TOAST CONFIG — consistent with dark theme
@@ -326,6 +329,8 @@ const Dashboard = () => {
   const [timeFilter, setTimeFilter] = useState('today');
   const [refreshLoading, setRefreshLoading] = useState(false);
 
+  
+
   useEffect(() => {
     dispatch(getAllUsers());
   }, [dispatch]);
@@ -340,7 +345,6 @@ const Dashboard = () => {
     const admins = users.filter((u) => u.role === 'admin').length;
     const regularUsers = total - admins;
     
-    // Mock financial data - replace with actual data from your store
     const totalDeposits = 1250000; // Example: ₹12,50,000
     const totalWithdrawals = 875000; // Example: ₹8,75,000
     const totalProfit = 375000; // Example: ₹3,75,000
@@ -488,42 +492,6 @@ const Dashboard = () => {
             trend="up"
             trendValue="+12%"
             color="white"
-          />
-          <StatCard
-            title="Profile Completed"
-            count={userStats.completed}
-            icon={FaUserCheck}
-            link="/users/active?filter=completed"
-            trend="up"
-            trendValue="+8%"
-            color="emerald"
-          />
-          <StatCard
-            title="Profile Not Completed"
-            count={userStats.notCompleted}
-            icon={FaUserClock}
-            link="/users/active?filter=pending"
-            trend="down"
-            trendValue="-5%"
-            color="amber"
-          />
-          <StatCard
-            title="Verified Users"
-            count={userStats.verified}
-            icon={MdVerified}
-            link="/users/active?filter=verified"
-            trend="up"
-            trendValue="+15%"
-            color="blue"
-          />
-          <StatCard
-            title="Unverified Users"
-            count={userStats.unverified}
-            icon={FaUserAltSlash}
-            link="/users/active?filter=unverified"
-            trend="down"
-            trendValue="-3%"
-            color="red"
           />
           <StatCard
             title="Admin Users"

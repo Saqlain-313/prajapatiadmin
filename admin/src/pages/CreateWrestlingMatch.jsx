@@ -19,7 +19,7 @@ import {
   MdUpload,
   
 } from "react-icons/md";
-import { FiAlertCircle, FiCheckCircle } from "react-icons/fi";
+import { FiAlertCircle, FiCheckCircle, FiXCircle } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 
 import {

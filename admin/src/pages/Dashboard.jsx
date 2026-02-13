@@ -191,11 +191,6 @@ const FinancialStatCard = ({ title, amount, icon: Icon, link, trend, percentage,
                   {amount?.toLocaleString() || '0'}
                 </h3>
               </div>
-              {trend && (
-                <p className={`text-xs mt-1 ${trend === 'positive' ? 'text-emerald-400' : 'text-red-400'}`}>
-                  {percentage}% from last month
-                </p>
-              )}
             </div>
 
             <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${getColorClasses()} 
@@ -695,8 +690,6 @@ const Dashboard = () => {
             amount={userStats.totalApprovedAmount}
             icon={FaMoneyBillWave}
             link="/deposit"
-            trend="positive"
-            percentage="+18"
             color="emerald"
           />
           <FinancialStatCard
@@ -704,24 +697,18 @@ const Dashboard = () => {
             amount={userStats.totalWithdrawals}
             icon={FaCreditCard}
             link="/withdrawals"
-            trend="negative"
-            percentage="-7"
             color="red"
           />
           <FinancialStatCard
             title="Total Profit"
             amount={userStats.totalProfit}
             icon={FaArrowUp}
-            trend="positive"
-            percentage="+12"
             color="amber"
           />
           <FinancialStatCard
             title="Total Loss"
             amount={userStats.totalLoss}
             icon={FaArrowDown}
-            trend="negative"
-            percentage="-4"
             color="red"
           />
         </div>

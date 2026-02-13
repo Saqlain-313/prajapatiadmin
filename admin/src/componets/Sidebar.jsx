@@ -278,7 +278,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         </nav>
 
         {/* Footer Section — with utility links */}
-        <div className="mt-auto p-6 border-t border-white/10">
+        {/* <div className="mt-auto p-6 border-t border-white/10">
           <div className="space-y-2">
             <button className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-white/60 
                              hover:text-white hover:bg-white/5 transition-all duration-300 text-sm
@@ -302,7 +302,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
               v2.0.0 • Premium Admin
             </p>
           </div>
-        </div>
+        </div> */}
       </aside>
 
       {/* Global styles for custom scrollbar */}

@@ -54,7 +54,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     "Bet History": "/admin/wrestling-bet-history",
 
     // ✅ Images Page
-    Images: "/admin/images",
+    Images: "/uploadbanner", // <-- FIX: added slash for proper routing
   };
 
   /* =========================
@@ -75,19 +75,14 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
   };
 
   const handleNavigation = (page) => {
-    navigate(routeMap[page]);
-    setSidebarOpen(false);
+    const target = routeMap[page];
+    if (target) {
+      navigate(target);
+      setSidebarOpen(false);
+    }
   };
 
-  /* =========================
-     BANNER UPLOAD HANDLER
-  ========================= */
-  const handleBannerUpload = () => {
-  
-      navigate("/bannerpage"); 
-   
-  };
-  
+  // Remove banner upload handler, navigation handled by banner box onClick
 
   const isActive = (page) => {
     const path = routeMap[page];
@@ -188,9 +183,15 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
           </button>
         </div>
 
-        {/* Banner Upload Section — beautiful glass card */}
-        <div className="p-5 m-4 bg-black/40 rounded-2xl border border-white/10 backdrop-blur-md
-                       shadow-[inset_0_2px_10px_rgba(0,0,0,0.6)]">
+        {/* Banner Upload Section — now navigates on box click, image upload button removed */}
+        <div
+          className="p-5 m-4 bg-black/40 rounded-2xl border border-white/10 backdrop-blur-md
+                       shadow-[inset_0_2px_10px_rgba(0,0,0,0.6)] cursor-pointer hover:border-white/20 transition"
+          onClick={() => {
+            navigate("/uploadbanner");
+            setSidebarOpen(false);
+          }}
+        >
           <div className="flex items-center gap-2 mb-3">
             <Image size={16} className="text-white/60" />
             <h3 className="text-white/80 text-sm font-medium">Banner Image</h3>
@@ -208,7 +209,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
             <span>{bannerPreview ? 'Change Banner' : 'Upload Banner'}</span>
             <input
               
-              onChange={handleBannerUpload}
+              
               className="hidden"
             />
           </label>

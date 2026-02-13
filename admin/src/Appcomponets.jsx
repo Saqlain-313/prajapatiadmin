@@ -20,27 +20,32 @@ import AdminWrestlingBetHistoryPage from "./pages/AdminWrestlingBetHistoryPage";
 import AdminWrestlingAllBetsPage from "./pages/AdminWrestlingAllBetsPage";
 import AdminWrestlingPendingPage from "./pages/AdminWrestlingPendingPage";
 import AdminWrestlingSettledPage from "./pages/AdminWrestlingSettledPage";
+import UserDetailsPage from "./pages/UserDetailsPage";
 import ImagesPage from "./pages/ImagesPage";
 function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen ">
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
       <div className="flex-1 flex flex-col overflow-hidden">
         <Navbar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-        <main className="flex-1 overflow-y-auto p-4 bg-gray-50">
+        <main className="flex-1 overflow-y-auto  ">
           <Routes>
             <Route element={<PrivateRoute />}>
               <Route index element={<Dashboard />} />
 
-              <Route
-                path="/users/active"
-                element={<ActiveUsers />}
-              />
+              
+
+              
+
+<Route path="/users/active" element={<ActiveUsers />} />
+<Route path="/users/active/:id" element={<UserDetailsPage />} />
+<Route path="/uploadbanner" element={<ImagesPage />} />
               <Route path="/deposit" element={<AdminDeposit />} />
+              
               <Route path="/Withdrawals" element={<AdminWithdrawals />} />
               <Route
                 path="/admin/wrestling/:matchId"
@@ -58,8 +63,6 @@ function Layout() {
               <Route path="/admin/wrestling-bets/all" element={<AdminWrestlingAllBetsPage />} />
               <Route path="/admin/wrestling-bets/pending" element={<AdminWrestlingPendingPage />} />
               <Route path="/admin/wrestling-bets/settled" element={<AdminWrestlingSettledPage />} />
-              <Route path="/admin/images" element={<ImagesPage />} />
-
 
               <Route
                 path="*"

@@ -4,6 +4,7 @@ const {
     uploadImages,
     updateImageByIndex,
     getImages,
+    deleteImageByIndex,
 } = require("../controllers/imageController");
 
 const router = express.Router();
@@ -16,6 +17,9 @@ router.post(
 
 router.get("/", getImages);
 
-router.put("/update/:index", upload.any(), updateImageByIndex);
+router.put("/update/:index",   upload.single("image"), updateImageByIndex);
+
+router.delete("/delete/:index", deleteImageByIndex);
+
 
 module.exports = router;

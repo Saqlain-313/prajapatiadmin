@@ -5,6 +5,7 @@ import {
   uploadImages,
   updateImageByIndex,
   clearImageState,
+  deleteImageByIndex,
 } from "../store/reducer/imageSlice";
 import {
   MdUpload,
@@ -96,52 +97,53 @@ const inputStyleClasses =
 /* --------------------------------------------------------
    IMAGE CARD COMPONENT
 -------------------------------------------------------- */
-const ImageCard = ({ image, index }) => {
+const ImageCard = ({ image, index, onEdit, onDelete }) => {
   const [showPreview, setShowPreview] = useState(false);
 
   return (
     <>
-      <div 
+      <div
         className="group relative bg-gradient-to-br from-[#0B0D10] via-[#15181E] to-[#070809] 
                    rounded-2xl border border-white/10 overflow-hidden
                    hover:border-white/30 hover:shadow-[0_20px_40px_-15px_black,0_0_30px_rgba(255,255,255,0.1)]
                    transition-all duration-500 cursor-pointer"
-        onClick={() => setShowPreview(true)}
       >
-        {/* Decorative glow */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-        
-        {/* Image */}
-        <div className="relative aspect-square overflow-hidden">
-          <img
-            src={image.url}
-            alt={`Image ${index}`}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-          />
-          
-          {/* Overlay */}
+        <div
+          onClick={() => {
+            onEdit(index);
+            setShowPreview(true);
+          }}
+        >
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          
-          {/* Index Badge */}
-          <div className="absolute top-3 left-3 px-3 py-1.5 bg-black/80 backdrop-blur-sm 
-                        rounded-lg border border-white/20 text-white/90 text-xs font-medium
-                        shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
-            <MdNumbers className="inline mr-1" size={12} />
-            Index #{index}
-          </div>
-          
-          {/* Preview Button */}
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-            <span className="px-4 py-2 bg-white/10 backdrop-blur-md rounded-xl 
-                           border border-white/30 text-white text-sm font-medium
-                           shadow-[0_0_20px_rgba(255,255,255,0.2)]">
-              <MdVisibility className="inline mr-2" size={16} />
-              Preview
-            </span>
+
+          <div className="relative aspect-square overflow-hidden">
+            <img
+              src={image.url}
+              alt={`Image ${index}`}
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            />
+
+            <div className="absolute top-3 left-3 px-3 py-1.5 bg-black/80 backdrop-blur-sm 
+                          rounded-lg border border-white/20 text-white/90 text-xs font-medium">
+              Index #{index}
+            </div>
           </div>
         </div>
-        
-        {/* Footer */}
+
+        {/* 🔥 Delete Button */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(index);
+          }}
+          className="absolute top-3 right-3 p-2 rounded-lg 
+                     bg-red-500/20 border border-red-500/30 
+                     text-red-400 hover:bg-red-500/30 
+                     hover:border-red-500/50 transition"
+        >
+          <MdDelete size={16} />
+        </button>
+
         <div className="p-3 border-t border-white/10 bg-black/40 backdrop-blur-sm">
           <p className="text-white/60 text-xs truncate">
             {image.filename || `Image ${index + 1}`}
@@ -149,52 +151,32 @@ const ImageCard = ({ image, index }) => {
         </div>
       </div>
 
-      {/* Preview Modal */}
       {showPreview && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center z-50 p-4"
           onClick={() => setShowPreview(false)}
         >
-          <div 
-            className={`${gradientCardClass} max-w-4xl w-full relative overflow-hidden animate-scaleIn`}
+          <div
+            className="bg-[#0B0D10] border border-white/10 rounded-3xl max-w-4xl w-full p-6"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="relative z-10 p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-white/20 to-white/5 
-                                flex items-center justify-center border border-white/30">
-                    <MdImage size={28} className="text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-white">Image Preview</h3>
-                    <p className="text-white/40 text-sm">Index #{index}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setShowPreview(false)}
-                  className="p-2 text-white/50 hover:text-white hover:bg-white/5 rounded-xl 
-                           border border-transparent hover:border-white/20 transition"
-                >
-                  <MdClose size={22} />
-                </button>
-              </div>
-              
-              <div className="mt-4 rounded-2xl overflow-hidden border border-white/10">
-                <img
-                  src={image.url}
-                  alt={`Preview ${index}`}
-                  className="w-full h-auto max-h-[70vh] object-contain bg-black/60"
-                />
-              </div>
-              
-              <div className="mt-4 p-4 bg-black/40 rounded-xl border border-white/10">
-                <p className="text-white/80 text-sm break-all">
-                  <span className="text-white/40">URL: </span>
-                  {image.url}
-                </p>
-              </div>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-white font-semibold">
+                Image Preview (Index {index})
+              </h3>
+              <button
+                onClick={() => setShowPreview(false)}
+                className="text-white/60 hover:text-white"
+              >
+                ✕
+              </button>
             </div>
+
+            <img
+              src={image.url}
+              alt="Preview"
+              className="w-full max-h-[70vh] object-contain rounded-xl"
+            />
           </div>
         </div>
       )}
@@ -256,6 +238,22 @@ const ImagesPage = () => {
     }
 
     dispatch(uploadImages(Array.from(selectedFiles)));
+  };
+
+  const handleDelete = (index) => {
+    if (!window.confirm(`Delete image at index ${index}?`)) return;
+
+    dispatch(deleteImageByIndex(index));
+  };
+
+  const handleSelectForEdit = (index) => {
+    setUpdateIndex(index);
+    setUpdateFile(null);
+
+    const section = document.getElementById("update-section");
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
   /* =============================
@@ -331,7 +329,7 @@ const ImagesPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-[#0A0C0F] to-[#030405] p-4 md:p-6 lg:p-8">
-      
+
       {/* Header Section */}
       <div className={`${gradientCardClass} p-5 md:p-6 mb-6`}>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -364,7 +362,7 @@ const ImagesPage = () => {
               />
               <MdSearch className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40" size={18} />
             </div>
-            
+
             <button
               onClick={handleRefresh}
               className={buttonGradientClass}
@@ -392,12 +390,12 @@ const ImagesPage = () => {
 
       {/* Main Content - Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        
+
         {/* Left Column - Upload Section */}
         <div className={`${gradientCardClass} p-6 relative overflow-hidden`}>
           <div className="absolute -top-20 -right-20 w-60 h-60 bg-blue-500/10 rounded-full blur-3xl" />
           <div className="absolute -bottom-20 -left-20 w-60 h-60 bg-blue-500/10 rounded-full blur-3xl" />
-          
+
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-900/30 
@@ -411,14 +409,15 @@ const ImagesPage = () => {
               {/* Drag & Drop Area */}
               <div
                 className={`relative border-2 border-dashed rounded-2xl p-8 mb-5 transition-all duration-300
-                  ${dragActive 
-                    ? 'border-blue-500/50 bg-blue-500/10' 
+                  ${dragActive
+                    ? 'border-blue-500/50 bg-blue-500/10'
                     : 'border-white/20 hover:border-white/40 bg-black/40 hover:bg-black/60'
                   }`}
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}
                 onDragOver={handleDrag}
                 onDrop={handleDrop}
+                onClick={() => document.getElementById("file-upload").click()}  // ✅ ADD THIS
               >
                 <input
                   type="file"
@@ -428,8 +427,8 @@ const ImagesPage = () => {
                   className="hidden"
                   accept="image/*"
                 />
-                
-                <div className="text-center">
+
+                <div className="text-center cursor-pointer">
                   <MdFileUpload size={40} className="mx-auto mb-3 text-white/40" />
                   <p className="text-white/70 mb-1">
                     <span className="text-blue-400 font-medium">Click to upload</span> or drag and drop
@@ -439,7 +438,6 @@ const ImagesPage = () => {
                   </p>
                 </div>
               </div>
-
               {/* Selected Files Preview */}
               {selectedFiles.length > 0 && (
                 <div className="mb-5 p-4 bg-black/40 rounded-xl border border-white/10">
@@ -497,10 +495,12 @@ const ImagesPage = () => {
         </div>
 
         {/* Right Column - Update Section */}
-        <div className={`${gradientCardClass} p-6 relative overflow-hidden`}>
-          <div className="absolute -top-20 -right-20 w-60 h-60 bg-emerald-500/10 rounded-full blur-3xl" />
+        <div
+          id="update-section"
+          className={`${gradientCardClass} p-6 relative overflow-hidden`}
+        >          <div className="absolute -top-20 -right-20 w-60 h-60 bg-emerald-500/10 rounded-full blur-3xl" />
           <div className="absolute -bottom-20 -left-20 w-60 h-60 bg-emerald-500/10 rounded-full blur-3xl" />
-          
+
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-900/30 
@@ -543,7 +543,7 @@ const ImagesPage = () => {
                     className="hidden"
                     accept="image/*"
                   />
-                  <div 
+                  <div
                     onClick={() => document.getElementById('update-file').click()}
                     className={`${inputStyleClasses} cursor-pointer flex items-center justify-between`}
                   >
@@ -612,7 +612,7 @@ const ImagesPage = () => {
       <div className={`${gradientCardClass} p-6 relative overflow-hidden`}>
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-white/5 rounded-full blur-3xl" />
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-white/5 rounded-full blur-3xl" />
-        
+
         <div className="relative z-10">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
@@ -627,7 +627,7 @@ const ImagesPage = () => {
                 </p>
               </div>
             </div>
-            
+
             {images.length > 0 && (
               <button
                 onClick={handleClearState}
@@ -656,12 +656,13 @@ const ImagesPage = () => {
               {filteredImages.map((img, idx) => {
                 const originalIndex = images.findIndex(i => i.url === img.url);
                 return (
-                  <ImageCard 
-                    key={originalIndex} 
-                    image={img} 
-                    index={originalIndex} 
-                  />
-                );
+                  <ImageCard
+                    key={originalIndex}
+                    image={img}
+                    index={originalIndex}
+                    onEdit={handleSelectForEdit}
+                    onDelete={handleDelete}
+                  />);
               })}
             </div>
           )}
@@ -670,11 +671,11 @@ const ImagesPage = () => {
 
       {/* Preview Modal for Update Section */}
       {previewFile && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center z-50 p-4"
           onClick={() => setPreviewFile(null)}
         >
-          <div 
+          <div
             className={`${gradientCardClass} max-w-4xl w-full relative overflow-hidden animate-scaleIn`}
             onClick={(e) => e.stopPropagation()}
           >
@@ -698,7 +699,7 @@ const ImagesPage = () => {
                   <MdClose size={22} />
                 </button>
               </div>
-              
+
               <div className="mt-4 rounded-2xl overflow-hidden border border-white/10">
                 <img
                   src={previewFile.url}

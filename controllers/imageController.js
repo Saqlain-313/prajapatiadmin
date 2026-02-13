@@ -40,7 +40,7 @@ exports.updateImageByIndex = async (req, res) => {
     const { index } = req.params;
     const file = req.file;
 
-    
+
 
     if (!file) {
       return res.status(400).json({ message: "No image provided" });
@@ -63,6 +63,31 @@ exports.updateImageByIndex = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Image update failed" });
+  }
+};
+
+exports.deleteImageByIndex = async (req, res) => {
+  try {
+    const { index } = req.params;
+
+    const collection = await ImageCollection.findOne();
+
+    if (!collection || !collection.images[index]) {
+      return res.status(404).json({ message: "Image not found" });
+    }
+
+    // Remove image by index
+    collection.images.splice(index, 1);
+
+    await collection.save();
+
+    res.json({
+      success: true,
+      images: collection.images,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Image delete failed" });
   }
 };
 

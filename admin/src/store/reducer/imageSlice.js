@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
-import {api} from "./api"
+import { api } from "./api"
 
 
 /* =========================
@@ -57,6 +57,21 @@ export const updateImageByIndex = createAsyncThunk(
     } catch (err) {
       return rejectWithValue(
         err.response?.data?.message || "Image update failed"
+      );
+    }
+  }
+);
+
+/* DELETE IMAGE BY INDEX */
+export const deleteImageByIndex = createAsyncThunk(
+  "images/delete",
+  async (index, { rejectWithValue }) => {
+    try {
+      const { data } = await api.delete(`/images/delete/${index}`);
+      return data.images; // backend updated images array bhej raha hai
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.message || "Image delete failed"
       );
     }
   }
@@ -121,6 +136,20 @@ const imageSlice = createSlice({
         if (state.images[index]) {
           state.images[index] = image;
         }
+      })
+      /* DELETE IMAGE BY INDEX */
+      .addCase(deleteImageByIndex.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(deleteImageByIndex.fulfilled, (state, action) => {
+        state.loading = false;
+        state.success = true;
+        state.images = action.payload;
+        state.total = action.payload.length;
+      })
+      .addCase(deleteImageByIndex.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });

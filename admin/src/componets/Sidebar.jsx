@@ -54,7 +54,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     "Bet History": "/admin/wrestling-bet-history",
 
     // ✅ Images Page
-    Images: "/uploadbanner", // <-- FIX: added slash for proper routing
   };
 
   /* =========================
@@ -116,12 +115,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
       name: "Withdrawals",
       icon: ArrowDownCircle,
       page: "Withdrawals",
-      type: "single",
-    },
-    {
-      name: "Images",
-      icon: Image,
-      page: "Images",
       type: "single",
     },
     {

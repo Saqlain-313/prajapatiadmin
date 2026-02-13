@@ -70,7 +70,7 @@ function Layout() {
               <Route path="/admin/wrestling-bets/all" element={<AdminWrestlingAllBetsPage />} />
               <Route path="/admin/wrestling-bets/pending" element={<AdminWrestlingPendingPage />} />
               <Route path="/admin/wrestling-bets/settled" element={<AdminWrestlingSettledPage />} />
-              <Route path="/admin/images" element={<ImagesPage />} />
+              <Route path="/uploadbanner" element={<ImagesPage />} />
 
 
               <Route

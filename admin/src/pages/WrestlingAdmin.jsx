@@ -203,6 +203,20 @@ const WrestlingAdmin = () => {
               ⬅ Back
             </button>
           </div>
+          {/* 🔥 MATCH IMAGE */}
+          {MATCH && (
+            <div className="mb-6 rounded-2xl overflow-hidden border border-gray-700">
+              <img
+                src={
+                  MATCH?.img
+                    ? `${MATCH.img}`
+                    : "https://via.placeholder.com/800x300?text=Wrestling+Match"
+                }
+                alt="Match"
+                className="w-full h-52 object-cover"
+              />
+            </div>
+          )}
 
           {/* STATUS */}
           <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">

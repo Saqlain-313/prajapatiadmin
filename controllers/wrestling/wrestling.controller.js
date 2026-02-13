@@ -1,6 +1,30 @@
 const WrestlingMatch = require("../../models/WRESTLING/WrestlingMatch");
 
+const axios = require("axios");
+const FormData = require("form-data");
 
+const uploadToImgbb = async (buffer) => {
+  try {
+    const form = new FormData();
+
+    form.append("image", buffer.toString("base64"));
+    form.append("key", process.env.IMGBB_API_KEY);
+
+    const response = await axios.post(
+      "https://api.imgbb.com/1/upload",
+      form,
+      {
+        headers: form.getHeaders(), // ✅ important
+        maxBodyLength: Infinity,
+      }
+    );
+
+    return response.data.data.url;
+  } catch (error) {
+    console.log("IMGBB ERROR:", error.response?.data || error.message);
+    throw error;
+  }
+};
 
 const createWrestlingMatch = async (req, res) => {
   try {
@@ -21,13 +45,24 @@ const createWrestlingMatch = async (req, res) => {
       });
     }
 
-
-    if (maxbet < minbet) {
+    if (Number(maxbet) < Number(minbet)) {
       return res.status(400).json({
         success: false,
         message: "maxbet cannot be less than minbet",
       });
     }
+
+    /* 🔥 IMAGE LOGIC START */
+    let imageUrl = null;
+
+    if (req.file) {
+      imageUrl = await uploadToImgbb(req.file.buffer);
+    }
+
+    if (req.body.img) {
+      imageUrl = req.body.img;
+    }
+    /* 🔥 IMAGE LOGIC END */
 
     const now = Date.now();
 
@@ -44,9 +79,10 @@ const createWrestlingMatch = async (req, res) => {
       mid: now,
       gmid: now,
       startTime: parsedStartTime,
-      minbet:Number(minbet) || 0,
-      maxbet:Number(maxbet) || 0,
+      minbet: Number(minbet) || 0,
+      maxbet: Number(maxbet) || 0,
       status: "PENDING",
+      img: imageUrl, // 🔥 image saved here
       teams: [
         { tid: 1, tname: teamAName.trim(), side: "A", boxes: createBoxes() },
         { tid: 2, tname: teamBName.trim(), side: "B", boxes: createBoxes() },
@@ -55,15 +91,8 @@ const createWrestlingMatch = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: "Match created",
-      data: {
-        matchId: match._id,
-        mid: match.mid,
-        minbet: match.minbet,
-        maxbet: match.maxbet,
-        startTime: match.startTime,
-        status: match.status,
-      },
+      message: "Match created successfully",
+      data: match,
     });
   } catch (err) {
     console.error("CREATE MATCH ERROR:", err);

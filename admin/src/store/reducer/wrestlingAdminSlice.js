@@ -7,23 +7,39 @@ import { api } from "./api";
 export const createWrestlingMatch = createAsyncThunk(
   "wrestlingAdmin/createMatch",
   async (
-    { teamAName, teamBName, startTime, minbet, maxbet },
+    { teamAName, teamBName, startTime, minbet, maxbet, img },
     { rejectWithValue }
   ) => {
     try {
+      const formData = new FormData();
+
+      formData.append("teamAName", teamAName);
+      formData.append("teamBName", teamBName);
+      formData.append(
+        "startTime",
+        new Date(startTime).toISOString()
+      );
+      formData.append("minbet", minbet);
+      formData.append("maxbet", maxbet);
+
+      // ✅ Optional Image
+      if (img) {
+        formData.append("img", img);
+      }
+
       const { data } = await api.post(
         "/wrestling/create-match?admin_key=C1o9EGOjzyp0",
+        formData,
         {
-          teamAName,
-          teamBName,
-          startTime: new Date(startTime).toISOString(),
-          minbet,
-          maxbet,
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         }
       );
 
       if (!data.success) throw new Error(data.message);
       return data.data;
+
     } catch (err) {
       return rejectWithValue(
         err.response?.data?.message || err.message

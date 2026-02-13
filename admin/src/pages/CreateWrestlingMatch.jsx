@@ -11,6 +11,7 @@ import {
   FaCoins,
   FaArrowLeft,
   FaPlusCircle,
+  FaImage,
 } from "react-icons/fa";
 
 import {
@@ -32,6 +33,19 @@ const CreateWrestlingMatch = () => {
   const [time, setTime] = useState("");
   const [minbet, setMinbet] = useState("");
   const [maxbet, setMaxbet] = useState("");
+
+  /* 🔥 NEW IMAGE STATES */
+  const [image, setImage] = useState(null);
+  const [preview, setPreview] = useState(null);
+
+  /* ================= IMAGE HANDLER ================= */
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setImage(file);
+    setPreview(URL.createObjectURL(file));
+  };
 
   /* ================= TIME OPTIONS ================= */
   const timeOptions = [];
@@ -83,7 +97,7 @@ const CreateWrestlingMatch = () => {
       minbet === "" ||
       maxbet === ""
     ) {
-      alert("Please fill all fields");
+      alert("Please fill all required fields");
       return;
     }
 
@@ -103,10 +117,12 @@ const CreateWrestlingMatch = () => {
         startTime,
         minbet: Number(minbet),
         maxbet: Number(maxbet),
+        img: image, // 🔥 IMAGE INCLUDED
       })
     );
   };
 
+  /* ================= SUCCESS RESET ================= */
   useEffect(() => {
     if (success) {
       setTeamAName("");
@@ -115,6 +131,8 @@ const CreateWrestlingMatch = () => {
       setTime("");
       setMinbet("");
       setMaxbet("");
+      setImage(null);
+      setPreview(null);
 
       const t = setTimeout(() => dispatch(clearStatus()), 1500);
       return () => clearTimeout(t);
@@ -124,10 +142,8 @@ const CreateWrestlingMatch = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black px-4 py-10">
       <div className="max-w-5xl mx-auto">
-
-        {/* CARD */}
         <div className="bg-gradient-to-br from-gray-900/80 to-black border border-gray-700/40 rounded-3xl p-8 md:p-10 shadow-2xl backdrop-blur-xl">
-
+          
           {/* HEADER */}
           <div className="flex items-center justify-between mb-10">
             <h1 className="text-3xl font-extrabold text-white flex items-center gap-3">
@@ -155,7 +171,7 @@ const CreateWrestlingMatch = () => {
                 placeholder="Team A Name"
                 value={teamAName}
                 onChange={(e) => setTeamAName(e.target.value)}
-                className="pl-12 w-full px-4 py-3 rounded-xl bg-black/60 border border-gray-700 text-white focus:ring-2 focus:ring-gray-600 outline-none"
+                className="pl-12 w-full px-4 py-3 rounded-xl bg-black/60 border border-gray-700 text-white outline-none"
               />
             </div>
 
@@ -166,7 +182,7 @@ const CreateWrestlingMatch = () => {
                 placeholder="Team B Name"
                 value={teamBName}
                 onChange={(e) => setTeamBName(e.target.value)}
-                className="pl-12 w-full px-4 py-3 rounded-xl bg-black/60 border border-gray-700 text-white focus:ring-2 focus:ring-gray-600 outline-none"
+                className="pl-12 w-full px-4 py-3 rounded-xl bg-black/60 border border-gray-700 text-white outline-none"
               />
             </div>
 
@@ -224,18 +240,36 @@ const CreateWrestlingMatch = () => {
               />
             </div>
 
+            {/* IMAGE UPLOAD */}
+            <div className="md:col-span-2">
+              <label className="block text-gray-400 mb-2 font-semibold">
+                <FaImage className="inline mr-2" />
+                Match Image (Optional)
+              </label>
+
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="w-full px-4 py-3 rounded-xl bg-black/60 border border-gray-700 text-white outline-none"
+              />
+
+              {preview && (
+                <div className="mt-4">
+                  <img
+                    src={preview}
+                    alt="Preview"
+                    className="h-48 w-full object-cover rounded-xl border border-gray-700"
+                  />
+                </div>
+              )}
+            </div>
+
             {/* BUTTON */}
             <div className="md:col-span-2">
               <button
                 disabled={loading}
-                className="
-                  w-full mt-4
-                  bg-gradient-to-r from-gray-700 to-gray-900
-                  hover:from-gray-600 hover:to-black
-                  text-white py-4 rounded-2xl
-                  font-extrabold tracking-wide
-                  shadow-xl disabled:opacity-50
-                "
+                className="w-full mt-4 bg-gradient-to-r from-gray-700 to-gray-900 hover:from-gray-600 hover:to-black text-white py-4 rounded-2xl font-extrabold tracking-wide shadow-xl disabled:opacity-50"
               >
                 {loading ? "Creating Match..." : "🔥 Create Match"}
               </button>

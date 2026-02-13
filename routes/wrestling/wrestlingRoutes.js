@@ -9,19 +9,21 @@ const {
   getAllWrestlingMatches,
   updateWrestlingMatchStatus
 } = require("../../controllers/wrestling/wrestling.controller");
-const verifyAdminKeyQuery = require("../../utils/verifyAdminKeyQuery");
 
+const verifyAdminKeyQuery = require("../../utils/verifyAdminKeyQuery");
+const upload = require("../../middlewares/upload");
 
 const router = express.Router();
 
 /* ================= MATCH ================= */
 
-// 🔐 CREATE MATCH
 router.post(
   "/create-match",
   verifyAdminKeyQuery,
+  upload.single("img"), 
   createWrestlingMatch
 );
+
 
 // 🔐 GET ALL MATCHES
 router.get(

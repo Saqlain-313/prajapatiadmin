@@ -58,6 +58,7 @@ const teamSchema = new mongoose.Schema(
   { _id: false }
 );
 
+
 /* =====================
    MATCH
 ===================== */
@@ -92,6 +93,12 @@ const wrestlingMatchSchema = new mongoose.Schema(
     maxb: { type: Number, default: 0 },
     maxbet: { type: Number, default: 0 },
     minbet: { type: Number, default: 0 },
+
+    /* ✅ NEW OPTIONAL IMAGE FIELD */
+    img: {
+      type: String,        // store image URL or filename
+      default: null,       // optional
+    },
 
     matchTimer: {
       type: timerSchema,

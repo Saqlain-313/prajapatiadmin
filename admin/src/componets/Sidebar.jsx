@@ -9,13 +9,34 @@ import {
   CreditCard,
   ArrowDownCircle,
   Folder,
+  Upload,
   Image,
+  LogOut,
+  Settings,
+  HelpCircle,
 } from "lucide-react";
+
+/* -------------------- DARK BLACK & WHITE GLOW THEME — SIDEBAR -------------------- */
+const sidebarGlassClass =
+  "bg-gradient-to-br from-[#0A0C0E] via-[#0F1115] to-[#050607] \
+   border-r border-white/5 shadow-[5px_0_35px_-15px_black,0_0_0_1px_rgba(255,255,255,0.02)] \
+   backdrop-blur-xl";
+
+const menuItemClass =
+  "flex items-center gap-3 w-full px-4 py-3 rounded-xl text-white/80 hover:text-white \
+   transition-all duration-300 border border-transparent hover:border-white/20 \
+   hover:bg-white/5 hover:shadow-[0_0_20px_rgba(255,255,255,0.1)]";
+
+const activeMenuItemClass =
+  "flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-white/10 text-white \
+   border border-white/30 shadow-[0_0_20px_rgba(255,255,255,0.15)]";
 
 const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [bannerImage, setBannerImage] = useState(null);
+  const [bannerPreview, setBannerPreview] = useState(null);
 
   /* =========================
      ROUTE MAP
@@ -25,12 +46,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     "Active Users": "/users/active",
     Deposit: "/deposit",
     Withdrawals: "/withdrawals",
-
-    // Wrestling Core
     Matches: "/matches",
     "Create Match": "/admin/wrestling/create",
-
-    // Betting Pages
     "All Bets": "/admin/wrestling-bets/all",
     "Pending Bets": "/admin/wrestling-bets/pending",
     "Settled Bets": "/admin/wrestling-bets/settled",
@@ -63,16 +80,19 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
   };
 
   /* =========================
-     ACTIVE LOGIC
+     BANNER UPLOAD HANDLER
   ========================= */
+  const handleBannerUpload = () => {
+  
+      navigate("/bannerpage"); 
+   
+  };
+  
+
   const isActive = (page) => {
     const path = routeMap[page];
     if (!path) return false;
-
-    return (
-      location.pathname === path ||
-      location.pathname.startsWith(path + "/")
-    );
+    return location.pathname === path || location.pathname.startsWith(path + "/");
   };
 
   /* =========================
@@ -126,83 +146,113 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
 
   return (
     <>
-      {/* Overlay */}
+      {/* Overlay for mobile */}
       <div
-        className={`fixed inset-0 bg-black/70 z-40 transition-opacity duration-300 md:hidden
+        className={`fixed inset-0 bg-black/80 backdrop-blur-sm z-40 transition-opacity duration-300 md:hidden
         ${sidebarOpen ? "opacity-100 visible" : "opacity-0 invisible"}`}
         onClick={() => setSidebarOpen(false)}
       />
 
       {/* Sidebar */}
       <aside
-        className={`fixed z-50 inset-y-0 left-0 w-64
-        bg-gradient-to-b from-[#1f2933] to-[#000000]
-        text-white shadow-2xl rounded-r-3xl
-        transform transition-transform duration-300 ease-in-out overflow-y-auto
-        ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
-        md:translate-x-0 md:static md:flex-shrink-0 md:rounded-r-none`}
+        className={`fixed z-50 inset-y-0 left-0 w-72 ${sidebarGlassClass}
+          transform transition-transform duration-300 ease-in-out overflow-y-auto
+          ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
+          md:translate-x-0 md:static md:flex-shrink-0 `}
       >
-        {/* Logo */}
-        <div className="p-6 flex justify-between items-center md:block border-b border-white/20">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">WM</span>
+        {/* Logo Section — with glow */}
+        <div className="p-6 flex justify-between items-center md:block border-b border-white/10">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-white/20 to-white/5 flex items-center justify-center 
+                            border border-white/30 shadow-[0_0_20px_rgba(255,255,255,0.1)]">
+                <span className="text-white font-bold text-xl drop-shadow-[0_2px_5px_black]">WM</span>
+              </div>
+              <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full 
+                             border-2 border-black shadow-[0_0_10px_rgba(16,185,129,0.5)]"></span>
             </div>
             <div>
               <Link to="/">
-                <h1 className="text-lg font-bold text-white">Wrestling</h1>
-                <p className="text-white/70 text-sm">Admin Panel</p>
+                <h1 className="text-xl font-bold text-white drop-shadow-[0_2px_5px_black]">Wrestling</h1>
+                <p className="text-white/50 text-xs tracking-wide">Admin Panel</p>
               </Link>
             </div>
           </div>
 
           <button
             onClick={() => setSidebarOpen(false)}
-            className="md:hidden p-2 rounded-lg text-white/70 hover:bg-white/10"
+            className="md:hidden p-2 rounded-xl text-white/60 hover:text-white hover:bg-white/5 
+                       border border-transparent hover:border-white/20 transition"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Menu */}
-        <nav className="mt-6 px-4 space-y-1">
+        {/* Banner Upload Section — beautiful glass card */}
+        <div className="p-5 m-4 bg-black/40 rounded-2xl border border-white/10 backdrop-blur-md
+                       shadow-[inset_0_2px_10px_rgba(0,0,0,0.6)]">
+          <div className="flex items-center gap-2 mb-3">
+            <Image size={16} className="text-white/60" />
+            <h3 className="text-white/80 text-sm font-medium">Banner Image</h3>
+          </div>
+          
+          
+
+          {/* Upload Button */}
+          <label className="flex items-center justify-center gap-2 w-full py-2.5 px-3 
+                          bg-white/5 hover:bg-white/10 border border-white/20 rounded-xl
+                          text-white/80 hover:text-white text-sm cursor-pointer
+                          transition-all duration-300 hover:border-white/40
+                          shadow-[0_0_15px_rgba(255,255,255,0.05)] hover:shadow-[0_0_25px_rgba(255,255,255,0.15)]">
+            <Upload size={16} />
+            <span>{bannerPreview ? 'Change Banner' : 'Upload Banner'}</span>
+            <input
+              
+              onChange={handleBannerUpload}
+              className="hidden"
+            />
+          </label>
+        </div>
+
+        {/* Navigation Menu */}
+        <nav className="mt-2 px-4 space-y-1">
           {menuItems.map((item) =>
             item.type === "dropdown" ? (
-              <div key={item.name}>
+              <div key={item.name} className="mb-1">
                 <button
                   onClick={() => toggleDropdown(item.name)}
-                  className={`flex justify-between w-full px-4 py-3 rounded-lg transition
-                  ${
-                    openDropdown === item.name
-                      ? "bg-white/25 text-white"
-                      : "text-white/90 hover:bg-white/10"
-                  }`}
+                  className={`w-full flex justify-between items-center px-4 py-3 rounded-xl transition-all duration-300
+                    ${openDropdown === item.name
+                      ? "bg-white/10 text-white border border-white/30 shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+                      : "text-white/70 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/20"
+                    }`}
                 >
                   <div className="flex items-center gap-3">
-                    <item.icon className="h-4 w-4" />
-                    {item.name}
+                    <item.icon size={18} className={openDropdown === item.name ? "text-white" : "text-white/60"} />
+                    <span className="font-medium">{item.name}</span>
                   </div>
                   <ChevronDown
-                    className={`h-4 w-4 transition ${
-                      openDropdown === item.name ? "rotate-180" : ""
+                    size={16}
+                    className={`transition-transform duration-300 ${
+                      openDropdown === item.name ? "rotate-180 text-white" : "text-white/40"
                     }`}
                   />
                 </button>
 
+                {/* Dropdown Items */}
                 {openDropdown === item.name && (
-                  <div className="ml-8 mt-1 space-y-1">
+                  <div className="ml-6 mt-1 space-y-1 border-l border-white/10 pl-3">
                     {item.items.map((sub) => (
                       <button
                         key={sub.name}
                         onClick={() => handleNavigation(sub.page)}
-                        className={`flex w-full px-4 py-2 rounded-lg text-sm transition
-                        ${
-                          isActive(sub.page)
-                            ? "bg-white/30 text-white"
-                            : "text-white/80 hover:bg-white/10"
-                        }`}
+                        className={`flex w-full items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-all duration-300
+                          ${isActive(sub.page)
+                            ? "bg-white/10 text-white border border-white/20 shadow-[0_0_15px_rgba(255,255,255,0.1)]"
+                            : "text-white/60 hover:text-white hover:bg-white/5"
+                          }`}
                       >
-                        <ChevronRight className="h-3 w-3 mr-3" />
+                        <ChevronRight size={14} className="text-white/40" />
                         {sub.name}
                       </button>
                     ))}
@@ -213,28 +263,63 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
               <button
                 key={item.name}
                 onClick={() => handleNavigation(item.page)}
-                className={`flex w-full px-4 py-3 rounded-lg transition gap-3
-                ${
-                  isActive(item.page)
-                    ? "bg-white/30 text-white"
-                    : "text-white/90 hover:bg-white/10"
-                }`}
+                className={`flex w-full items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300
+                  ${isActive(item.page)
+                    ? "bg-white/10 text-white border border-white/30 shadow-[0_0_20px_rgba(255,255,255,0.15)]"
+                    : "text-white/70 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/20"
+                  }`}
               >
-                <item.icon className="h-4 w-4" />
-                {item.name}
+                <item.icon size={18} className={isActive(item.page) ? "text-white" : "text-white/60"} />
+                <span className="font-medium">{item.name}</span>
               </button>
             )
           )}
         </nav>
 
-        {/* Footer */}
-        <div className="p-6 border-t border-white/20 mt-auto text-center">
-          <p className="text-white/70 text-sm">
-            © {new Date().getFullYear()} Wrestling
-          </p>
-          <p className="text-white/50 text-xs mt-1">v1.0.0</p>
+        {/* Footer Section — with utility links */}
+        <div className="mt-auto p-6 border-t border-white/10">
+          <div className="space-y-2">
+            <button className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-white/60 
+                             hover:text-white hover:bg-white/5 transition-all duration-300 text-sm
+                             border border-transparent hover:border-white/20">
+              <Settings size={16} />
+              <span>Settings</span>
+            </button>
+            <button className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-white/60 
+                             hover:text-white hover:bg-white/5 transition-all duration-300 text-sm
+                             border border-transparent hover:border-white/20">
+              <HelpCircle size={16} />
+              <span>Help & Support</span>
+            </button>
+          </div>
+          
+          <div className="mt-6 pt-4 border-t border-white/10">
+            <p className="text-white/40 text-xs text-center">
+              © {new Date().getFullYear()} Wrestling
+            </p>
+            <p className="text-white/30 text-[10px] text-center mt-1">
+              v2.0.0 • Premium Admin
+            </p>
+          </div>
         </div>
       </aside>
+
+      {/* Global styles for custom scrollbar */}
+      <style jsx global>{`
+        .overflow-y-auto::-webkit-scrollbar {
+          width: 4px;
+        }
+        .overflow-y-auto::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.02);
+        }
+        .overflow-y-auto::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 20px;
+        }
+        .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.2);
+        }
+      `}</style>
     </>
   );
 };

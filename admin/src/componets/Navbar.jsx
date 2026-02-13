@@ -1,9 +1,49 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bell, LogOut, Search, Settings, User, Menu, Globe } from 'lucide-react';
+import { 
+  MdNotificationsNone, 
+  MdLogout, 
+  MdSearch,
+  MdSettings,
+  MdPerson,
+  MdMenu,
+  MdClose,
+  MdVpnKey,
+  MdEmail,
+  MdPhone,
+  MdAdminPanelSettings,
+  MdDashboard,
+  MdUpload,
+  MdImage,
+  MdExpandMore,
+  MdAccountCircle,
+  MdLock,
+} from 'react-icons/md';
+import { FiGlobe, FiLogOut } from 'react-icons/fi';
+import { FaUserCircle } from 'react-icons/fa';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-
 import { logoutUser, getProfile } from "../store/reducer/authReducer";
+
+/* -------------------- DARK BLACK & WHITE GLOW THEME -------------------- */
+const gradientNavClass = 
+  "bg-gradient-to-br from-[#0A0C0E] via-[#0F1115] to-[#050607] \
+   border-b border-white/5 shadow-[0_15px_35px_-15px_black,0_0_0_1px_rgba(255,255,255,0.02)] \
+   backdrop-blur-xl relative";
+
+const glassCardClass =
+  "bg-gradient-to-br from-[#0C0E12] via-[#111419] to-[#080A0C] \
+   border border-white/10 rounded-2xl shadow-[0_20px_40px_-15px_black,0_0_0_1px_rgba(255,255,255,0.02)] \
+   backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:shadow-[0_25px_50px_-15px_black,0_0_20px_rgba(255,255,255,0.1)]";
+
+const buttonIconClass = 
+  "p-2.5 text-white/70 hover:text-white rounded-xl hover:bg-white/5 transition-all duration-300 \
+   border border-transparent hover:border-white/20 hover:shadow-[0_0_15px_rgba(255,255,255,0.1)]";
+
+const glowInputClass =
+  "w-full px-4 py-3 bg-black/60 border border-white/10 rounded-xl text-white \
+   placeholder-white/30 focus:border-white/40 focus:ring-2 focus:ring-white/20 \
+   outline-none transition-all backdrop-blur-sm shadow-[inset_0_2px_8px_rgba(0,0,0,0.6)] \
+   focus:shadow-[0_0_20px_rgba(255,255,255,0.1),inset_0_2px_8px_rgba(0,0,0,0.6)]";
 
 /* -------------------- NAVBAR -------------------- */
 const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
@@ -37,71 +77,123 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
 
   return (
     <>
-      {/* NAVBAR */}
-      <nav className="bg-gradient-to-r from-[#1f2933] to-[#000000] p-3 md:px-6 flex justify-between items-center shadow-lg sticky top-0 z-30">
-
-        {/* LEFT */}
-        <div className="flex items-center space-x-4">
+      {/* NAVBAR — BLACK & WHITE GLOW */}
+      <nav className={`${gradientNavClass} px-4 md:px-6 py-2 flex justify-between items-center sticky top-0 z-30`}>
+        {/* Animated glow overlay */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(255,255,255,0.03)_0%,_transparent_70%)] pointer-events-none" />
+        
+        {/* LEFT SECTION */}
+        <div className="flex items-center gap-3 relative z-10">
           <button
-            className="text-white p-2 rounded-lg md:hidden hover:bg-white/10"
+            className={`${buttonIconClass} md:hidden`}
             onClick={() => setSidebarOpen(!sidebarOpen)}
           >
-            <Menu size={24} />
+            {sidebarOpen ? <MdClose size={22} /> : <MdMenu size={22} />}
           </button>
 
+          {/* SEARCH — white glass with glow */}
           <form className="relative hidden sm:block">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60"
+            <MdSearch
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40"
               size={18}
             />
             <input
               type="search"
               placeholder="Search here..."
-              className="pl-10 pr-4 py-2 rounded bg-white/10 text-white
-              border border-white/20 placeholder-white/60
-              focus:ring-2 focus:ring-white/40 w-56"
+              className="w-64 pl-11 pr-5 py-2.5 bg-black/50 border border-white/10 rounded-xl text-white 
+              placeholder-white/30 focus:border-white/40 focus:ring-2 focus:ring-white/20 
+              outline-none transition-all backdrop-blur-sm shadow-[inset_0_2px_8px_rgba(0,0,0,0.6)] 
+              focus:shadow-[0_0_20px_rgba(255,255,255,0.1),inset_0_2px_8px_rgba(0,0,0,0.6)]"
             />
           </form>
         </div>
 
-        {/* RIGHT */}
-        <div className="flex items-center space-x-4">
-          {/* Visit website */}
+        {/* RIGHT SECTION */}
+        <div className="flex items-center gap-2 md:gap-3 relative z-10">
+          {/* GLOBE ICON */}
           <a href="https://demo3.daltincasino.live/" target="_blank" rel="noreferrer">
-            <button className="p-2 bg-white/20 hover:bg-white/30 rounded-full text-white">
-              <Globe size={20} />
+            <button className={buttonIconClass}>
+              <FiGlobe size={20} />
             </button>
           </a>
 
-          {/* USER DROPDOWN */}
+          {/* NOTIFICATION */}
+          <button className={buttonIconClass}>
+            <MdNotificationsNone size={20} />
+          </button>
+
+          {/* SETTINGS */}
+          <button className={buttonIconClass}>
+            <MdSettings size={20} />
+          </button>
+
+          {/* USER DROPDOWN — GLOWING PROFILE */}
           <div className="relative" ref={userDropdownRef}>
             <button
-              className="flex items-center p-1 rounded-full text-white hover:bg-white/10"
+              className="flex items-center gap-3 p-1.5 pl-2 pr-4 rounded-xl hover:bg-white/5 transition-all duration-300 
+                         border border-transparent hover:border-white/20 hover:shadow-[0_0_20px_rgba(255,255,255,0.15)]"
               onClick={() => setUserDropdownOpen(!userDropdownOpen)}
             >
-              <div className="h-10 w-10 rounded-full bg-white/30 flex items-center justify-center font-bold">
-                {loading
-                  ? "..."
-                  : (user?.firstname?.charAt(0) || "U").toUpperCase()}
+              <div className="relative">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-white/20 to-white/5 flex items-center justify-center 
+                              border border-white/30 shadow-[0_0_15px_rgba(255,255,255,0.1)]">
+                  {loading ? (
+                    <span className="text-white/60">...</span>
+                  ) : (
+                    <span className="text-white font-bold text-lg drop-shadow-[0_2px_5px_black]">
+                      {(user?.firstname?.charAt(0) || "U").toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full 
+                               border-2 border-black shadow-[0_0_10px_rgba(16,185,129,0.5)]"></span>
               </div>
+              <div className="hidden md:block text-left">
+                <p className="text-white text-sm font-medium">{user?.firstname || 'Admin User'}</p>
+                <p className="text-white/40 text-xs">{user?.role || 'Administrator'}</p>
+              </div>
+              <MdExpandMore className={`text-white/60 transition-transform duration-300 ${userDropdownOpen ? 'rotate-180' : ''}`} size={18} />
             </button>
 
+            {/* DROPDOWN MENU — GLASS CARD */}
             {userDropdownOpen && (
-              <div className="absolute right-0 mt-3 w-48 bg-white rounded-lg shadow-xl border py-2">
+              <div className={`${glassCardClass} absolute right-0 mt-3 w-64 py-2 z-50 animate-fadeIn`}>
+                {/* User info header */}
+                <div className="px-5 py-4 border-b border-white/10">
+                  <p className="text-white font-medium">{user?.firstname || 'John Doe'}</p>
+                  <p className="text-white/40 text-xs mt-0.5">{user?.email || 'admin@wrestling.com'}</p>
+                </div>
+                
                 <button
-                  className="flex items-center px-4 py-2 text-sm hover:bg-gray-100 w-full"
-                  onClick={() => setShowProfileModal(true)}
+                  className="flex items-center gap-3 px-5 py-3 text-sm text-white/80 hover:bg-white/5 w-full transition group"
+                  onClick={() => {
+                    setShowProfileModal(true);
+                    setUserDropdownOpen(false);
+                  }}
                 >
-                  <User size={16} className="mr-2" /> Profile
+                  <MdAccountCircle size={18} className="text-white/60 group-hover:text-white" />
+                  <span>My Profile</span>
+                </button>
+                
+                <button
+                  className="flex items-center gap-3 px-5 py-3 text-sm text-white/80 hover:bg-white/5 w-full transition group"
+                  onClick={() => {
+                    // Account settings navigation
+                    setUserDropdownOpen(false);
+                  }}
+                >
+                  <MdLock size={18} className="text-white/60 group-hover:text-white" />
+                  <span>Account Settings</span>
                 </button>
 
-                <hr className="my-1" />
+                <hr className="border-white/10 my-1" />
 
                 <button
-                  className="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full"
+                  className="flex items-center gap-3 px-5 py-3 text-sm text-red-400 hover:bg-red-500/10 w-full transition group"
                   onClick={handleLogout}
                 >
-                  <LogOut size={16} className="mr-2" /> Logout
+                  <FiLogOut size={18} className="group-hover:text-red-300" />
+                  <span>Logout</span>
                 </button>
               </div>
             )}
@@ -109,28 +201,100 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
         </div>
       </nav>
 
-      {/* PROFILE MODAL */}
+      {/* PROFILE MODAL — ELEGANT DARK GLASS */}
       {showProfileModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-xl w-96 relative">
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className={`${glassCardClass} w-full max-w-md p-8 relative animate-scaleIn overflow-hidden`}>
+            {/* Decorative glow */}
+            <div className="absolute -top-20 -right-20 w-64 h-64 bg-white/5 rounded-full blur-3xl" />
+            <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-white/5 rounded-full blur-3xl" />
+            
             <button
-              className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+              className="absolute top-6 right-6 p-2 text-white/40 hover:text-white/80 hover:bg-white/5 rounded-xl transition border border-transparent hover:border-white/20 z-10"
               onClick={() => setShowProfileModal(false)}
             >
-              ✕
+              <MdClose size={22} />
             </button>
 
-            <h2 className="text-lg font-bold mb-4">Admin Profile</h2>
+            <div className="flex flex-col items-center text-center mb-6 relative z-10">
+              <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-white/30 to-white/5 flex items-center justify-center 
+                            border border-white/30 mb-4 shadow-[0_0_30px_rgba(255,255,255,0.15)]">
+                <MdAdminPanelSettings size={48} className="text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]" />
+              </div>
+              <h2 className="text-2xl font-bold text-white drop-shadow-[0_2px_5px_black]">
+                Admin Profile
+              </h2>
+              <p className="text-white/40 text-sm mt-1">account information</p>
+            </div>
 
-            <div className="space-y-2">
-              <p><strong>Name:</strong> {user?.firstname}</p>
-              <p><strong>Email:</strong> {user?.email}</p>
-              <p><strong>Phone:</strong> {user?.mobile}</p>
-              <p><strong>Role:</strong> {user?.role}</p>
+            <div className="space-y-4 bg-black/40 rounded-2xl p-6 border border-white/10 relative z-10 backdrop-blur-sm">
+              <div className="flex items-center gap-3 text-white/90">
+                <MdPerson className="text-white/50" size={20} />
+                <span className="text-sm text-white/60 w-20">Name</span>
+                <span className="text-white font-medium">{user?.firstname || 'John Doe'}</span>
+              </div>
+              <div className="flex items-center gap-3 text-white/90">
+                <MdEmail className="text-white/50" size={20} />
+                <span className="text-sm text-white/60 w-20">Email</span>
+                <span className="text-white/90">{user?.email || 'admin@wrestling.com'}</span>
+              </div>
+              <div className="flex items-center gap-3 text-white/90">
+                <MdPhone className="text-white/50" size={20} />
+                <span className="text-sm text-white/60 w-20">Phone</span>
+                <span className="text-white/90">{user?.mobile || '+91 98765 43210'}</span>
+              </div>
+              <div className="flex items-center gap-3 text-white/90">
+                <MdVpnKey className="text-white/50" size={20} />
+                <span className="text-sm text-white/60 w-20">Role</span>
+                <span className="text-white uppercase text-xs bg-white/10 px-3 py-1.5 rounded-full border border-white/20">
+                  {user?.role || 'Admin'}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6 relative z-10">
+              <button
+                className="flex-1 py-3 px-4 bg-gradient-to-br from-white/10 to-white/5 hover:from-white/15 hover:to-white/10 
+                           border border-white/20 rounded-xl text-white transition-all flex items-center justify-center gap-2
+                           shadow-[0_0_15px_rgba(255,255,255,0.05)] hover:shadow-[0_0_25px_rgba(255,255,255,0.15)]"
+                onClick={() => setShowProfileModal(false)}
+              >
+                <MdClose size={18} />
+                Close
+              </button>
+              <button
+                className="flex-1 py-3 px-4 bg-white/10 hover:bg-white/15 border border-white/30 rounded-xl text-white 
+                           transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(255,255,255,0.1)]"
+                onClick={() => {
+                  // Edit profile action
+                  setShowProfileModal(false);
+                }}
+              >
+                <MdAccountCircle size={18} />
+                Edit
+              </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* GLOBAL ANIMATIONS */}
+      <style jsx global>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.98); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        .animate-scaleIn {
+          animation: scaleIn 0.25s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+      `}</style>
     </>
   );
 };

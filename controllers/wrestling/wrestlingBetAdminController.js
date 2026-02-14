@@ -1,5 +1,10 @@
 const WrestlingBet = require("../../models/WRESTLING/WrestlingBet");
 
+const mongoose = require("mongoose");
+const WrestlingBetHistory = require("../../models/WRESTLING/WrestlingBetHistory");
+const User = require("../../models/usermodel");
+
+
 
 exports.getAllWrestlingBets = async (req, res) => {
   try {
@@ -53,47 +58,83 @@ exports.getWrestlingBetById = async (req, res) => {
    3️⃣ ADMIN SETTLE / APPROVE BET
 ===================================== */
 exports.updateWrestlingBetStatus = async (req, res) => {
+  const session = await mongoose.startSession();
+
   try {
-    const { result } = req.body; // WON / LOST / CANCELLED
+    const { result } = req.body; 
 
-    const bet = await WrestlingBet.findById(req.params.id).populate("user");
-
-    if (!bet) {
-      return res.status(404).json({
-        success: false,
-        message: "Bet not found",
-      });
-    }
-
-    if (bet.settled) {
+    if (!["WON", "LOST", "CANCELLED"].includes(result)) {
       return res.status(400).json({
         success: false,
-        message: "Bet already settled",
+        message: "Invalid result value",
       });
     }
 
-    bet.result = result;
-    bet.settled = true;
+    await session.withTransaction(async () => {
+      const bet = await WrestlingBet.findById(req.params.id)
+        .populate("user")
+        .session(session);
 
-    // 💰 CREDIT LOGIC
-    if (result === "WON") {
-      bet.user.credit += bet.profit;
-    }
+      if (!bet) {
+        throw new Error("Bet not found");
+      }
 
-    if (result === "CANCELLED") {
-      bet.user.credit += bet.stake;
-    }
+      if (bet.settled) {
+        throw new Error("Bet already settled");
+      }
+      
+      bet.result = result;
+      bet.settled = true;
+      await bet.save({ session });
 
-    await bet.user.save();
-    await bet.save();
+      // ✅ Credit Logic
+      if (result === "WON") {
+        await User.findByIdAndUpdate(
+          bet.user._id,
+          { $inc: { credit: bet.profit +bet.liability } },
+          { session }
+        );
+      }
+
+      if (result === "CANCELLED") {
+        await User.findByIdAndUpdate(
+          bet.user._id,
+          { $inc: { credit: bet.stake } },
+          { session }
+        );
+      }
+
+      // ✅ Update History (No VOID mapping now)
+      await WrestlingBetHistory.findOneAndUpdate(
+        { 
+          user: bet.user._id,
+          mid: bet.mid,
+          teamTid: bet.teamTid,
+          boxId: bet.boxId,
+          rate: bet.rate,
+          stake: bet.stake,
+          settled: false
+        },
+        {
+          result: result,
+          settled: true,
+        },
+        { session }
+      );
+    });
+
+    session.endSession();
 
     res.status(200).json({
       success: true,
-      message: "Bet settled successfully",
-      bet,
+      message: "Bet & History settled successfully",
     });
+
   } catch (error) {
-    res.status(500).json({
+    await session.abortTransaction();
+    session.endSession();
+
+    res.status(400).json({
       success: false,
       message: error.message,
     });

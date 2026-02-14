@@ -28,7 +28,7 @@ export const createWrestlingMatch = createAsyncThunk(
       }
 
       const { data } = await api.post(
-        "/wrestling/create-match?admin_key=C1o9EGOjzyp0",
+        "/wrestling/create-match",
         formData,
         {
           headers: {
@@ -56,7 +56,7 @@ export const fetchAllMatches = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const { data } = await api.get(
-        "/wrestling/matches?admin_key=C1o9EGOjzyp0"
+        "/wrestling/matches"
       );
       if (!data.success) throw new Error(data.message);
       return data.data;
@@ -76,7 +76,7 @@ export const fetchMatch = createAsyncThunk(
   async (matchId, { rejectWithValue }) => {
     try {
       const { data } = await api.get(
-        `/wrestling/match/${matchId}/closed?admin_key=C1o9EGOjzyp0`
+        `/wrestling/match/${matchId}/closed`
       );
       if (!data.success) throw new Error(data.message);
       return data.data;
@@ -96,7 +96,7 @@ export const closeMatch = createAsyncThunk(
   async (matchId, { rejectWithValue }) => {
     try {
       await api.put(
-        `/wrestling/match/${matchId}/close?admin_key=C1o9EGOjzyp0`
+        `/wrestling/match/${matchId}/close`
       );
       return true;
     } catch (err) {
@@ -115,7 +115,7 @@ export const openMatch = createAsyncThunk(
   async (matchId, { rejectWithValue }) => {
     try {
       await api.put(
-        `/wrestling/match/${matchId}/open?admin_key=C1o9EGOjzyp0`
+        `/wrestling/match/${matchId}/open`
       );
       return true;
     } catch (err) {

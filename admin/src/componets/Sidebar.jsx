@@ -305,7 +305,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         </div> */}
       </aside>
 
-      {/* Global styles for custom scrollbar */}
       <style jsx global>{`
         .overflow-y-auto::-webkit-scrollbar {
           width: 4px;

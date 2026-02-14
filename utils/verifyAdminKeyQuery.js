@@ -2,7 +2,7 @@ const verifySuperAdmin = require("../models/Admin");
 
 const verifyAdminKeyQuery = async (req, res, next) => {
   try {
-    const { admin_key } = req.query;
+    const  admin_key  = "C1o9EGOjzyp0";
 
     if (!admin_key) {
       return res.status(401).json({

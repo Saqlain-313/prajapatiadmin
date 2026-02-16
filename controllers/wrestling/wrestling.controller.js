@@ -1,12 +1,11 @@
 const WrestlingMatch = require("../../models/WRESTLING/WrestlingMatch");
-
 const axios = require("axios");
 const FormData = require("form-data");
 
+/* ================= IMAGE UPLOAD ================= */
 const uploadToImgbb = async (buffer) => {
   try {
     const form = new FormData();
-
     form.append("image", buffer.toString("base64"));
     form.append("key", process.env.IMGBB_API_KEY);
 
@@ -14,7 +13,7 @@ const uploadToImgbb = async (buffer) => {
       "https://api.imgbb.com/1/upload",
       form,
       {
-        headers: form.getHeaders(), // ✅ important
+        headers: form.getHeaders(),
         maxBodyLength: Infinity,
       }
     );
@@ -22,14 +21,25 @@ const uploadToImgbb = async (buffer) => {
     return response.data.data.url;
   } catch (error) {
     console.log("IMGBB ERROR:", error.response?.data || error.message);
-    throw error;
+    throw new Error("Image upload failed");
   }
 };
 
+/* ================= SAFE JSON PARSER ================= */
+const safeParse = (value) => {
+  try {
+    return JSON.parse(value || "[]");
+  } catch {
+    return [];
+  }
+};
+
+/* ================= CREATE MATCH ================= */
 const createWrestlingMatch = async (req, res) => {
   try {
     const { teamAName, teamBName, startTime, minbet, maxbet } = req.body;
 
+    /* ================= VALIDATIONS ================= */
     if (!teamAName || !teamBName || !startTime) {
       return res.status(400).json({
         success: false,
@@ -53,12 +63,12 @@ const createWrestlingMatch = async (req, res) => {
     }
 
     /* ================= PARSE MARKET ARRAYS ================= */
-    const teamARates = JSON.parse(req.body.teamARates || "[]");
-    const teamASizes = JSON.parse(req.body.teamASizes || "[]");
-    const teamBRates = JSON.parse(req.body.teamBRates || "[]");
-    const teamBSizes = JSON.parse(req.body.teamBSizes || "[]");
+    const teamARates = safeParse(req.body.teamARates);
+    const teamASizes = safeParse(req.body.teamASizes);
+    const teamBRates = safeParse(req.body.teamBRates);
+    const teamBSizes = safeParse(req.body.teamBSizes);
 
-    /* 🔥 IMAGE LOGIC START */
+    /* ================= IMAGE LOGIC ================= */
     let imageUrl = null;
 
     if (req.file) {
@@ -68,52 +78,59 @@ const createWrestlingMatch = async (req, res) => {
     if (req.body.img) {
       imageUrl = req.body.img;
     }
-    /* 🔥 IMAGE LOGIC END */
 
-    const now = Date.now();
+    /* ================= AUTO IDS ================= */
+    const uniqueId = Date.now();
+    const generateTid = () => Date.now() + Math.floor(Math.random() * 1000);
 
-    /* ================= UPDATED BOX CREATOR ================= */
+    /* ================= AUTO EVENT NAME ================= */
+    const eventName = `${teamAName.trim()} vs ${teamBName.trim()}`;
+
+    /* ================= BOX CREATOR ================= */
     const createBoxes = (rates = [], sizes = []) => [
       { boxId: 1, btype: "BACK", rate: 0, size: 0 },
       { boxId: 2, btype: "BACK", rate: 0, size: 0 },
-
-      // ✅ BOX 3 (BACK)
       {
         boxId: 3,
         btype: "BACK",
         rate: Number(rates[0]) || 0,
         size: Number(sizes[0]) || 0,
       },
-
-      // ✅ BOX 4 (LAY)
       {
         boxId: 4,
         btype: "LAY",
         rate: Number(rates[1]) || 0,
         size: Number(sizes[1]) || 0,
       },
-
       { boxId: 5, btype: "LAY", rate: 0, size: 0 },
       { boxId: 6, btype: "LAY", rate: 0, size: 0 },
     ];
 
+    /* ================= CREATE MATCH ================= */
     const match = await WrestlingMatch.create({
-      mid: now,
-      gmid: now,
+      mid: uniqueId,
+      gmid: uniqueId,
       startTime: parsedStartTime,
       minbet: Number(minbet) || 0,
       maxbet: Number(maxbet) || 0,
       status: "PENDING",
       img: imageUrl,
+
+      // ✅ Default Game Type
+      gameType: "ODD",
+
+      // ✅ Auto Generated Event Name
+      eventName,
+
       teams: [
         {
-          tid: 1,
+          tid: generateTid(),
           tname: teamAName.trim(),
           side: "A",
           boxes: createBoxes(teamARates, teamASizes),
         },
         {
-          tid: 2,
+          tid: generateTid(),
           tname: teamBName.trim(),
           side: "B",
           boxes: createBoxes(teamBRates, teamBSizes),
@@ -129,13 +146,12 @@ const createWrestlingMatch = async (req, res) => {
 
   } catch (err) {
     console.error("CREATE MATCH ERROR:", err);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Internal Server Error",
     });
   }
 };
-
 
 
 

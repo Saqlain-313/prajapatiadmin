@@ -89,6 +89,17 @@ const wrestlingMatchSchema = new mongoose.Schema(
       default: "PENDING",
       index: true,
     },
+    gameType: {
+      type: String,
+      default: "ODD",
+      trim: true,
+      index: true,
+    },
+
+    eventName: {
+      type: String,
+      trim: true,
+    },
 
     maxb: { type: Number, default: 0 },
     maxbet: { type: Number, default: 0 },

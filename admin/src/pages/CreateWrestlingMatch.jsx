@@ -105,6 +105,7 @@ const CreateWrestlingMatch = () => {
   const [time, setTime] = useState("");
   const [minbet, setMinbet] = useState("");
   const [maxbet, setMaxbet] = useState("");
+  const [betStatus, setBetStatus] = useState("ACTIVE");
   /* ================= MARKET STATES (BOX 3 & 4) ================= */
   const [teamARates, setTeamARates] = useState(["", ""]);
   const [teamASizes, setTeamASizes] = useState(["", ""]);
@@ -195,6 +196,7 @@ const CreateWrestlingMatch = () => {
         startTime,
         minbet: Number(minbet),
         maxbet: Number(maxbet),
+        betStatus, // ✅ ADD HERE
         teamARates,
         teamASizes,
         teamBRates,
@@ -217,6 +219,7 @@ const CreateWrestlingMatch = () => {
       setTeamASizes(["", ""]);
       setTeamBRates(["", ""]);
       setTeamBSizes(["", ""]);
+      setBetStatus("ACTIVE");
       setImage(null);
       setPreview(null);
 
@@ -508,6 +511,24 @@ const CreateWrestlingMatch = () => {
                     </span>
                   )}
                 </label>
+              </div>
+              {/* BET STATUS */}
+              <div className="space-y-2">
+                <label className="text-white/60 text-xs flex items-center gap-1">
+                  <MdCheckCircle size={14} />
+                  Betting Status
+                </label>
+
+                <div className="relative">
+                  <select
+                    value={betStatus}
+                    onChange={(e) => setBetStatus(e.target.value)}
+                    className={`${selectStyleClasses} appearance-none`}
+                  >
+                    <option value="ACTIVE">ACTIVE (Betting Enabled)</option>
+                    <option value="DEACTIVE">DEACTIVE (Betting Disabled)</option>
+                  </select>
+                </div>
               </div>
 
               {/* IMAGE PREVIEW */}

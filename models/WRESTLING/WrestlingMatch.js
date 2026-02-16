@@ -89,6 +89,12 @@ const wrestlingMatchSchema = new mongoose.Schema(
       default: "PENDING",
       index: true,
     },
+    betStatus: {
+      type: String,
+      enum: ["ACTIVE", "DEACTIVE"],
+      default: "ACTIVE",
+      index: true,
+    },
     gameType: {
       type: String,
       default: "ODD",

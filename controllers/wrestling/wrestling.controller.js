@@ -2,7 +2,6 @@ const WrestlingMatch = require("../../models/WRESTLING/WrestlingMatch");
 const axios = require("axios");
 const FormData = require("form-data");
 
-/* ================= IMAGE UPLOAD ================= */
 const uploadToImgbb = async (buffer) => {
   try {
     const form = new FormData();
@@ -37,7 +36,14 @@ const safeParse = (value) => {
 /* ================= CREATE MATCH ================= */
 const createWrestlingMatch = async (req, res) => {
   try {
-    const { teamAName, teamBName, startTime, minbet, maxbet } = req.body;
+    const {
+      teamAName,
+      teamBName,
+      startTime,
+      minbet,
+      maxbet,
+      betStatus, // ✅ NEW
+    } = req.body;
 
     /* ================= VALIDATIONS ================= */
     if (!teamAName || !teamBName || !startTime) {
@@ -61,6 +67,12 @@ const createWrestlingMatch = async (req, res) => {
         message: "maxbet cannot be less than minbet",
       });
     }
+
+    /* ================= VALIDATE BET STATUS ================= */
+    const validBetStatus = ["ACTIVE", "DEACTIVE"];
+    const finalBetStatus = validBetStatus.includes(betStatus)
+      ? betStatus
+      : "ACTIVE"; // default
 
     /* ================= PARSE MARKET ARRAYS ================= */
     const teamARates = safeParse(req.body.teamARates);
@@ -114,12 +126,12 @@ const createWrestlingMatch = async (req, res) => {
       minbet: Number(minbet) || 0,
       maxbet: Number(maxbet) || 0,
       status: "PENDING",
+
+      // ✅ NEW FIELD ADDED
+      betStatus: finalBetStatus,
+
       img: imageUrl,
-
-      // ✅ Default Game Type
       gameType: "ODD",
-
-      // ✅ Auto Generated Event Name
       eventName,
 
       teams: [

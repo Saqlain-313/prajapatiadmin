@@ -13,6 +13,7 @@ export const createWrestlingMatch = createAsyncThunk(
       startTime,
       minbet,
       maxbet,
+      betStatus, // ✅ added
       teamARates,
       teamASizes,
       teamBRates,
@@ -33,13 +34,15 @@ export const createWrestlingMatch = createAsyncThunk(
       formData.append("minbet", minbet);
       formData.append("maxbet", maxbet);
 
-      /* ✅ IMPORTANT — SEND ARRAYS AS JSON */
+      // ✅ NEW
+      formData.append("betStatus", betStatus);
+
+      /* SEND ARRAYS AS JSON */
       formData.append("teamARates", JSON.stringify(teamARates));
       formData.append("teamASizes", JSON.stringify(teamASizes));
       formData.append("teamBRates", JSON.stringify(teamBRates));
       formData.append("teamBSizes", JSON.stringify(teamBSizes));
 
-      /* ✅ Optional Image */
       if (img) {
         formData.append("img", img);
       }

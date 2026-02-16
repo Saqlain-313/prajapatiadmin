@@ -14,6 +14,12 @@ const wrestlingBetHistorySchema = new mongoose.Schema(
       required: true,
     },
 
+    bet: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "WrestlingBet",
+      required: true,
+    },
+
     mid: {
       type: String,
       required: true,

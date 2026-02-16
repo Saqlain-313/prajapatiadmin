@@ -232,70 +232,57 @@ const WrestlingAdmin = () => {
   const [timer, setTimer] = useState("");
   const [confirmation, setConfirmation] = useState({ isOpen: false, type: "close" });
 
+  const [rateStep, setRateStep] = useState("0.01");
+
   useEffect(() => {
     if (matchId) dispatch(fetchMatch(matchId));
   }, [matchId, dispatch]);
 
-  const minRate = 1;
-  const maxRate = 10;
-  const step = 0.05;
+  const minRate = 0.00;
+  const maxRate = 1.99;
 
   const handleIncreaseRate = () => {
-    if (!MATCH || MATCH.status !== "OPEN") {
-      showToast("Match is not open", "error");
-      return;
-    }
-    if (!tid || !boxId) {
-      showToast("Select team and box first", "error");
-      return;
-    }
+    if (!MATCH || MATCH.status !== "OPEN") return;
+    if (!tid || !boxId || !selectedBox) return;
 
-    const current = selectedBox?.rate ?? 1;
-    const newRate = (parseFloat(current) + step).toFixed(2);
+    const current = Number(selectedBox.rate || 0);
+    const step = Number(rateStep);
 
-    if (parseFloat(newRate) <= maxRate) {
-      socket.emit("admin:update-box", {
-        matchId: MATCH._id,
-        mid: MATCH.mid,
-        tid,
-        boxId,
-        rate: Number(newRate),
-        size: selectedBox?.size || 0,
-        timer: selectedBox?.timer || 0,
-      });
-      showToast(`Rate increased to ${newRate}`, "success");
-    } else {
-      showToast(`Maximum rate is ${maxRate}`, "error");
-    }
+    let newRate = Number((current + step).toFixed(2));
+
+    if (newRate > maxRate) newRate = maxRate;
+
+    socket.emit("admin:update-box", {
+      matchId: MATCH._id,
+      mid: MATCH.mid,
+      tid,
+      boxId,
+      rate: newRate,
+      size: selectedBox.size || 0,
+      timer: selectedBox.timer || 0,
+    });
   };
 
   const handleDecreaseRate = () => {
-    if (!MATCH || MATCH.status !== "OPEN") {
-      showToast("Match is not open", "error");
-      return;
-    }
-    if (!tid || !boxId) {
-      showToast("Select team and box first", "error");
-      return;
-    }
+    if (!MATCH || MATCH.status !== "OPEN") return;
+    if (!tid || !boxId || !selectedBox) return;
 
-    const current = selectedBox?.rate ?? 1;
-    const newRate = (parseFloat(current) - step).toFixed(2);
+    const current = Number(selectedBox.rate || 0);
+    const step = Number(rateStep);
 
-    if (parseFloat(newRate) >= minRate) {
-      socket.emit("admin:update-box", {
-        matchId: MATCH._id,
-        mid: MATCH.mid,
-        tid,
-        boxId,
-        rate: Number(newRate),
-        size: selectedBox?.size || 0,
-        timer: selectedBox?.timer || 0,
-      });
-      showToast(`Rate decreased to ${newRate}`, "success");
-    } else {
-      showToast(`Minimum rate is ${minRate}`, "error");
-    }
+    let newRate = Number((current - step).toFixed(2));
+
+    if (newRate < minRate) newRate = minRate;
+
+    socket.emit("admin:update-box", {
+      matchId: MATCH._id,
+      mid: MATCH.mid,
+      tid,
+      boxId,
+      rate: newRate,
+      size: selectedBox.size || 0,
+      timer: selectedBox.timer || 0,
+    });
   };
 
   useEffect(() => {
@@ -621,36 +608,29 @@ const WrestlingAdmin = () => {
                   Rate Control
                 </label>
                 <div className="flex items-center gap-2">
+
                   <button
                     onClick={handleDecreaseRate}
                     disabled={!tid || !boxId || MATCH?.status !== "OPEN"}
-                    className="p-3 bg-red-500/20 hover:bg-red-500/30 rounded-xl text-red-300 border border-red-500/30
-                           disabled:opacity-40 disabled:cursor-not-allowed transition"
+                    className="p-3 bg-red-500/20 rounded-xl text-red-300 border border-red-500/30"
                   >
                     <MdRemove size={18} />
                   </button>
 
+                  <input
+                    type="text"
+                    value={selectedBox?.rate?.toFixed(2) || "0.00"}
+                    readOnly
+                    className="w-24 text-center px-3 py-3 bg-black/50 border border-white/10 rounded-xl text-white"
+                  />
+
                   <select
-                    value={selectedBox?.rate?.toFixed(2) || ""}
-                    onChange={(e) => {
-                      if (!MATCH || MATCH.status !== "OPEN") return;
-                      if (!tid || !boxId) return;
-                      socket.emit("admin:update-box", {
-                        matchId: MATCH._id,
-                        mid: MATCH.mid,
-                        tid,
-                        boxId,
-                        rate: Number(e.target.value),
-                        size: selectedBox?.size || 0,
-                        timer: selectedBox?.timer || 0,
-                      });
-                    }}
-                    className={selectStyleClasses}
-                    disabled={!tid || !boxId || MATCH?.status !== "OPEN"}
+                    value={rateStep}
+                    onChange={(e) => setRateStep(e.target.value)}
+                    className="w-24 px-3 py-3 bg-black/50 border border-white/10 rounded-xl text-white text-sm"
                   >
-                    <option value="">Rate</option>
-                    {[...Array(181)].map((_, i) => {
-                      const value = (1 + i * 0.05).toFixed(2);
+                    {Array.from({ length: 11 }, (_, i) => {
+                      const value = (i / 100).toFixed(2);
                       return (
                         <option key={value} value={value}>
                           {value}
@@ -662,11 +642,11 @@ const WrestlingAdmin = () => {
                   <button
                     onClick={handleIncreaseRate}
                     disabled={!tid || !boxId || MATCH?.status !== "OPEN"}
-                    className="p-3 bg-emerald-500/20 hover:bg-emerald-500/30 rounded-xl text-emerald-300 border border-emerald-500/30
-                           disabled:opacity-40 disabled:cursor-not-allowed transition"
+                    className="p-3 bg-emerald-500/20 rounded-xl text-emerald-300 border border-emerald-500/30"
                   >
                     <MdAdd size={18} />
                   </button>
+
                 </div>
               </div>
               <div className="space-y-2">
@@ -683,20 +663,7 @@ const WrestlingAdmin = () => {
                   disabled={MATCH?.status !== "OPEN"}
                 />
               </div>
-              {/* <div className="space-y-2">
-                <label className="text-white/60 text-xs flex items-center gap-1">
-                  <MdTimer size={14} />
-                  Timer (seconds)
-                </label>
-                <input
-                  type="number"
-                  placeholder="Enter timer"
-                  value={timer}
-                  onChange={(e) => setTimer(e.target.value)}
-                  className={inputStyleClasses}
-                  disabled={MATCH?.status !== "OPEN"}
-                />
-              </div> */}
+
             </div>
 
             {/* Update Box Button */}

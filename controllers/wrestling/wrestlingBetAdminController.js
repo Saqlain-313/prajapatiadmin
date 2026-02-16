@@ -1,9 +1,6 @@
 const WrestlingBet = require("../../models/WRESTLING/WrestlingBet");
-
+const WrestlingBetHistory = require('../../models/WRESTLING/WrestlingBetHistory')
 const mongoose = require("mongoose");
-const WrestlingBetHistory = require("../../models/WRESTLING/WrestlingBetHistory");
-const User = require("../../models/usermodel");
-
 
 
 exports.getAllWrestlingBets = async (req, res) => {
@@ -59,82 +56,68 @@ exports.getWrestlingBetById = async (req, res) => {
 ===================================== */
 exports.updateWrestlingBetStatus = async (req, res) => {
   const session = await mongoose.startSession();
+  session.startTransaction();
 
   try {
-    const { result } = req.body; 
+    const { result } = req.body; // WON / LOST / CANCELLED
 
+    // ✅ Result Validation
     if (!["WON", "LOST", "CANCELLED"].includes(result)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid result value",
-      });
+      throw new Error("Invalid result type");
     }
 
-    await session.withTransaction(async () => {
-      const bet = await WrestlingBet.findById(req.params.id)
-        .populate("user")
-        .session(session);
+    const bet = await WrestlingBet.findOne({
+      _id: req.params.id,
+      settled: false, // 🔒 Prevent double settlement
+    })
+      .populate("user")
+      .session(session);
 
-      if (!bet) {
-        throw new Error("Bet not found");
-      }
+    if (!bet) {
+      throw new Error("Bet not found or already settled");
+    }
 
-      if (bet.settled) {
-        throw new Error("Bet already settled");
-      }
-      
-      bet.result = result;
-      bet.settled = true;
-      await bet.save({ session });
+    // 🔹 Update Bet Status
+    bet.result = result;
+    bet.settled = true;
 
-      // ✅ Credit Logic
-      if (result === "WON") {
-        await User.findByIdAndUpdate(
-          bet.user._id,
-          { $inc: { credit: bet.profit +bet.liability } },
-          { session }
-        );
-      }
+    // 💰 CREDIT LOGIC
+    if (result === "WON") {
+      bet.user.credit += bet.profit;
+    }
 
-      if (result === "CANCELLED") {
-        await User.findByIdAndUpdate(
-          bet.user._id,
-          { $inc: { credit: bet.stake } },
-          { session }
-        );
-      }
+    if (result === "CANCELLED") {
+      bet.user.credit += bet.stake;
+    }
 
-      // ✅ Update History (No VOID mapping now)
-      await WrestlingBetHistory.findOneAndUpdate(
-        { 
-          user: bet.user._id,
-          mid: bet.mid,
-          teamTid: bet.teamTid,
-          boxId: bet.boxId,
-          rate: bet.rate,
-          stake: bet.stake,
-          settled: false
-        },
-        {
-          result: result,
-          settled: true,
-        },
-        { session }
-      );
-    });
+    // LOST case → nothing added (stake already deducted)
 
+    await bet.user.save({ session });
+    await bet.save({ session });
+
+    // 🔹 Update History (Better way: use betId if possible)
+    await WrestlingBetHistory.updateOne(
+      { betId: bet._id }, // 👈 recommend storing betId in history
+      {
+        result: result === "CANCELLED" ? "VOID" : result,
+        settled: true,
+      },
+      { session }
+    );
+
+    await session.commitTransaction();
     session.endSession();
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      message: "Bet & History settled successfully",
+      message: "Bet settled successfully",
+      bet,
     });
-
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
 
-    res.status(400).json({
+    return res.status(500).json({
       success: false,
       message: error.message,
     });

@@ -52,6 +52,12 @@ const createWrestlingMatch = async (req, res) => {
       });
     }
 
+    /* ================= PARSE MARKET ARRAYS ================= */
+    const teamARates = JSON.parse(req.body.teamARates || "[]");
+    const teamASizes = JSON.parse(req.body.teamASizes || "[]");
+    const teamBRates = JSON.parse(req.body.teamBRates || "[]");
+    const teamBSizes = JSON.parse(req.body.teamBSizes || "[]");
+
     /* 🔥 IMAGE LOGIC START */
     let imageUrl = null;
 
@@ -66,11 +72,27 @@ const createWrestlingMatch = async (req, res) => {
 
     const now = Date.now();
 
-    const createBoxes = () => [
+    /* ================= UPDATED BOX CREATOR ================= */
+    const createBoxes = (rates = [], sizes = []) => [
       { boxId: 1, btype: "BACK", rate: 0, size: 0 },
       { boxId: 2, btype: "BACK", rate: 0, size: 0 },
-      { boxId: 3, btype: "BACK", rate: 0, size: 0 },
-      { boxId: 4, btype: "LAY", rate: 0, size: 0 },
+
+      // ✅ BOX 3 (BACK)
+      {
+        boxId: 3,
+        btype: "BACK",
+        rate: Number(rates[0]) || 0,
+        size: Number(sizes[0]) || 0,
+      },
+
+      // ✅ BOX 4 (LAY)
+      {
+        boxId: 4,
+        btype: "LAY",
+        rate: Number(rates[1]) || 0,
+        size: Number(sizes[1]) || 0,
+      },
+
       { boxId: 5, btype: "LAY", rate: 0, size: 0 },
       { boxId: 6, btype: "LAY", rate: 0, size: 0 },
     ];
@@ -82,10 +104,20 @@ const createWrestlingMatch = async (req, res) => {
       minbet: Number(minbet) || 0,
       maxbet: Number(maxbet) || 0,
       status: "PENDING",
-      img: imageUrl, // 🔥 image saved here
+      img: imageUrl,
       teams: [
-        { tid: 1, tname: teamAName.trim(), side: "A", boxes: createBoxes() },
-        { tid: 2, tname: teamBName.trim(), side: "B", boxes: createBoxes() },
+        {
+          tid: 1,
+          tname: teamAName.trim(),
+          side: "A",
+          boxes: createBoxes(teamARates, teamASizes),
+        },
+        {
+          tid: 2,
+          tname: teamBName.trim(),
+          side: "B",
+          boxes: createBoxes(teamBRates, teamBSizes),
+        },
       ],
     });
 
@@ -94,6 +126,7 @@ const createWrestlingMatch = async (req, res) => {
       message: "Match created successfully",
       data: match,
     });
+
   } catch (err) {
     console.error("CREATE MATCH ERROR:", err);
     res.status(500).json({

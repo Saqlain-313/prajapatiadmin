@@ -7,7 +7,18 @@ import { api } from "./api";
 export const createWrestlingMatch = createAsyncThunk(
   "wrestlingAdmin/createMatch",
   async (
-    { teamAName, teamBName, startTime, minbet, maxbet, img },
+    {
+      teamAName,
+      teamBName,
+      startTime,
+      minbet,
+      maxbet,
+      teamARates,
+      teamASizes,
+      teamBRates,
+      teamBSizes,
+      img,
+    },
     { rejectWithValue }
   ) => {
     try {
@@ -22,7 +33,13 @@ export const createWrestlingMatch = createAsyncThunk(
       formData.append("minbet", minbet);
       formData.append("maxbet", maxbet);
 
-      // ✅ Optional Image
+      /* ✅ IMPORTANT — SEND ARRAYS AS JSON */
+      formData.append("teamARates", JSON.stringify(teamARates));
+      formData.append("teamASizes", JSON.stringify(teamASizes));
+      formData.append("teamBRates", JSON.stringify(teamBRates));
+      formData.append("teamBSizes", JSON.stringify(teamBSizes));
+
+      /* ✅ Optional Image */
       if (img) {
         formData.append("img", img);
       }
@@ -38,8 +55,8 @@ export const createWrestlingMatch = createAsyncThunk(
       );
 
       if (!data.success) throw new Error(data.message);
-      return data.data;
 
+      return data.data;
     } catch (err) {
       return rejectWithValue(
         err.response?.data?.message || err.message

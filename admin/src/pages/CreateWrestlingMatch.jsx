@@ -17,7 +17,7 @@ import {
   MdWarning,
   MdClose,
   MdUpload,
-  
+
 } from "react-icons/md";
 import { FiAlertCircle, FiCheckCircle, FiXCircle } from "react-icons/fi";
 import { toast } from "react-hot-toast";
@@ -105,6 +105,11 @@ const CreateWrestlingMatch = () => {
   const [time, setTime] = useState("");
   const [minbet, setMinbet] = useState("");
   const [maxbet, setMaxbet] = useState("");
+  /* ================= MARKET STATES (BOX 3 & 4) ================= */
+  const [teamARates, setTeamARates] = useState(["", ""]);
+  const [teamASizes, setTeamASizes] = useState(["", ""]);
+  const [teamBRates, setTeamBRates] = useState(["", ""]);
+  const [teamBSizes, setTeamBSizes] = useState(["", ""]);
 
   /* IMAGE STATES */
   const [image, setImage] = useState(null);
@@ -190,6 +195,10 @@ const CreateWrestlingMatch = () => {
         startTime,
         minbet: Number(minbet),
         maxbet: Number(maxbet),
+        teamARates,
+        teamASizes,
+        teamBRates,
+        teamBSizes,
         img: image,
       })
     );
@@ -204,11 +213,15 @@ const CreateWrestlingMatch = () => {
       setTime("");
       setMinbet("");
       setMaxbet("");
+      setTeamARates(["", ""]);
+      setTeamASizes(["", ""]);
+      setTeamBRates(["", ""]);
+      setTeamBSizes(["", ""]);
       setImage(null);
       setPreview(null);
-      
+
       showToast("Match created successfully", "success");
-      
+
       const t = setTimeout(() => dispatch(clearStatus()), 1500);
       return () => clearTimeout(t);
     }
@@ -224,7 +237,7 @@ const CreateWrestlingMatch = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-[#0A0C0F] to-[#030405] p-4 md:p-6 lg:p-8">
       <div className="max-w-5xl mx-auto">
-        
+
         {/* HEADER CARD */}
         <div className={`${gradientCardClass} p-6 md:p-8 mb-6`}>
           <div className="flex items-center justify-between">
@@ -244,7 +257,7 @@ const CreateWrestlingMatch = () => {
                 </p>
               </div>
             </div>
-            
+
             <button
               onClick={() => navigate(-1)}
               className={buttonGradientClass}
@@ -373,6 +386,98 @@ const CreateWrestlingMatch = () => {
                 />
               </div>
             </div>
+            {/* TEAM A MARKET */}
+            <div className="md:col-span-2 space-y-4">
+              <h2 className="text-white font-semibold text-lg border-b border-white/10 pb-2">
+                Team A Market (Box 3 & 4)
+              </h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                <div className="p-4 bg-black/40 rounded-xl border border-white/10 space-y-2">
+                  <p className="text-xs text-white/50">BACK - Box 3</p>
+                  <input
+                    type="number"
+                    placeholder="Rate"
+                    value={teamARates[0]}
+                    onChange={(e) => setTeamARates([e.target.value, teamARates[1]])}
+                    className={inputStyleClasses}
+                  />
+                  <input
+                    type="number"
+                    placeholder="Size"
+                    value={teamASizes[0]}
+                    onChange={(e) => setTeamASizes([e.target.value, teamASizes[1]])}
+                    className={inputStyleClasses}
+                  />
+                </div>
+
+                <div className="p-4 bg-black/40 rounded-xl border border-white/10 space-y-2">
+                  <p className="text-xs text-white/50">LAY - Box 4</p>
+                  <input
+                    type="number"
+                    placeholder="Rate"
+                    value={teamARates[1]}
+                    onChange={(e) => setTeamARates([teamARates[0], e.target.value])}
+                    className={inputStyleClasses}
+                  />
+                  <input
+                    type="number"
+                    placeholder="Size"
+                    value={teamASizes[1]}
+                    onChange={(e) => setTeamASizes([teamASizes[0], e.target.value])}
+                    className={inputStyleClasses}
+                  />
+                </div>
+
+              </div>
+            </div>
+            {/* TEAM B MARKET */}
+            <div className="md:col-span-2 space-y-4">
+              <h2 className="text-white font-semibold text-lg border-b border-white/10 pb-2">
+                Team B Market (Box 3 & 4)
+              </h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                <div className="p-4 bg-black/40 rounded-xl border border-white/10 space-y-2">
+                  <p className="text-xs text-white/50">BACK - Box 3</p>
+                  <input
+                    type="number"
+                    placeholder="Rate"
+                    value={teamBRates[0]}
+                    onChange={(e) => setTeamBRates([e.target.value, teamBRates[1]])}
+                    className={inputStyleClasses}
+                  />
+                  <input
+                    type="number"
+                    placeholder="Size"
+                    value={teamBSizes[0]}
+                    onChange={(e) => setTeamBSizes([e.target.value, teamBSizes[1]])}
+                    className={inputStyleClasses}
+                  />
+                </div>
+
+                <div className="p-4 bg-black/40 rounded-xl border border-white/10 space-y-2">
+                  <p className="text-xs text-white/50">LAY - Box 4</p>
+                  <input
+                    type="number"
+                    placeholder="Rate"
+                    value={teamBRates[1]}
+                    onChange={(e) => setTeamBRates([teamBRates[0], e.target.value])}
+                    className={inputStyleClasses}
+                  />
+                  <input
+                    type="number"
+                    placeholder="Size"
+                    value={teamBSizes[1]}
+                    onChange={(e) => setTeamBSizes([teamBSizes[0], e.target.value])}
+                    className={inputStyleClasses}
+                  />
+                </div>
+
+              </div>
+            </div>
 
             {/* IMAGE UPLOAD - FULL WIDTH */}
             <div className="md:col-span-2 space-y-2">
@@ -380,7 +485,7 @@ const CreateWrestlingMatch = () => {
                 <MdImage size={14} />
                 Match Image (Optional)
               </label>
-              
+
               <div className="relative">
                 <input
                   type="file"

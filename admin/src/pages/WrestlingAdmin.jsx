@@ -617,12 +617,12 @@ const WrestlingAdmin = () => {
                     <MdRemove size={18} />
                   </button>
 
-                  <input
+                  {/* <input
                     type="text"
                     value={selectedBox?.rate?.toFixed(2) || "0.00"}
                     readOnly
                     className="w-24 text-center px-3 py-3 bg-black/50 border border-white/10 rounded-xl text-white"
-                  />
+                  /> */}
 
                   <select
                     value={rateStep}

@@ -319,17 +319,17 @@ const WrestlingAdmin = () => {
 
   const exposureData = MATCH?.teams?.map((team) => {
     const teamBets = bets?.filter(
-      (bet) => String(bet.teamTid) === String(team.tid)
+      (bet) => String(bet.teamName) === String(team.tname)
     );
 
     let backTotal = 0;
     let layTotal = 0;
 
     teamBets?.forEach((bet) => {
-      if (bet.boxId == 3) {
-        backTotal += bet.stake;
-      } else if (bet.boxId == 4) {
-        layTotal += bet.stake;
+      if (bet.otype === "back") {
+        backTotal += bet.betAmount || 0;
+      } else if (bet.otype === "lay") {
+        layTotal += bet.betAmount || 0;
       }
     });
 
@@ -617,12 +617,6 @@ const WrestlingAdmin = () => {
                     <MdRemove size={18} />
                   </button>
 
-                  {/* <input
-                    type="text"
-                    value={selectedBox?.rate?.toFixed(2) || "0.00"}
-                    readOnly
-                    className="w-24 text-center px-3 py-3 bg-black/50 border border-white/10 rounded-xl text-white"
-                  /> */}
 
                   <select
                     value={rateStep}
@@ -840,42 +834,54 @@ const WrestlingAdmin = () => {
               </thead>
               <tbody>
                 {bets?.map((bet) => {
-                  const team = MATCH?.teams?.find(
-                    (t) => String(t.tid) === String(bet.teamTid)
-                  );
-
                   return (
                     <tr key={bet._id} className="border-t border-white/5 hover:bg-white/5 transition">
+
+                      {/* USER */}
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <div className="w-6 h-6 rounded-full bg-gradient-to-br from-white/20 to-white/5 
-                                        flex items-center justify-center border border-white/30">
+                          flex items-center justify-center border border-white/30">
                             <span className="text-white font-bold text-xs">
-                              {bet.user?.name?.charAt(0) || "U"}
+                              {bet.userId?.mobile?.charAt(0) || "U"}
                             </span>
                           </div>
-                          <span className="text-white text-sm">{bet.user?.name || "N/A"}</span>
+                          <span className="text-white text-sm">
+                            {bet.userId?.mobile || "N/A"}
+                          </span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-white/80 text-sm">{team?.tname}</td>
+
+                      {/* TEAM */}
+                      <td className="px-4 py-3 text-white/80 text-sm">
+                        {bet.teamName}
+                      </td>
+
+                      {/* TYPE */}
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 text-xs font-bold rounded-full border
-                          ${bet.boxId == 3
+            ${bet.otype === "back"
                             ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/50"
                             : "bg-red-500/20 text-red-300 border-red-500/50"
                           }`}>
-                          {bet.boxId == 3 ? "BACK" : "LAY"}
+                          {bet.otype?.toUpperCase()}
                         </span>
                       </td>
+
+                      {/* STAKE */}
                       <td className="px-4 py-3 text-amber-400 font-bold text-sm">
-                        {formatCurrency(bet.stake)}
+                        {formatCurrency(bet.betAmount)}
                       </td>
+
+                      {/* RATE */}
                       <td className="px-4 py-3 text-white/80 text-sm">
-                        {Number(bet.rate).toFixed(2)}
+                        {Number(bet.price || 0).toFixed(2)}
                       </td>
+
                     </tr>
                   );
                 })}
+
                 {(!bets || bets.length === 0) && (
                   <tr>
                     <td colSpan="5" className="px-4 py-8 text-center text-white/40">

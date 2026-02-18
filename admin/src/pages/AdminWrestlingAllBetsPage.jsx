@@ -80,7 +80,7 @@ const BetDetailsModal = ({ isOpen, onClose, bet }) => {
       <div className={`${gradientCardClass} w-full max-w-2xl relative overflow-hidden animate-scaleIn`}>
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-white/5 rounded-full blur-3xl" />
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-white/5 rounded-full blur-3xl" />
-        
+
         <div className="relative z-10 p-6 border-b border-white/10">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-white/20 to-white/5 
@@ -158,11 +158,11 @@ const BetDetailsModal = ({ isOpen, onClose, bet }) => {
                 <div className="flex items-center gap-3 text-sm">
                   <span className="text-white/60 w-20">Result</span>
                   <span className={`px-3 py-1 rounded-full text-xs font-medium
-                    ${!bet.settled ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' : 
+                    ${!bet.settled ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
                       bet.result === 'WON' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
-                      bet.result === 'LOST' ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
-                      bet.result === 'CANCELLED' ? 'bg-gray-500/20 text-gray-300 border border-gray-500/30' :
-                      'bg-white/10 text-white/80 border border-white/20'}`}>
+                        bet.result === 'LOST' ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
+                          bet.result === 'CANCELLED' ? 'bg-gray-500/20 text-gray-300 border border-gray-500/30' :
+                            'bg-white/10 text-white/80 border border-white/20'}`}>
                     {bet.result || 'PENDING'}
                   </span>
                 </div>
@@ -202,8 +202,8 @@ const BetDetailsModal = ({ isOpen, onClose, bet }) => {
 /* --------------------------------------------------------
    RESULT BADGE COMPONENT
 -------------------------------------------------------- */
-const ResultBadge = ({ result, settled }) => {
-  if (!settled) {
+const ResultBadge = ({ status }) => {
+  if (status === 0) {
     return (
       <span className="px-3 py-1.5 bg-yellow-500/20 rounded-lg text-yellow-300 text-xs font-medium border border-yellow-500/30">
         PENDING
@@ -211,32 +211,23 @@ const ResultBadge = ({ result, settled }) => {
     );
   }
 
-  switch(result) {
-    case 'WON':
-      return (
-        <span className="px-3 py-1.5 bg-emerald-500/20 rounded-lg text-emerald-300 text-xs font-medium border border-emerald-500/30">
-          WON
-        </span>
-      );
-    case 'LOST':
-      return (
-        <span className="px-3 py-1.5 bg-red-500/20 rounded-lg text-red-300 text-xs font-medium border border-red-500/30">
-          LOST
-        </span>
-      );
-    case 'CANCELLED':
-      return (
-        <span className="px-3 py-1.5 bg-gray-500/20 rounded-lg text-gray-300 text-xs font-medium border border-gray-500/30">
-          CANCELLED
-        </span>
-      );
-    default:
-      return (
-        <span className="px-3 py-1.5 bg-white/10 rounded-lg text-white/80 text-xs font-medium border border-white/20">
-          {result || 'N/A'}
-        </span>
-      );
+  if (status === 1) {
+    return (
+      <span className="px-3 py-1.5 bg-emerald-500/20 rounded-lg text-emerald-300 text-xs font-medium border border-emerald-500/30">
+        WON
+      </span>
+    );
   }
+
+  if (status === 2) {
+    return (
+      <span className="px-3 py-1.5 bg-red-500/20 rounded-lg text-red-300 text-xs font-medium border border-red-500/30">
+        LOST
+      </span>
+    );
+  }
+
+  return null;
 };
 
 /* --------------------------------------------------------
@@ -247,7 +238,7 @@ const AdminWrestlingAllBetsPage = () => {
   const { bets, loading, error } = useSelector(
     (s) => s.wrestlingBetAdmin
   );
-  
+
   const [searchQuery, setSearchQuery] = useState("");
   const [filterResult, setFilterResult] = useState("ALL");
   const [selectedBet, setSelectedBet] = useState(null);
@@ -266,40 +257,47 @@ const AdminWrestlingAllBetsPage = () => {
   // Filter bets based on search and result filter
   const filteredBets = useMemo(() => {
     let filtered = bets;
-    
+
     // Apply result filter
-    if (filterResult !== "ALL") {
-      if (filterResult === "PENDING") {
-        filtered = filtered.filter(b => !b.settled);
-      } else {
-        filtered = filtered.filter(b => b.settled && b.result === filterResult);
-      }
+    if (filterResult === "PENDING") {
+      filtered = filtered.filter(b => b.status === 0);
     }
-    
+
+    if (filterResult === "WON") {
+      filtered = filtered.filter(b => b.status === 1);
+    }
+
+    if (filterResult === "LOST") {
+      filtered = filtered.filter(b => b.status === 2);
+    }
+
     // Apply search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(b => 
+      filtered = filtered.filter(b =>
         b.user?.mobile?.toLowerCase().includes(query) ||
         b.teamName?.toLowerCase().includes(query) ||
         b._id?.toLowerCase().includes(query) ||
         b.user?._id?.toLowerCase().includes(query)
       );
     }
-    
+
     return filtered;
   }, [bets, searchQuery, filterResult]);
 
   // Calculate stats
   const stats = useMemo(() => {
     const total = bets.length;
-    const pending = bets.filter(b => !b.settled).length;
-    const won = bets.filter(b => b.settled && b.result === 'WON').length;
-    const lost = bets.filter(b => b.settled && b.result === 'LOST').length;
-    const cancelled = bets.filter(b => b.settled && b.result === 'CANCELLED').length;
-    const totalStake = bets.reduce((sum, b) => sum + (b.stake || 0), 0);
-    
-    return { total, pending, won, lost, cancelled, totalStake };
+    const pending = bets.filter(b => b.status === 0).length;
+    const won = bets.filter(b => b.status === 1).length;
+    const lost = bets.filter(b => b.status === 2).length;
+
+    const totalStake = bets.reduce(
+      (sum, b) => sum + (b.betAmount || 0),
+      0
+    );
+
+    return { total, pending, won, lost, totalStake };
   }, [bets]);
 
   // Get unique result types for filter
@@ -335,7 +333,7 @@ const AdminWrestlingAllBetsPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-[#0A0C0F] to-[#030405] p-4 md:p-6 lg:p-8">
-      
+
       {/* Header Section */}
       <div className={`${gradientCardClass} p-5 md:p-6 mb-6`}>
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
@@ -368,7 +366,7 @@ const AdminWrestlingAllBetsPage = () => {
               />
               <MdSearch className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40" size={18} />
             </div>
-            
+
             <select
               value={filterResult}
               onChange={(e) => setFilterResult(e.target.value)}
@@ -479,7 +477,7 @@ const AdminWrestlingAllBetsPage = () => {
       {/* Main Table Card */}
       <div className={`${gradientCardClass} overflow-hidden`}>
         <div className="relative z-10">
-          
+
           {/* Table Header with count */}
           <div className="p-5 border-b border-white/10 flex justify-between items-center bg-black/20">
             <div className="flex items-center gap-3">
@@ -488,7 +486,7 @@ const AdminWrestlingAllBetsPage = () => {
                 Showing {filteredBets.length} of {bets.length} bets
               </span>
             </div>
-            
+
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
@@ -509,8 +507,8 @@ const AdminWrestlingAllBetsPage = () => {
               </div>
               <p className="text-white/50 text-lg font-medium">No bets found</p>
               <p className="text-white/30 text-sm mt-1">
-                {searchQuery || filterResult !== 'ALL' 
-                  ? 'Try adjusting your filters' 
+                {searchQuery || filterResult !== 'ALL'
+                  ? 'Try adjusting your filters'
                   : 'No bets have been placed yet'}
               </p>
             </div>
@@ -544,8 +542,8 @@ const AdminWrestlingAllBetsPage = () => {
                 </thead>
                 <tbody className="divide-y divide-white/5">
                   {filteredBets.map((bet) => (
-                    <tr 
-                      key={bet._id} 
+                    <tr
+                      key={bet._id}
                       className="hover:bg-white/5 transition-all duration-200 group"
                     >
                       <td className="px-5 py-4">
@@ -553,8 +551,7 @@ const AdminWrestlingAllBetsPage = () => {
                           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-white/20 to-white/5 
                                         flex items-center justify-center border border-white/20">
                             <span className="text-white font-bold text-sm">
-                              {bet.user?.mobile?.charAt(0) || 'U'}
-                            </span>
+                              {bet.userId?.mobile?.charAt(0) || "U"}                            </span>
                           </div>
                           <div>
                             <div className="font-medium text-white text-sm">
@@ -566,37 +563,37 @@ const AdminWrestlingAllBetsPage = () => {
                           </div>
                         </div>
                       </td>
-                      
+
                       <td className="px-5 py-4">
                         <span className="text-white/80 text-sm font-mono">
-                          {bet.user?.mobile || 'N/A'}
+                          {bet.userId?.mobile || 'N/A'}
                         </span>
                       </td>
-                      
+
                       <td className="px-5 py-4">
                         <span className="px-3 py-1.5 bg-gradient-to-br from-white/10 to-white/5 
                                      rounded-lg text-white/90 text-xs font-medium border border-white/20">
                           {bet.teamName}
                         </span>
                       </td>
-                      
+
                       <td className="px-5 py-4">
                         <span className="px-3 py-1.5 bg-gradient-to-br from-blue-500/10 to-blue-900/20 
                                      rounded-lg text-blue-300 text-xs font-medium border border-blue-500/30">
-                          {bet.btype}
+                          {bet.otype}
                         </span>
                       </td>
-                      
+
                       <td className="px-5 py-4">
                         <span className="text-amber-400 font-bold drop-shadow-[0_0_10px_rgba(251,191,36,0.2)]">
-                          ₹{bet.stake?.toLocaleString()}
+                          ₹{bet.betAmount?.toLocaleString()}
                         </span>
                       </td>
-                      
+
                       <td className="px-5 py-4">
-                        <ResultBadge result={bet.result} settled={bet.settled} />
+                        <ResultBadge status={bet.status} />
                       </td>
-                      
+
                       <td className="px-5 py-4">
                         <button
                           onClick={() => openDetailsModal(bet)}

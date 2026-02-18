@@ -103,27 +103,27 @@ const SettlementConfirmationPopup = ({ isOpen, onClose, onConfirm, betDetails, r
   if (!isOpen) return null;
 
   const getResultConfig = () => {
-    switch(result) {
-      case 'WON':
+    switch (result) {
+      case 1:
         return {
           icon: <FiCheckCircle size={32} className="text-emerald-400" />,
-          title: 'Mark as Won',
-          color: 'emerald',
-          message: 'User will receive their winnings'
+          title: "Mark as Won",
+          color: "emerald",
+          message: "User will receive profit amount"
         };
-      case 'LOST':
+      case 2:
         return {
           icon: <FiXCircle size={32} className="text-red-400" />,
-          title: 'Mark as Lost',
-          color: 'red',
-          message: 'Stake amount will be deducted'
+          title: "Mark as Lost",
+          color: "red",
+          message: "Stake amount will be deducted"
         };
-      case 'CANCELLED':
+      case 0:
         return {
           icon: <MdCancel size={32} className="text-yellow-400" />,
-          title: 'Cancel Bet',
-          color: 'yellow',
-          message: 'Stake amount will be refunded'
+          title: "Reset to Pending",
+          color: "yellow",
+          message: "Bet will move back to pending"
         };
       default:
         return {};
@@ -138,7 +138,7 @@ const SettlementConfirmationPopup = ({ isOpen, onClose, onConfirm, betDetails, r
         {/* Decorative glows */}
         <div className={`absolute -top-40 -right-40 w-80 h-80 bg-${config.color}-500/10 rounded-full blur-3xl`} />
         <div className={`absolute -bottom-40 -left-40 w-80 h-80 bg-${config.color}-500/10 rounded-full blur-3xl`} />
-        
+
         {/* Header */}
         <div className="relative z-10 p-6 border-b border-white/10">
           <div className="flex items-center gap-4">
@@ -171,7 +171,7 @@ const SettlementConfirmationPopup = ({ isOpen, onClose, onConfirm, betDetails, r
             <p className="text-white/90 text-center mb-3">
               Are you sure you want to settle this bet?
             </p>
-            
+
             {betDetails && (
               <div className="space-y-2 mt-3 bg-black/60 p-4 rounded-xl border border-white/10">
                 <div className="flex justify-between text-sm">
@@ -188,7 +188,7 @@ const SettlementConfirmationPopup = ({ isOpen, onClose, onConfirm, betDetails, r
                 </div>
               </div>
             )}
-            
+
             <p className={`text-${config.color}-400/80 text-xs text-center mt-4 flex items-center justify-center gap-1`}>
               <MdInfo size={14} />
               {config.message}
@@ -223,8 +223,7 @@ const SettlementConfirmationPopup = ({ isOpen, onClose, onConfirm, betDetails, r
                 {result === 'WON' && <FiCheckCircle size={16} />}
                 {result === 'LOST' && <FiXCircle size={16} />}
                 {result === 'CANCELLED' && <MdCancel size={16} />}
-                Yes, {result.toLowerCase()}
-              </>
+                Yes, {result === 1 ? "won" : result === 2 ? "lost" : "pending"}              </>
             )}
           </button>
         </div>
@@ -245,7 +244,7 @@ const BetDetailsModal = ({ isOpen, onClose, bet }) => {
         {/* Decorative glows */}
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-white/5 rounded-full blur-3xl" />
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-white/5 rounded-full blur-3xl" />
-        
+
         {/* Header */}
         <div className="relative z-10 p-6 border-b border-white/10">
           <div className="flex items-center gap-3">
@@ -357,7 +356,7 @@ const BetDetailsModal = ({ isOpen, onClose, bet }) => {
 const AdminWrestlingPendingPage = () => {
   const dispatch = useDispatch();
   const { bets, loading, error } = useSelector((s) => s.wrestlingBetAdmin);
-  
+
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("ALL");
   const [selectedBet, setSelectedBet] = useState(null);
@@ -383,17 +382,20 @@ const AdminWrestlingPendingPage = () => {
   const handleSettleBet = async () => {
     setSettlementLoading(true);
     try {
-      await dispatch(settleBet({ 
-        id: settlementPopup.betId, 
-        result: settlementPopup.result 
+      await dispatch(settleBet({
+        id: settlementPopup.betId,
+        status: settlementPopup.result
       }));
-      
-      showToast(
-        `Bet settled as ${settlementPopup.result.toLowerCase()}`, 
-        settlementPopup.result === 'WON' ? 'success' : 
-        settlementPopup.result === 'LOST' ? 'error' : 'warning'
+      const statusText =
+        settlementPopup.result === 1 ? "won" :
+          settlementPopup.result === 2 ? "lost" :
+            "pending";
+
+      showToast(`Bet settled as ${statusText}`,
+        settlementPopup.result === 1 ? "success" :
+          settlementPopup.result === 2 ? "error" :
+            "info"
       );
-      
       setSettlementPopup({ isOpen: false, betId: null, result: null, betDetails: null });
       dispatch(getAllBets());
     } catch (err) {
@@ -417,28 +419,28 @@ const AdminWrestlingPendingPage = () => {
     setShowDetailsModal(true);
   };
 
-  const pendingBets = bets.filter((b) => !b.settled);
+  const pendingBets = bets.filter((b) => b.status === 0);
 
   // Filter bets based on search and type
   const filteredBets = useMemo(() => {
     let filtered = pendingBets;
-    
+
     // Apply type filter
     if (filterType !== "ALL") {
       filtered = filtered.filter(b => b.btype === filterType);
     }
-    
+
     // Apply search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(b => 
+      filtered = filtered.filter(b =>
         b.user?.mobile?.toLowerCase().includes(query) ||
         b.teamName?.toLowerCase().includes(query) ||
         b._id?.toLowerCase().includes(query) ||
         b.user?._id?.toLowerCase().includes(query)
       );
     }
-    
+
     return filtered;
   }, [pendingBets, searchQuery, filterType]);
 
@@ -460,7 +462,7 @@ const AdminWrestlingPendingPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-[#0A0C0F] to-[#030405] p-4 md:p-6 lg:p-8">
-      
+
       {/* Header Section */}
       <div className={`${gradientCardClass} p-5 md:p-6 mb-6`}>
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
@@ -493,7 +495,7 @@ const AdminWrestlingPendingPage = () => {
               />
               <MdSearch className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40" size={18} />
             </div>
-            
+
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
@@ -552,7 +554,7 @@ const AdminWrestlingPendingPage = () => {
             <div>
               <p className="text-white/40 text-xs">Unique Users</p>
               <p className="text-white text-2xl font-bold mt-1">
-                {new Set(pendingBets.map(b => b.user?._id)).size}
+                {new Set(pendingBets.map(b => b.userId?._id)).size}
               </p>
             </div>
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-900/30 
@@ -593,7 +595,7 @@ const AdminWrestlingPendingPage = () => {
       {!loading && (
         <div className={`${gradientCardClass} overflow-hidden`}>
           <div className="relative z-10">
-            
+
             {/* Table Header with count */}
             <div className="p-5 border-b border-white/10 flex justify-between items-center bg-black/20">
               <div className="flex items-center gap-3">
@@ -602,7 +604,7 @@ const AdminWrestlingPendingPage = () => {
                   Showing {filteredBets.length} of {pendingBets.length} pending bets
                 </span>
               </div>
-              
+
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
@@ -623,8 +625,8 @@ const AdminWrestlingPendingPage = () => {
                 </div>
                 <p className="text-white/50 text-lg font-medium">No pending bets found</p>
                 <p className="text-white/30 text-sm mt-1">
-                  {searchQuery || filterType !== 'ALL' 
-                    ? 'Try adjusting your filters' 
+                  {searchQuery || filterType !== 'ALL'
+                    ? 'Try adjusting your filters'
                     : 'All bets have been settled'}
                 </p>
               </div>
@@ -655,8 +657,8 @@ const AdminWrestlingPendingPage = () => {
                   </thead>
                   <tbody className="divide-y divide-white/5">
                     {filteredBets.map((bet) => (
-                      <tr 
-                        key={bet._id} 
+                      <tr
+                        key={bet._id}
                         className="hover:bg-white/5 transition-all duration-200 group"
                       >
                         <td className="px-5 py-4">
@@ -677,67 +679,57 @@ const AdminWrestlingPendingPage = () => {
                             </div>
                           </div>
                         </td>
-                        
+
                         <td className="px-5 py-4">
                           <span className="text-white/80 text-sm font-mono">
                             {bet.user?.mobile || 'N/A'}
                           </span>
                         </td>
-                        
+
                         <td className="px-5 py-4">
                           <span className="px-3 py-1.5 bg-gradient-to-br from-white/10 to-white/5 
                                        rounded-lg text-white/90 text-xs font-medium border border-white/20">
                             {bet.teamName}
                           </span>
                         </td>
-                        
+
                         <td className="px-5 py-4">
                           <span className="px-3 py-1.5 bg-gradient-to-br from-blue-500/10 to-blue-900/20 
                                        rounded-lg text-blue-300 text-xs font-medium border border-blue-500/30">
                             {bet.btype}
                           </span>
                         </td>
-                        
+
                         <td className="px-5 py-4">
                           <span className="text-amber-400 font-bold drop-shadow-[0_0_10px_rgba(251,191,36,0.2)]">
                             ₹{bet.stake?.toLocaleString()}
                           </span>
                         </td>
-                        
+
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-2">
                             <button
-                              onClick={() => openDetailsModal(bet)}
-                              className="p-2 text-white/70 hover:text-white rounded-lg 
-                                       hover:bg-white/5 border border-transparent hover:border-white/20
-                                       transition-all duration-300"
-                              title="View Details"
-                            >
-                              <MdVisibility size={18} />
-                            </button>
-                            
-                            <button
-                              onClick={() => openSettlementPopup(bet._id, 'WON', bet)}
+                              onClick={() => openSettlementPopup(bet._id, 1, bet)}
                               className={wonButtonClass}
                             >
                               <FiCheckCircle size={14} />
                               WON
                             </button>
-                            
+
                             <button
-                              onClick={() => openSettlementPopup(bet._id, 'LOST', bet)}
+                              onClick={() => openSettlementPopup(bet._id, 2, bet)}
                               className={lostButtonClass}
                             >
                               <FiXCircle size={14} />
                               LOST
                             </button>
-                            
+
                             <button
-                              onClick={() => openSettlementPopup(bet._id, 'CANCELLED', bet)}
+                              onClick={() => openSettlementPopup(bet._id, 0, bet)}
                               className={cancelButtonClass}
                             >
                               <MdCancel size={14} />
-                              CANCEL
+                              PENDING
                             </button>
                           </div>
                         </td>

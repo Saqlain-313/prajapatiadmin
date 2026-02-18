@@ -76,46 +76,41 @@ const inputStyleClasses =
 /* --------------------------------------------------------
    RESULT BADGE COMPONENT
 -------------------------------------------------------- */
-const ResultBadge = ({ result }) => {
-  switch(result) {
-    case 'WON':
-      return (
-        <span className="px-3 py-1.5 bg-emerald-500/20 rounded-lg text-emerald-300 text-xs font-medium border border-emerald-500/30">
-          WON
-        </span>
-      );
-    case 'LOST':
-      return (
-        <span className="px-3 py-1.5 bg-red-500/20 rounded-lg text-red-300 text-xs font-medium border border-red-500/30">
-          LOST
-        </span>
-      );
-    case 'CANCELLED':
-      return (
-        <span className="px-3 py-1.5 bg-gray-500/20 rounded-lg text-gray-300 text-xs font-medium border border-gray-500/30">
-          CANCELLED
-        </span>
-      );
-    default:
-      return (
-        <span className="px-3 py-1.5 bg-white/10 rounded-lg text-white/80 text-xs font-medium border border-white/20">
-          {result || 'PENDING'}
-        </span>
-      );
+const ResultBadge = ({ status }) => {
+  if (status === 1) {
+    return (
+      <span className="px-3 py-1.5 bg-emerald-500/20 rounded-lg text-emerald-300 text-xs font-medium border border-emerald-500/30">
+        WON
+      </span>
+    );
   }
+
+  if (status === 2) {
+    return (
+      <span className="px-3 py-1.5 bg-red-500/20 rounded-lg text-red-300 text-xs font-medium border border-red-500/30">
+        LOST
+      </span>
+    );
+  }
+
+  return (
+    <span className="px-3 py-1.5 bg-yellow-500/20 rounded-lg text-yellow-300 text-xs font-medium border border-yellow-500/30">
+      PENDING
+    </span>
+  );
 };
 
 /* --------------------------------------------------------
    STATUS BADGE COMPONENT
 -------------------------------------------------------- */
-const StatusBadge = ({ settled }) => {
-  return settled ? (
-    <span className="px-3 py-1.5 bg-emerald-500/20 rounded-lg text-emerald-300 text-xs font-medium border border-emerald-500/30">
-      SETTLED
-    </span>
-  ) : (
+const StatusBadge = ({ status }) => {
+  return status === 0 ? (
     <span className="px-3 py-1.5 bg-yellow-500/20 rounded-lg text-yellow-300 text-xs font-medium border border-yellow-500/30">
       PENDING
+    </span>
+  ) : (
+    <span className="px-3 py-1.5 bg-emerald-500/20 rounded-lg text-emerald-300 text-xs font-medium border border-emerald-500/30">
+      SETTLED
     </span>
   );
 };
@@ -142,21 +137,21 @@ const MatchCard = ({ game, isOpen, onToggle }) => {
   // Admin Profit / Loss Calculation (Only Settled Bets)
   const adminSummary = game.bets.reduce(
     (acc, bet) => {
-      if (!bet.settled) return acc;
+      if (bet.status === 0) return acc;
 
-      if (bet.btype === "BACK") {
-        if (bet.result === "WON") {
-          acc.loss += bet.profit; // admin loss
-        } else if (bet.result === "LOST") {
-          acc.profit += bet.stake; // admin profit
+      if (bet.otype === "BACK") {
+        if (bet.status === 1) {
+          acc.loss += bet.profit || 0;
+        } else if (bet.status === 2) {
+          acc.profit += bet.betAmount || 0;
         }
       }
 
-      if (bet.btype === "LAY") {
-        if (bet.result === "WON") {
-          acc.profit += bet.liability; // admin profit
-        } else if (bet.result === "LOST") {
-          acc.loss += bet.profit; // admin loss
+      if (bet.otype === "LAY") {
+        if (bet.status === 1) {
+          acc.profit += bet.liability || 0;
+        } else if (bet.status === 2) {
+          acc.loss += bet.profit || 0;
         }
       }
 
@@ -169,8 +164,8 @@ const MatchCard = ({ game, isOpen, onToggle }) => {
 
   // Calculate total bets and stake
   const totalBets = game.bets.length;
-  const settledBets = game.bets.filter(b => b.settled).length;
-  const totalStake = game.bets.reduce((sum, b) => sum + (b.stake || 0), 0);
+  const settledBets = game.bets.filter(b => b.status !== 0).length;
+  const totalStake = game.bets.reduce((sum, b) => sum + (b.betAmount || 0), 0);
 
   return (
     <div className={`${gradientCardClass} overflow-hidden mb-6`}>
@@ -187,7 +182,7 @@ const MatchCard = ({ game, isOpen, onToggle }) => {
                           shadow-[0_0_20px_rgba(255,165,0,0.1)]">
               <MdSportsKabaddi size={30} className="text-orange-400" />
             </div>
-            
+
             <div>
               <div className="flex items-center gap-3 mb-1">
                 <h2 className="text-2xl font-bold text-white drop-shadow-[0_2px_5px_black]">
@@ -197,11 +192,11 @@ const MatchCard = ({ game, isOpen, onToggle }) => {
                   {totalBets} bets
                 </span>
               </div>
-              
+
               <p className="text-lg text-white/80 font-medium mb-3">
-                {game.teams.map((t) => t.tname).join(" vs ")}
+                {game.eventName}
               </p>
-              
+
               <div className="flex flex-wrap items-center gap-4 text-sm">
                 <span className="text-white/60 flex items-center gap-1">
                   <MdAttachMoney size={16} className="text-amber-400" />
@@ -234,18 +229,17 @@ const MatchCard = ({ game, isOpen, onToggle }) => {
               <div className="w-px h-8 bg-white/20" />
               <div className="text-right">
                 <span className="text-white/40 text-xs">Net</span>
-                <p className={`font-bold text-lg ${
-                  netAdmin >= 0 ? 'text-emerald-400' : 'text-red-400'
-                }`}>
+                <p className={`font-bold text-lg ${netAdmin >= 0 ? 'text-emerald-400' : 'text-red-400'
+                  }`}>
                   ₹{netAdmin.toLocaleString()}
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-2 text-white/40">
               <span className="text-xs">{isOpen ? 'Hide details' : 'Show details'}</span>
-              {isOpen ? 
-                <MdExpandLess size={24} className="text-white/60" /> : 
+              {isOpen ?
+                <MdExpandLess size={24} className="text-white/60" /> :
                 <MdExpandMore size={24} className="text-white/60" />
               }
             </div>
@@ -255,9 +249,8 @@ const MatchCard = ({ game, isOpen, onToggle }) => {
 
       {/* Collapsible Table */}
       <div
-        className={`transition-all duration-500 ease-in-out ${
-          isOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
-        }`}
+        className={`transition-all duration-500 ease-in-out ${isOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
+          }`}
       >
         <div className="p-6 bg-black/40">
           <div className="overflow-x-auto rounded-xl border border-white/10">
@@ -302,76 +295,76 @@ const MatchCard = ({ game, isOpen, onToggle }) => {
               <tbody className="divide-y divide-white/5">
                 {game.bets.map((bet) => (
                   <tr key={bet._id} className="hover:bg-white/5 transition-all duration-200">
+
+                    {/* USER */}
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-white/20 to-white/5 
-                                      flex items-center justify-center border border-white/20">
+                      flex items-center justify-center border border-white/20">
                           <span className="text-white font-bold text-sm">
-                            {bet.user?.uid?.charAt(0) || 'U'}
+                            {bet.userId?.mobile?.charAt(0) || "U"}
                           </span>
                         </div>
                         <div>
                           <div className="font-medium text-white text-sm">
-                            {bet.user?.uid || 'N/A'}
+                            {bet.userId?.mobile || "N/A"}
                           </div>
                         </div>
                       </div>
                     </td>
-                    
-                    <td className="px-5 py-4">
-                      <span className="text-white/80 text-sm font-mono">
-                        {bet.user?.mobile || 'N/A'}
-                      </span>
+
+                    {/* MOBILE */}
+                    <td className="px-5 py-4 text-white/80 text-sm font-mono">
+                      {bet.userId?.mobile || "N/A"}
                     </td>
-                    
+
+                    {/* TEAM */}
                     <td className="px-5 py-4">
-                      <span className="px-3 py-1.5 bg-gradient-to-br from-white/10 to-white/5 
-                                   rounded-lg text-white/90 text-xs font-medium border border-white/20">
+                      <span className="px-3 py-1.5 bg-white/10 rounded-lg text-xs border border-white/20">
                         {bet.teamName}
                       </span>
                     </td>
-                    
+
+                    {/* TYPE */}
                     <td className="px-5 py-4">
-                      <BetTypeBadge btype={bet.btype} />
+                      <BetTypeBadge btype={bet.otype} />
                     </td>
-                    
+
+                    {/* RATE */}
+                    <td className="px-5 py-4 text-white font-mono">
+                      {bet.price?.toFixed(2)}
+                    </td>
+
+                    {/* STAKE */}
+                    <td className="px-5 py-4 text-amber-400 font-bold">
+                      ₹{bet.betAmount?.toLocaleString()}
+                    </td>
+
+                    {/* PROFIT */}
+                    <td className="px-5 py-4 text-emerald-400 font-semibold">
+                      ₹{bet.profit?.toLocaleString() || 0}
+                    </td>
+
+                    {/* LIABILITY */}
+                    <td className="px-5 py-4 text-red-400 font-semibold">
+                      ₹{bet.liability?.toLocaleString() || 0}
+                    </td>
+
+                    {/* RESULT */}
                     <td className="px-5 py-4">
-                      <span className="text-white font-mono">
-                        {bet.rate?.toFixed(2)}
-                      </span>
+                      <ResultBadge status={bet.status} />
                     </td>
-                    
+
+                    {/* STATUS */}
                     <td className="px-5 py-4">
-                      <span className="text-amber-400 font-bold">
-                        ₹{bet.stake?.toLocaleString()}
-                      </span>
+                      <StatusBadge status={bet.status} />
                     </td>
-                    
-                    <td className="px-5 py-4">
-                      <span className="text-emerald-400 font-semibold">
-                        ₹{bet.profit?.toLocaleString()}
-                      </span>
+
+                    {/* DATE */}
+                    <td className="px-5 py-4 text-white/40 text-xs">
+                      {new Date(bet.createdAt).toLocaleString()}
                     </td>
-                    
-                    <td className="px-5 py-4">
-                      <span className="text-red-400 font-semibold">
-                        ₹{bet.liability?.toLocaleString()}
-                      </span>
-                    </td>
-                    
-                    <td className="px-5 py-4">
-                      <ResultBadge result={bet.result} />
-                    </td>
-                    
-                    <td className="px-5 py-4">
-                      <StatusBadge settled={bet.settled} />
-                    </td>
-                    
-                    <td className="px-5 py-4">
-                      <span className="text-white/40 text-xs">
-                        {new Date(bet.createdAt).toLocaleString()}
-                      </span>
-                    </td>
+
                   </tr>
                 ))}
               </tbody>
@@ -411,13 +404,14 @@ const AdminWrestlingBetHistoryPage = () => {
     const map = {};
 
     bets.forEach((bet) => {
-      const mid = bet.match?.mid;
+      const mid = bet.sid; // ✅ USE sid (match id)
+
       if (!mid) return;
 
       if (!map[mid]) {
         map[mid] = {
           mid,
-          teams: bet.match.teams,
+          eventName: bet.eventName, // ✅ from API
           bets: [],
         };
       }
@@ -431,9 +425,9 @@ const AdminWrestlingBetHistoryPage = () => {
   // Filter matches based on search
   const filteredGroups = useMemo(() => {
     if (!searchQuery) return groupedBets;
-    
+
     const query = searchQuery.toLowerCase();
-    return groupedBets.filter(game => 
+    return groupedBets.filter(game =>
       game.mid.toLowerCase().includes(query) ||
       game.teams.some(t => t.tname.toLowerCase().includes(query))
     );
@@ -450,22 +444,24 @@ const AdminWrestlingBetHistoryPage = () => {
     groupedBets.forEach(game => {
       game.bets.forEach(bet => {
         totalBets++;
-        totalStake += bet.stake || 0;
-        if (bet.settled) totalSettled++;
-        
-        if (bet.settled) {
-          if (bet.btype === "BACK") {
-            if (bet.result === "WON") {
-              totalLoss += bet.profit;
-            } else if (bet.result === "LOST") {
-              totalProfit += bet.stake;
+        totalStake += bet.betAmount || 0;
+
+        if (bet.status !== 0) totalSettled++;
+
+        if (bet.status !== 0) {
+          if (bet.otype === "back") {
+            if (bet.status === 1) {
+              totalLoss += bet.profit || 0;
+            } else if (bet.status === 2) {
+              totalProfit += bet.betAmount || 0;
             }
           }
-          if (bet.btype === "LAY") {
-            if (bet.result === "WON") {
-              totalProfit += bet.liability;
-            } else if (bet.result === "LOST") {
-              totalLoss += bet.profit;
+
+          if (bet.otype === "lay") {
+            if (bet.status === 1) {
+              totalProfit += bet.liability || 0;
+            } else if (bet.status === 2) {
+              totalLoss += bet.profit || 0;
             }
           }
         }
@@ -510,7 +506,7 @@ const AdminWrestlingBetHistoryPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-[#0A0C0F] to-[#030405] p-4 md:p-6 lg:p-8">
-      
+
       {/* Header Section */}
       <div className={`${gradientCardClass} p-5 md:p-6 mb-6`}>
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
@@ -668,9 +664,8 @@ const AdminWrestlingBetHistoryPage = () => {
             </div>
             <div>
               <p className="text-white/60 text-sm">Net Admin Profit / Loss</p>
-              <p className={`text-3xl font-bold ${
-                overallStats.netAdmin >= 0 ? 'text-emerald-400' : 'text-red-400'
-              }`}>
+              <p className={`text-3xl font-bold ${overallStats.netAdmin >= 0 ? 'text-emerald-400' : 'text-red-400'
+                }`}>
                 ₹{overallStats.netAdmin.toLocaleString()}
               </p>
             </div>

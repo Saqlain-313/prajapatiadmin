@@ -2,93 +2,68 @@ const mongoose = require("mongoose");
 
 const wrestlingBetSchema = new mongoose.Schema(
   {
-    /* =====================
-       USER INFO
-    ===================== */
-    user: {
+    userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User", // aapka user model name
-      required: true,
-      index: true,
+      ref: "User",
     },
-
-    /* =====================
-       MATCH INFO
-    ===================== */
-    match: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "WrestlingMatch",
+    gameId: {
+      type: String,
       required: true,
-      index: true,
     },
-
-    mid: {
-      type: Number,
+    invite: String,
+    userRole: String,
+    sid: {
+      type: String,
       required: true,
-      index: true,
     },
-
-    /* =====================
-       TEAM + BOX INFO
-    ===================== */
-    teamTid: {
+    otype: {
+      type: String,
+      required: true,
+    },
+    price: {
       type: Number,
       required: true,
     },
-
+    xValue: {
+      type: Number,
+      required: true,
+    },
+    resultAmount: {
+      type: Number,
+      default: 0,
+    },
+    betAmount: {
+      type: Number,
+      default: 0,
+    },
+    status: {
+      type: Number,
+      default: 0,
+    },
+    eventName: {
+      type: String,
+      required: true,
+    },
+    marketName: {
+      type: String,
+      required: true,
+    },
+    gameType: {
+      type: String,
+      required: true,
+    },
+    gameName: {
+      type: String,
+      required: true,
+    },
     teamName: {
       type: String,
       required: true,
     },
-
-    boxId: {
-      type: Number,
-      required: true,
-    },
-
-    btype: {
-      type: String,
-      enum: ["BACK", "LAY"],
-      required: true,
-    },
-
-    /* =====================
-       BET VALUES
-    ===================== */
-    rate: {
-      type: Number,
-      required: true,
-    },
-
-    stake: {
-      type: Number,
-      required: true,
-    },
-
-    profit: {
-      type: Number,
-      default: 0,
-    },
-
-    liability: {
-      type: Number,
-      default: 0,
-    },
-
-    /* =====================
-       RESULT
-    ===================== */
-    result: {
-      type: String,
-      enum: ["PENDING", "WON", "LOST", "CANCELLED"],
-      default: "PENDING",
-      index: true,
-    },
-
-    settled: {
-      type: Boolean,
-      default: false,
-      index: true,
+    betResult: String,
+    date: {
+      type: Date,
+      default: Date.now,
     },
   },
   { timestamps: true }
@@ -97,7 +72,7 @@ const wrestlingBetSchema = new mongoose.Schema(
 /* =====================
    IMPORTANT INDEXES
 ===================== */
-wrestlingBetSchema.index({ user: 1, match: 1 });
-wrestlingBetSchema.index({ mid: 1, result: 1 });
+wrestlingBetSchema.index({ user: 1, sid: 1 });
+wrestlingBetSchema.index({ sid: 1, result: 1 });
 
 module.exports = mongoose.model("WrestlingBet", wrestlingBetSchema);

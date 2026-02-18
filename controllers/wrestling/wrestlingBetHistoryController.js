@@ -1,12 +1,12 @@
 const WrestlingBetHistory = require("../../models/WRESTLING/WrestlingBetHistory");
-const User = require("../../models/usermodel"); 
 
-// 🔹 Get All Bet History (Admin)
+/* =====================================
+   1️⃣ GET ALL BET HISTORY (ADMIN)
+===================================== */
 exports.getAllWrestlingBetHistory = async (req, res) => {
   try {
     const bets = await WrestlingBetHistory.find()
-      .populate("user")       // ✅ full user document
-      .populate("match")      // ✅ full match document
+      .populate("userId") // ✅ correct field
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -23,13 +23,15 @@ exports.getAllWrestlingBetHistory = async (req, res) => {
   }
 };
 
-// 🔹 Get Logged In User Bet History
+
+/* =====================================
+   2️⃣ GET LOGGED IN USER BET HISTORY
+===================================== */
 exports.getMyWrestlingBetHistory = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    const bets = await WrestlingBetHistory.find({ user: userId })
-      .populate("match", "mid")
+    const bets = await WrestlingBetHistory.find({ userId }) // ✅ fixed
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -46,6 +48,9 @@ exports.getMyWrestlingBetHistory = async (req, res) => {
 };
 
 
+/* =====================================
+   3️⃣ GET BET HISTORY BY MATCH ID (MID)
+===================================== */
 exports.getWrestlingBetHistoryByMid = async (req, res) => {
   try {
     const { mid } = req.params;
@@ -57,11 +62,9 @@ exports.getWrestlingBetHistoryByMid = async (req, res) => {
       });
     }
 
-    console.log(mid)
-
-    const bets = await WrestlingBetHistory.find({ mid }) 
-      .populate("user")      // full user details
-      .populate("match")     // full match details
+    // ✅ sid = match id in your schema
+    const bets = await WrestlingBetHistory.find({ sid: mid })
+      .populate("userId")
       .sort({ createdAt: -1 });
 
     if (!bets.length) {

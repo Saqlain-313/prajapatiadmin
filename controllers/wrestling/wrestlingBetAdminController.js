@@ -1,13 +1,14 @@
 const WrestlingBet = require("../../models/WRESTLING/WrestlingBet");
-const WrestlingBetHistory = require('../../models/WRESTLING/WrestlingBetHistory')
+const WrestlingBetHistory = require("../../models/WRESTLING/WrestlingBetHistory");
 const mongoose = require("mongoose");
 
-
+/* =====================================
+   1️⃣ GET ALL WRESTLING BETS
+===================================== */
 exports.getAllWrestlingBets = async (req, res) => {
   try {
     const bets = await WrestlingBet.find()
-      .populate("user")
-      .populate("match")
+      .populate("userId")
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -23,14 +24,14 @@ exports.getAllWrestlingBets = async (req, res) => {
   }
 };
 
+
 /* =====================================
    2️⃣ GET BET BY ID
 ===================================== */
 exports.getWrestlingBetById = async (req, res) => {
   try {
     const bet = await WrestlingBet.findById(req.params.id)
-      .populate("user")
-      .populate("match");
+      .populate("userId");
 
     if (!bet) {
       return res.status(404).json({
@@ -51,56 +52,74 @@ exports.getWrestlingBetById = async (req, res) => {
   }
 };
 
+
 /* =====================================
-   3️⃣ ADMIN SETTLE / APPROVE BET
+   3️⃣ UPDATE BET STATUS (0,1,2)
 ===================================== */
 exports.updateWrestlingBetStatus = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    const { result } = req.body; // WON / LOST / CANCELLED
+    const { status } = req.body;
 
-    // ✅ Result Validation
-    if (!["WON", "LOST", "CANCELLED"].includes(result)) {
-      throw new Error("Invalid result type");
+
+    if (![0, 1, 2].includes(status)) {
+      throw new Error("Invalid status value");
     }
 
-    const bet = await WrestlingBet.findOne({
-      _id: req.params.id,
-      settled: false, // 🔒 Prevent double settlement
-    })
-      .populate("user")
+    const bet = await WrestlingBet.findById(req.params.id)
+      .populate("userId")
       .session(session);
 
     if (!bet) {
-      throw new Error("Bet not found or already settled");
+      throw new Error("Bet not found");
     }
 
-    // 🔹 Update Bet Status
-    bet.result = result;
-    bet.settled = true;
-
-    // 💰 CREDIT LOGIC
-    if (result === "WON") {
-      bet.user.credit += bet.profit;
+    // 🚫 prevent double settlement
+    if (bet.status !== 0) {
+      throw new Error("Bet already settled");
     }
 
-    if (result === "CANCELLED") {
-      bet.user.credit += bet.stake;
+    const stake = Number(bet.betAmount) || 0;
+    const profit = Number(bet.resultAmount) || 0;
+
+    /* ===============================
+       STATUS LOGIC
+    =============================== */
+
+    bet.status = status;
+
+    if (status === 1) {
+      // WON
+      bet.betResult = "WON";
+      bet.userId.credit += profit;
     }
 
-    // LOST case → nothing added (stake already deducted)
+    if (status === 2) {
+      // LOST
+      bet.betResult = "LOST";
+      // no credit
+    }
 
-    await bet.user.save({ session });
+
+    await bet.userId.save({ session });
     await bet.save({ session });
 
-    // 🔹 Update History (Better way: use betId if possible)
+    /* ===============================
+       UPDATE HISTORY
+    =============================== */
+
     await WrestlingBetHistory.updateOne(
-      { betId: bet._id }, // 👈 recommend storing betId in history
       {
-        result: result === "CANCELLED" ? "VOID" : result,
-        settled: true,
+        userId: bet.userId._id,
+        sid: bet.sid,
+        gameId: bet.gameId,
+      },
+      {
+        status: status,
+        betResult: bet.betResult,
+        resultAmount: bet.resultAmount,
       },
       { session }
     );
@@ -110,9 +129,10 @@ exports.updateWrestlingBetStatus = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Bet settled successfully",
+      message: "Bet status updated successfully",
       bet,
     });
+
   } catch (error) {
     await session.abortTransaction();
     session.endSession();

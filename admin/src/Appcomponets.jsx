@@ -159,9 +159,9 @@
 
 
 
-
 import React, { useState } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import "./App.css";
 
 import Sidebar from "./componets/Sidebar";
@@ -191,13 +191,22 @@ import AdminWrestlingPendingPage from "./pages/AdminWrestlingPendingPage";
 import AdminWrestlingSettledPage from "./pages/AdminWrestlingSettledPage";
 import ImagesPage from "./pages/ImagesPage";
 import ReferralSettings from "./pages/ReferralSettings";
+import Matchcontrol from "./pages/live/Matchcontrol";
 
-function Layout() {
+
+
+// Super Admin Layout (with sidebar and navbar)
+function SuperAdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { user } = useSelector((state) => state.auth);
+
+  // If not super admin, redirect to login
+  if (user?.role !== "admin") {
+    return <Navigate to="/login" replace />;
+  }
 
   return (
     <div className="flex h-screen bg-black overflow-hidden">
-      
       {/* Sidebar */}
       <Sidebar
         sidebarOpen={sidebarOpen}
@@ -296,6 +305,22 @@ function Layout() {
   );
 }
 
+// Sub Admin Layout (no sidebar, no navbar - just the component)
+function SubAdminLayout() {
+  const { user } = useSelector((state) => state.auth);
+
+  // If not subadmin, redirect to login
+  if (user?.role !== "subadmin") {
+    return <Navigate to="/login" replace />;
+  }
+
+  return (
+    <div className="min-h-screen bg-black">
+      <Matchcontrol />
+    </div>
+  );
+}
+
 function AppComponent() {
   return (
     <Routes>
@@ -303,8 +328,13 @@ function AppComponent() {
       <Route path="/login" element={<Login />} />
       <Route path="/forget" element={<Forget />} />
 
-      {/* Private Layout */}
-      <Route path="/*" element={<Layout />} />
+      {/* Subadmin Route - No sidebar, no navbar */}
+      <Route path="/livematch" element={<PrivateRoute />}>
+        <Route index element={<SubAdminLayout />} />
+      </Route>
+
+      {/* Super Admin Routes - With sidebar and navbar */}
+      <Route path="/*" element={<SuperAdminLayout />} />
     </Routes>
   );
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { loginUser } from "../store/reducer/authReducer";
+import { loginUser, logoutUser } from "../store/reducer/authReducer";
 import { useNavigate } from "react-router-dom";
 
 /* ------------------ ICON LIBRARY (only icons, no emojis) ------------------ */
@@ -55,7 +55,7 @@ const ForgotPassword = ({ onBackToLogin }) => {
   const [mobile, setMobile] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [error, setError] = useState(null);
+  const [error, setError] = useState("");
 
   const handleForgotPassword = (e) => {
     e.preventDefault();
@@ -143,22 +143,32 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [roleError, setRoleError] = useState(null);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
-  const [showPassword, setShowPassword] = useState(false); // Password visibility state
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginAttempted, setLoginAttempted] = useState(false);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { loading, error, user } = useSelector((state) => state.auth);
 
+  // Handle redirection based on role
   useEffect(() => {
-    if (user) {
-      if (user.role === "admin") navigate("/");
-      else setRoleError("Only Admin can log in.");
+    if (user && loginAttempted) {
+      if (user.role === "admin") {
+        navigate("/");
+      } else if (user.role === "subadmin") {
+        navigate("/livematch");
+      } else if (user.role === "user") {
+        setRoleError("You don't have permission to access this admin panel.");
+        // logoutUser the user since they don't have permission
+        dispatch(logoutUser());
+      }
     }
-  }, [user, navigate]);
+  }, [user, navigate, dispatch, loginAttempted]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     setRoleError(null);
+    setLoginAttempted(true);
     dispatch(loginUser({ mobile, password }));
   };
 
@@ -235,7 +245,7 @@ const Login = () => {
                       value={mobile}
                       onChange={(e) => setMobile(e.target.value)}
                       required
-                      placeholder="admin@wrestling.com"
+                      placeholder="Enter your mobile number"
                     />
                     <HiOutlineIdentification className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
                   </div>

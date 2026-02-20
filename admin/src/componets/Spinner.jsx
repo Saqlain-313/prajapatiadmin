@@ -28,7 +28,7 @@ const Spinner = ({ path = "login" }) => {
         /* From Uiverse.io by clarencedion */
         <div className="w-full fixed h-[100vh] mx-auto overflow-hidden flex justify-center items-center bg-white">
         <div
-  class="w-10 h-10 border-4 border-t-blue-500 border-gray-300 rounded-full animate-spin"
+  className="w-10 h-10 border-4 border-t-blue-500 border-gray-300 rounded-full animate-spin"
 ></div>
         </div>
       ) : (

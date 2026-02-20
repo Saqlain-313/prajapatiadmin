@@ -6,14 +6,14 @@ const router = express.Router();
 
 
 // Admin route
-router.get("/all", protect, getAllWrestlingBetHistory);
+router.get("/wrestling-bet-history/all", protect, getAllWrestlingBetHistory);
 
 // User route
 
-router.get("/wrestling-bets/:mid", protect, getWrestlingBetHistoryByMid);
+router.get("/wrestling-bet-history/wrestling-bets/:mid", protect, getWrestlingBetHistoryByMid);
 
 router.get(
-    "/match-profit/:mid", protect, getMatchProfitSummary);
+    "/wrestling-bet-history/match-profit/:mid", protect, getMatchProfitSummary);
 
 module.exports = router;
 

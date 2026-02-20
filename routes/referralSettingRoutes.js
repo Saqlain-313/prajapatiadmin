@@ -7,12 +7,12 @@ const {
   deleteReferralCommission,
 } = require("../controllers/referralSettingController");
 
-router.post("/referral-setting", setReferralCommission);
+router.post("/referral/referral-setting", setReferralCommission);
 
-router.get("/getreferral-setting", getReferralCommissions);
+router.get("/referral/getreferral-setting", getReferralCommissions);
 
-router.put("/updatereferral-setting", updateReferralCommission);
+router.put("/referral/updatereferral-setting", updateReferralCommission);
 
-router.delete("/deletereferral-setting/:level", deleteReferralCommission);
+router.delete("/referral/deletereferral-setting/:level", deleteReferralCommission);
 
 module.exports = router;

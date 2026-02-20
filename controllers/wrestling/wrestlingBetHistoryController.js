@@ -112,90 +112,35 @@ exports.getMatchProfitSummary = async (req, res) => {
     const teams = {};
 
     // =========================
-    // STEP 1️⃣ TEAM-WISE COUNT
+    // TEAM-WISE TOTAL COUNT
     // =========================
     bets.forEach((bet) => {
       const { teamName, otype, price, betAmount } = bet;
 
       if (!teams[teamName]) {
         teams[teamName] = {
-          backStake: 0,
-          backProfit: 0,
-          layStake: 0,
-          layLiability: 0,
+          totalBackStake: 0,
+          totalBackProfit: 0,
+          totalLayStake: 0,
+          totalLayLiability: 0,
         };
       }
 
       if (otype === "back") {
-        teams[teamName].backStake += price;        // stake
-        teams[teamName].backProfit += betAmount;  // profit if win
+        teams[teamName].totalBackStake += Number(price);
+        teams[teamName].totalBackProfit += Number(betAmount);
       }
 
       if (otype === "lay") {
-        teams[teamName].layStake += price;        // stake user wins if team loses
-        teams[teamName].layLiability += betAmount; // admin pays if team wins
+        teams[teamName].totalLayStake += Number(price);
+        teams[teamName].totalLayLiability += Number(betAmount);
       }
     });
 
-    const teamNames = Object.keys(teams);
-
-    if (teamNames.length !== 2) {
-      return res.status(400).json({
-        success: false,
-        message: "Match must have exactly 2 teams",
-      });
-    }
-
-    const [teamA, teamB] = teamNames;
-
-    // =========================
-    // STEP 2️⃣ SCENARIO CALCULATION
-    // =========================
-
-    const calculateAdminProfit = (team) => {
-      return (
-        + teams[team].backStake        // back lose stake
-        - teams[team].backProfit       // pay back profit
-        + teams[team].layLiability     // lay users lose liability
-        - teams[team].layStake         // lay users win stake
-      );
-    };
-
-    const teamAProfit = calculateAdminProfit(teamA);
-    const teamBProfit = calculateAdminProfit(teamB);
-
-    // =========================
-    // STEP 3️⃣ COMPARE WHICH SIDE BETTER
-    // =========================
-
-    let bestOutcome = "";
-    let bestProfit = 0;
-
-    if (teamAProfit > teamBProfit) {
-      bestOutcome = `${teamA} Wins (Admin Advantage)`;
-      bestProfit = teamAProfit;
-    } else if (teamBProfit > teamAProfit) {
-      bestOutcome = `${teamB} Wins (Admin Advantage)`;
-      bestProfit = teamBProfit;
-    } else {
-      bestOutcome = "Balanced Market";
-      bestProfit = teamAProfit;
-    }
-
-    const result = {
-      matchId: mid,
-      scenarios: {
-        [`${teamA}_wins`]: { adminProfit: teamAProfit },
-        [`${teamB}_wins`]: { adminProfit: teamBProfit },
-      },
-      betterSide: bestOutcome,
-      betterProfit: bestProfit,
-      teamSummary: teams,
-    };
-
     return res.status(200).json({
       success: true,
-      data: result,
+      matchId: mid,
+      teamSummary: teams,
     });
 
   } catch (error) {

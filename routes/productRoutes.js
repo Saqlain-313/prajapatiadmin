@@ -8,10 +8,10 @@ const { createProduct, updateProduct, } = require("../controllers/productControl
 
 
 
-router.post("/",  createProduct);
+router.post("/products/",  createProduct);
 
 
-router.put("/:id", protect, adminMiddleware, updateProduct);
+router.put("/products/:id", protect, adminMiddleware, updateProduct);
 
 
 

@@ -1,26 +1,56 @@
 const QRCode = require("qrcode");
-const Product = require("../models/Product");
 
 exports.generateUpiQR = async (req, res) => {
   try {
-    const { productId } = req.params;
+    const { amount } = req.body;
 
-    const product = await Product.findById(productId);
-    if (!product || !product.enabled) {
-      return res.status(404).json({ message: "Invalid product" });
+    // ======================
+    // Validation
+    // ======================
+    if (!amount) {
+      return res.status(400).json({
+        success: false,
+        message: "Amount is required",
+      });
+    }
+
+    const numericAmount = Number(amount);
+
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid amount",
+      });
+    }
+
+    // Optional minimum recharge limit
+    if (numericAmount < 100) {
+      return res.status(400).json({
+        success: false,
+        message: "Minimum recharge is 100",
+      });
     }
 
     const upiId = process.env.UPI_ID;
     const payeeName = process.env.UPI_NAME;
 
-    // 🔥 UNIQUE EVERY TIME
-    const txnId = `TXN_${product._id}_${Date.now()}`;
+    if (!upiId || !payeeName) {
+      return res.status(500).json({
+        success: false,
+        message: "UPI configuration missing",
+      });
+    }
+
+    // ======================
+    // Unique Transaction ID
+    // ======================
+    const txnId = `TXN_${req.user._id}_${Date.now()}`;
+
+    const note = `Wallet Recharge | ${txnId}`;
 
     const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(
       payeeName
-    )}&am=${product.price}&cu=INR&tn=${encodeURIComponent(
-      `${product.title} | ${txnId}`
-    )}`;
+    )}&am=${numericAmount}&cu=INR&tn=${encodeURIComponent(note)}`;
 
     const qrImage = await QRCode.toDataURL(upiLink, {
       errorCorrectionLevel: "H",
@@ -30,17 +60,17 @@ exports.generateUpiQR = async (req, res) => {
 
     res.json({
       success: true,
-      product: {
-        id: product._id,
-        title: product.title,
-        amount: product.price,
-      },
+      amount: numericAmount,
       transactionId: txnId,
       upiLink,
       qrImage,
     });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "QR generation failed" });
+
+  } catch (error) {
+    console.error("QR Generation Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "QR generation failed",
+    });
   }
 };

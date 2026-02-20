@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const depositSchema = new mongoose.Schema(
   {
     // ======================
-    // USER
+    // USER INFO
     // ======================
     user: {
       type: mongoose.Schema.Types.ObjectId,
@@ -21,26 +21,24 @@ const depositSchema = new mongoose.Schema(
     mobile: {
       type: String,
       required: true,
+      trim: true,
     },
 
-    product: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Product",
-      required: true,
-      index: true,
-    },
-
-
+    // ======================
+    // RECHARGE INFO
+    // ======================
     amount: {
       type: Number,
       required: true,
+      min: 1,
     },
 
     utr: {
       type: String,
       required: true,
-      unique: true, // 🔐 no duplicate UTR
+      unique: true, // 🔐 Prevent duplicate UTR
       index: true,
+      trim: true,
     },
 
     paymentMethod: {
@@ -63,8 +61,25 @@ const depositSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+
+    approvedAt: {
+      type: Date,
+      default: null,
+    },
+
+    rejectedAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );
+
+
+// ======================
+// INDEXES (Performance)
+// ======================
+depositSchema.index({ user: 1, status: 1 });
+depositSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model("Deposit", depositSchema);

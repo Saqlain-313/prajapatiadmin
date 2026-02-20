@@ -42,75 +42,48 @@ const AdminMatchProfitPage = ({ mid, onClose }) => {
       {error && <p className="text-red-500">{error}</p>}
 
       {profitSummary && (
-        <>
-          {/* ================= TEAM SUMMARY ================= */}
-          <div className="grid md:grid-cols-2 gap-4 mb-6">
-            {Object.entries(profitSummary.teamSummary).map(
-              ([team, data]) => (
-                <div
-                  key={team}
-                  className="bg-gray-800 p-4 rounded"
-                >
-                  <h3 className="text-yellow-400 mb-3">
-                    Team {team}
-                  </h3>
+        <div className="grid md:grid-cols-2 gap-4">
+          {Object.entries(profitSummary.teamSummary).map(
+            ([team, data]) => (
+              <div
+                key={team}
+                className="bg-gray-800 p-4 rounded"
+              >
+                <h3 className="text-yellow-400 mb-3 text-lg font-semibold">
+                  Team {team}
+                </h3>
 
-                  <p>Back Stake: {format(data.backStake)}</p>
-                  <p>Back Profit (Liability): {format(data.backProfit)}</p>
-                  <p>Lay Stake: {format(data.layStake)}</p>
-                  <p>Lay Liability: {format(data.layLiability)}</p>
-                </div>
-              )
-            )}
-          </div>
+                <p>
+                  Total Back Stake:{" "}
+                  <span className="text-blue-400">
+                    {format(data.totalBackStake)}
+                  </span>
+                </p>
 
-          {/* ================= SCENARIOS ================= */}
-          <div className="grid md:grid-cols-2 gap-4 mb-6">
-            {Object.entries(profitSummary.scenarios).map(
-              ([scenario, data]) => (
-                <div
-                  key={scenario}
-                  className="bg-gray-800 p-4 rounded"
-                >
-                  <h3 className="capitalize mb-2">
-                    {scenario.replace("_", " ")}
-                  </h3>
+                <p>
+                  Total Back Liability:{" "}
+                  <span className="text-red-400">
+                    {format(data.totalBackProfit)}
+                  </span>
+                </p>
 
-                  <p
-                    className={`text-lg font-bold ${
-                      data.adminProfit >= 0
-                        ? "text-green-400"
-                        : "text-red-400"
-                    }`}
-                  >
-                    {format(data?.adminProfit)}
-                  </p>
-                </div>
-              )
-            )}
-          </div>
+                <p>
+                  Total Lay Stake:{" "}
+                  <span className="text-green-400">
+                    {format(data.totalLayStake)}
+                  </span>
+                </p>
 
-          {/* ================= BEST OUTCOME ================= */}
-          <div className="bg-black/40 border border-white/10 p-4 rounded">
-            <h3 className="text-blue-400 font-semibold mb-2">
-              Best Outcome For Admin
-            </h3>
-
-            <p className="text-lg font-bold">
-              {profitSummary.betterSide}
-            </p>
-
-            <p
-              className={`text-xl font-bold ${
-                profitSummary.betterProfit >= 0
-                  ? "text-green-400"
-                  : "text-red-400"
-              }`}
-            >
-              {format(profitSummary?.betterProfit)}
-            </p>
-          </div>
-        </>
+                <p>
+                  Total Lay Liability:{" "}
+                  <span className="text-red-400">
+                    {format(data.totalLayLiability)}
+                  </span>
+                </p>
+              </div>
+            )
+          )}
+        </div>
       )}
     </div>
   );

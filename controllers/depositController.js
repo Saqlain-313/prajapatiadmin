@@ -1,113 +1,195 @@
 const Deposit = require("../models/Deposit");
 const User = require("../models/usermodel");
 const ReferralSetting = require("../models/ReferralSetting");
-const Product = require("../models/Product");
 
 
+// ===============================
+// CREATE RECHARGE REQUEST
+// ===============================
 exports.createDeposit = async (req, res) => {
   try {
-    const { utr, productId } = req.body;
+    const { utr, amount } = req.body;
 
-    if (!utr || !productId) {
-      return res.status(400).json({ message: "UTR & Product required" });
+    // Validation
+    if (!utr || !amount) {
+      return res.status(400).json({
+        success: false,
+        message: "UTR and Amount are required",
+      });
     }
 
-    const utrUsed = await Deposit.findOne({ utr });
-    if (utrUsed) {
-      return res.status(400).json({ message: "UTR already used" });
+    const numericAmount = Number(amount);
+
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid amount",
+      });
+    }
+
+    // Optional: minimum recharge limit
+    if (numericAmount < 100) {
+      return res.status(400).json({
+        success: false,
+        message: "Minimum recharge is 100",
+      });
+    }
+
+    // UTR duplicate check
+    const utrExists = await Deposit.findOne({ utr: utr.trim() });
+    if (utrExists) {
+      return res.status(400).json({
+        success: false,
+        message: "UTR already used",
+      });
     }
 
     const user = await User.findById(req.user._id);
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    const product = await Product.findById(productId);
-    if (!product || !product.enabled) {
-      return res.status(404).json({ message: "Invalid product" });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
     }
 
+    // Create recharge entry
     const deposit = await Deposit.create({
       user: user._id,
       userUid: user.uid,
       mobile: user.mobile,
-      product: product._id,
-      amount: product.price,
-      utr,
+      amount: numericAmount,
+      utr: utr.trim(),
+      status: "pending",
     });
 
     res.status(201).json({
       success: true,
-      message: "Deposit submitted, waiting for approval",
+      message: "Recharge request submitted. Waiting for approval.",
       depositId: deposit._id,
     });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Deposit failed" });
+
+  } catch (error) {
+    console.error("Create Deposit Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Recharge failed",
+    });
   }
 };
 
 
+
+// ===============================
+// GET MY RECHARGES (USER)
+// ===============================
 exports.getMyDeposits = async (req, res) => {
   try {
     const deposits = await Deposit.find({ user: req.user._id })
-      .populate("product", "title price")
       .sort({ createdAt: -1 });
 
-    res.json({ success: true, deposits });
-  } catch (err) {
-    res.status(500).json({ message: "Failed to fetch deposits" });
+    res.json({
+      success: true,
+      deposits,
+    });
+
+  } catch (error) {
+    console.error("Get My Deposits Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch recharge history",
+    });
   }
 };
 
 
+
+// ===============================
+// GET ALL RECHARGES (ADMIN)
+// ===============================
 exports.getAllDeposits = async (req, res) => {
   try {
     const deposits = await Deposit.find()
-      .populate("user", "uid mobile email")
-      .populate("product", "title price")
+      .populate("user", "uid mobile email credit")
       .sort({ createdAt: -1 });
 
-    res.json({ success: true, deposits });
-  } catch (err) {
-    res.status(500).json({ message: "Failed to fetch deposits" });
+    res.json({
+      success: true,
+      deposits,
+    });
+
+  } catch (error) {
+    console.error("Get All Deposits Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch recharges",
+    });
   }
 };
 
+
+
+// ===============================
+// UPDATE RECHARGE STATUS (ADMIN)
+// ===============================
 exports.updateDepositStatus = async (req, res) => {
   try {
     const { status, remark } = req.body;
 
     if (!["approved", "rejected"].includes(status)) {
-      return res.status(400).json({ message: "Invalid status" });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status",
+      });
     }
 
     const deposit = await Deposit.findById(req.params.id);
+
     if (!deposit) {
-      return res.status(404).json({ message: "Deposit not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Recharge not found",
+      });
     }
 
     if (deposit.status !== "pending") {
-      return res
-        .status(400)
-        .json({ message: "Deposit already processed" });
+      return res.status(400).json({
+        success: false,
+        message: "Recharge already processed",
+      });
     }
 
     deposit.status = status;
     deposit.adminRemark = remark || null;
     await deposit.save();
 
+    // ===============================
+    // IF APPROVED
+    // ===============================
     if (status === "approved") {
-      const user = await User.findById(deposit.user);
-      if (!user) return res.status(404).json({ message: "User not found" });
 
+      const user = await User.findById(deposit.user);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "User not found",
+        });
+      }
+
+      // Add recharge amount
       user.credit += deposit.amount;
       await user.save();
 
+      // ===============================
+      // REFERRAL COMMISSION
+      // ===============================
       if (user.inviteCode) {
+
         const referrer = await User.findOne({
           myInviteCode: user.inviteCode,
         });
 
         if (referrer) {
+
           const approvedCount = await Deposit.countDocuments({
             user: user._id,
             status: "approved",
@@ -118,6 +200,7 @@ exports.updateDepositStatus = async (req, res) => {
           });
 
           if (setting && setting.percent > 0) {
+
             const commission =
               (deposit.amount * setting.percent) / 100;
 
@@ -130,10 +213,14 @@ exports.updateDepositStatus = async (req, res) => {
 
     res.json({
       success: true,
-      message: `Deposit ${status} successfully`,
+      message: `Recharge ${status} successfully`,
     });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Update failed" });
+
+  } catch (error) {
+    console.error("Update Deposit Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Status update failed",
+    });
   }
 };

@@ -10,7 +10,7 @@ const router = express.Router();
 // router.get("/my", protect, getMyDeposits);
 
 /* ADMIN */
-router.get("/deposits", protect, getAllDeposits);
-router.put("/deposits/:id",  updateDepositStatus);
+router.get("/deposits/deposits", protect, getAllDeposits);
+router.put("/deposits/deposits/:id",  updateDepositStatus);
 
 module.exports = router;

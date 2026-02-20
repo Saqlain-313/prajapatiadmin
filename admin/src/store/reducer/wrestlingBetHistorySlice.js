@@ -51,7 +51,7 @@ export const getMatchProfitSummary = createAsyncThunk(
                 { withCredentials: true }
             );
 
-            return data.data; // 👈 controller me data: result bheja tha
+            return data; // 👈 controller me data: result bheja tha
         } catch (error) {
             return rejectWithValue(error.response?.data?.message);
         }

@@ -18,7 +18,7 @@ const router = express.Router();
 /* ================= MATCH ================= */
 
 router.post(
-  "/create-match",
+  "/wrestling/create-match",
   verifyAdminKeyQuery,
   upload.single("img"), 
   createWrestlingMatch
@@ -27,47 +27,47 @@ router.post(
 
 // 🔐 GET ALL MATCHES
 router.get(
-  "/matches",
+  "/wrestling/matches",
   verifyAdminKeyQuery,
   getAllWrestlingMatches
 );
 
 // 🔐 GET OPEN MATCH
 router.get(
-  "/match/:id",
+  "/wrestling/match/:id",
   verifyAdminKeyQuery,
   getWrestlingMatchById
 );
 
 // 🔐 GET CLOSED MATCH
 router.get(
-  "/match/:id/closed",
+  "/wrestling/match/:id/closed",
   verifyAdminKeyQuery,
   getClosedWrestlingMatchById
 );
 
 // 🔐 CLOSE MATCH
 router.put(
-  "/match/:id/close",
+  "/wrestling/match/:id/close",
   verifyAdminKeyQuery,
   closeWrestlingMatch
 );
 
 // 🔐 OPEN MATCH
 router.put(
-  "/match/:id/open",
+  "/wrestling/match/:id/open",
   verifyAdminKeyQuery,
   openWrestlingMatch
 );
 
 router.patch(
-  "/match/:matchId/team/:tid/box/:boxId",
+  "/wrestling/match/:matchId/team/:tid/box/:boxId",
   verifyAdminKeyQuery,
   updateWrestlingBox
 );
 
 router.patch(
-  "/wrestling/update-status/:matchId",
+  "/wrestling/wrestling/update-status/:matchId",
   verifyAdminKeyQuery,
   updateWrestlingMatchStatus
 );

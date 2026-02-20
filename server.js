@@ -34,19 +34,19 @@ app.get("/admin", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "admi.html"));
 });
 
-app.use("/api/admin", require("./routes/userRoute"));
-app.use("/api/notification", require("./routes/notificationRoute"));
-app.use("/api/images", require("./routes/imageRoutes"));
-app.use("/api/deposits", require("./routes/depositRoutes"));
-app.use("/api/payment", require("./routes/paymentRoutes"));
-app.use("/api/withdrawal", require("./routes/withdrawalRoute"));
-app.use("/api/products", require("./routes/productRoutes"));
-app.use("/api/referral", require("./routes/referralSettingRoutes"));
-app.use("/api/game", require("./routes/allgameroute/allGameRoute"));
-app.use("/api/user-deposit", require("./routes/userDepositRoutes"));
-app.use("/api/wrestling", require("./routes/wrestling/wrestlingRoutes"));
-app.use('/api/wrestling-bet-history',require('./routes/wrestling/wrestlingBetHistoryRoutes'))
-app.use('/api/admin/wrestling-bets',require('./routes/wrestling/wrestlingBetAdminRoutes'))
+app.use("/api", require("./routes/userRoute"));
+app.use("/api", require("./routes/notificationRoute"));
+app.use("/api", require("./routes/imageRoutes"));
+app.use("/api", require("./routes/depositRoutes"));
+app.use("/api", require("./routes/paymentRoutes"));
+app.use("/api", require("./routes/withdrawalRoute"));
+app.use("/api", require("./routes/productRoutes"));
+app.use("/api", require("./routes/referralSettingRoutes"));
+app.use("/api", require("./routes/allgameroute/allGameRoute"));
+app.use("/api", require("./routes/userDepositRoutes"));
+app.use("/api", require("./routes/wrestling/wrestlingRoutes"));
+app.use('/api',require('./routes/wrestling/wrestlingBetHistoryRoutes'))
+app.use('/api',require('./routes/wrestling/wrestlingBetAdminRoutes'))
 const startMatchCron = require("./cron/matchAutoStart");
 
 startMatchCron();

@@ -14,15 +14,15 @@ const protect = require("../middlewares/authMiddleware");
 
 
 
-router.post("/order", protect, createRazorpayOrder);
-router.post("/verify", protect, verifyRazorpayPayment);
-router.get("/my", protect, getMyDeposits);
+router.post("/user-deposit/order", protect, createRazorpayOrder);
+router.post("/user-deposit/verify", protect, verifyRazorpayPayment);
+router.get("/user-deposit/my", protect, getMyDeposits);
 
 
 
 
 router.get(
-  "/admin/all",
+  "/user-deposit/admin/all",
   protect,
   adminMiddleware,
   getAllUserDeposits
@@ -31,7 +31,7 @@ router.get(
 
 
 router.put(
-  "/admin/:id",
+  "/user-deposit/admin/:id",
   protect,
   adminMiddleware,
   updateUserDepositStatus

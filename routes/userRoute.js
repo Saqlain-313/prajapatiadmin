@@ -15,17 +15,17 @@ const {
 
 const protect = require("../middlewares/authMiddleware");
 
-router.post("/register", register);
-router.post("/login", login);
+router.post("/admin/register", register);
+router.post("/admin/login", login);
 
-router.get("/getprofile", protect, getProfile);
-router.post("/logout", protect, logout);
-router.post("/change-password", protect, changePassword);
+router.get("/admin/getprofile", protect, getProfile);
+router.post("/admin/logout", protect, logout);
+router.post("/admin/change-password", protect, changePassword);
 
-router.post("/forgot-password", forgotPassword);
-router.post("/reset-password", verifyOTPAndReset);
+router.post("/admin/forgot-password", forgotPassword);
+router.post("/admin/reset-password", verifyOTPAndReset);
 
-router.get("/users", protect, getAllUsers);
-router.delete("/users/:userId", protect, deleteUser);
+router.get("/admin/users", protect, getAllUsers);
+router.delete("/admin/users/:userId", protect, deleteUser);
 
 module.exports = router;

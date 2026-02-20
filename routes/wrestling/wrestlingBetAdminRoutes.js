@@ -9,8 +9,8 @@ const {
 } = require("../../controllers/wrestling/wrestlingBetAdminController");
 
 
-router.get("/all", protect,  getAllWrestlingBets);
-router.get("/:id", protect,  getWrestlingBetById);
-router.put("/settle/:id", protect,  updateWrestlingBetStatus);
+router.get("/admin/wrestling-bets/all", protect,  getAllWrestlingBets);
+router.get("/admin/wrestling-bets/:id", protect,  getWrestlingBetById);
+router.put("/admin/wrestling-bets/settle/:id", protect,  updateWrestlingBetStatus);
 
 module.exports = router;

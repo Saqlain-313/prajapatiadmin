@@ -43,6 +43,7 @@ import {
   updateTeamStatusFromSocket,
 } from "../store/reducer/wrestlingAdminSlice";
 import { getBetHistoryByMid } from "../store/reducer/wrestlingBetHistorySlice";
+import AdminMatchProfitPage from "./AdminMatchProfitPage";
 
 const socket = io("http://localhost:5200/", {
   transports: ["websocket"],
@@ -231,6 +232,7 @@ const WrestlingAdmin = () => {
   const [size, setSize] = useState("");
   const [timer, setTimer] = useState("");
   const [confirmation, setConfirmation] = useState({ isOpen: false, type: "close" });
+  const [showProfit, setShowProfit] = useState(false);
 
   const [rateStep, setRateStep] = useState("0.01");
 
@@ -238,51 +240,228 @@ const WrestlingAdmin = () => {
     if (matchId) dispatch(fetchMatch(matchId));
   }, [matchId, dispatch]);
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!MATCH || MATCH.status !== "OPEN") return;
+      if (!tid) return;
+
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        handleIncreaseRate();
+      }
+
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        handleDecreaseRate();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [MATCH, tid, rateStep]);
+
   const minRate = 0.00;
   const maxRate = 1.99;
 
   const handleIncreaseRate = () => {
-    if (!MATCH || MATCH.status !== "OPEN") return;
-    if (!tid || !boxId || !selectedBox) return;
+    if (!MATCH || !tid) return;
 
-    const current = Number(selectedBox.rate || 0);
+    const team = MATCH?.teams?.find(
+      (t) => String(t.tid) === String(tid)
+    );
+    if (!team) return;
+
+    const backBox = team.boxes.find((b) => b.boxId == 3);
+    const layBox = team.boxes.find((b) => b.boxId == 4);
+    if (!backBox || !layBox) return;
+
+    const currentBack = Number(backBox.rate || 0);
+    const currentLay = Number(layBox.rate || 0);
     const step = Number(rateStep);
 
-    let newRate = Number((current + step).toFixed(2));
+    /* ===============================
+       🔁 TEAM SWITCH LOGIC
+    =============================== */
+    /* ===============================
+       🔁 TEAM SWITCH LOGIC (UPDATED)
+    =============================== */
 
-    if (newRate > maxRate) newRate = maxRate;
+    if (currentBack >= maxRate || currentLay >= maxRate) {
+
+      const suspendedTeamId = team.tid;
+
+      const otherTeam = MATCH.teams.find(
+        (t) => String(t.tid) !== String(suspendedTeamId)
+      );
+
+      /* 🔥 SUSPEND CURRENT TEAM */
+      socket.emit("admin:update-team-status", {
+        matchId: MATCH._id,
+        mid: MATCH.mid,
+        tid: suspendedTeamId,
+        status: "SUSPENDED",
+      });
+
+      /* 🔥 ACTIVATE OTHER TEAM */
+      if (otherTeam) {
+        socket.emit("admin:update-team-status", {
+          matchId: MATCH._id,
+          mid: MATCH.mid,
+          tid: otherTeam.tid,
+          status: "ACTIVE",
+        });
+
+        // Switch selected team in UI
+        setTimeout(() => {
+          setTid(String(otherTeam.tid));
+
+          const otherBack = otherTeam.boxes.find((b) => b.boxId == 3);
+          if (otherBack) {
+            setBoxId(String(otherBack.boxId));
+          }
+        }, 50);
+      }
+
+      showToast("Team auto suspended (Back/Lay hit max) 🔁", "info");
+      return;
+    }
+
+    /* ===============================
+       📈 NORMAL RATE INCREASE (Maintain Gap)
+    =============================== */
+
+    if (MATCH.status !== "OPEN") return;
+
+    let newBackRate = Number((currentBack + step).toFixed(2));
+    let newLayRate = Number((currentLay + step).toFixed(2));
+
+    if (newBackRate > maxRate) newBackRate = maxRate;
+    if (newLayRate > maxRate) newLayRate = maxRate;
 
     socket.emit("admin:update-box", {
       matchId: MATCH._id,
       mid: MATCH.mid,
       tid,
-      boxId,
-      rate: newRate,
-      size: selectedBox.size || 0,
-      timer: selectedBox.timer || 0,
+      boxId: 3,
+      rate: newBackRate,
+      size: backBox.size || 0,
+      timer: backBox.timer || 0,
+    });
+
+    socket.emit("admin:update-box", {
+      matchId: MATCH._id,
+      mid: MATCH.mid,
+      tid,
+      boxId: 4,
+      rate: newLayRate,
+      size: layBox.size || 0,
+      timer: layBox.timer || 0,
     });
   };
 
   const handleDecreaseRate = () => {
     if (!MATCH || MATCH.status !== "OPEN") return;
-    if (!tid || !boxId || !selectedBox) return;
+    if (!tid) return;
 
-    const current = Number(selectedBox.rate || 0);
+    const team = MATCH?.teams?.find(
+      (t) => String(t.tid) === String(tid)
+    );
+    if (!team) return;
+
     const step = Number(rateStep);
 
-    let newRate = Number((current - step).toFixed(2));
+    const backBox = team.boxes.find((b) => b.boxId == 3);
+    const layBox = team.boxes.find((b) => b.boxId == 4);
 
-    if (newRate < minRate) newRate = minRate;
+    const currentBack = Number(backBox?.rate || 0);
+    const currentLay = Number(layBox?.rate || 0);
 
-    socket.emit("admin:update-box", {
-      matchId: MATCH._id,
-      mid: MATCH.mid,
-      tid,
-      boxId,
-      rate: newRate,
-      size: selectedBox.size || 0,
-      timer: selectedBox.timer || 0,
-    });
+    let newBackRate = currentBack;
+    let newLayRate = currentLay;
+
+    if (backBox) {
+      newBackRate = Number((currentBack - step).toFixed(2));
+      if (newBackRate < minRate) newBackRate = minRate;
+    }
+
+    if (layBox) {
+      newLayRate = Number((currentLay - step).toFixed(2));
+      if (newLayRate < minRate) newLayRate = minRate;
+    }
+
+    /* ===============================
+       🔁 TEAM SWITCH LOGIC (MIN HIT)
+    =============================== */
+
+    if (newBackRate <= minRate || newLayRate <= minRate) {
+
+      const suspendedTeamId = team.tid;
+
+      const otherTeam = MATCH.teams.find(
+        (t) => String(t.tid) !== String(suspendedTeamId)
+      );
+
+      // 🔥 Suspend current team
+      socket.emit("admin:update-team-status", {
+        matchId: MATCH._id,
+        mid: MATCH.mid,
+        tid: suspendedTeamId,
+        status: "SUSPENDED",
+      });
+
+      // 🔥 Activate other team
+      if (otherTeam) {
+        socket.emit("admin:update-team-status", {
+          matchId: MATCH._id,
+          mid: MATCH.mid,
+          tid: otherTeam.tid,
+          status: "ACTIVE",
+        });
+
+        setTimeout(() => {
+          setTid(String(otherTeam.tid));
+
+          const otherBack = otherTeam.boxes.find((b) => b.boxId == 3);
+          if (otherBack) {
+            setBoxId(String(otherBack.boxId));
+          }
+        }, 50);
+      }
+
+      showToast("Team auto suspended (Min rate hit) 🔁", "info");
+      return;
+    }
+
+    /* ===============================
+       📉 NORMAL RATE DECREASE
+    =============================== */
+
+    if (backBox) {
+      socket.emit("admin:update-box", {
+        matchId: MATCH._id,
+        mid: MATCH.mid,
+        tid,
+        boxId: 3,
+        rate: newBackRate,
+        size: backBox.size || 0,
+        timer: backBox.timer || 0,
+      });
+    }
+
+    if (layBox) {
+      socket.emit("admin:update-box", {
+        matchId: MATCH._id,
+        mid: MATCH.mid,
+        tid,
+        boxId: 4,
+        rate: newLayRate,
+        size: layBox.size || 0,
+        timer: layBox.timer || 0,
+      });
+    }
   };
 
   useEffect(() => {
@@ -511,7 +690,28 @@ const WrestlingAdmin = () => {
                 </label>
                 <select
                   value={tid}
-                  onChange={(e) => setTid(e.target.value)}
+                  onChange={(e) => {
+                    const selectedTid = e.target.value;
+                    setTid(selectedTid);
+
+                    const team = MATCH?.teams?.find(
+                      (t) => String(t.tid) === String(selectedTid)
+                    );
+
+                    if (team?.boxes?.length) {
+                      // Try to auto select BACK first
+                      const backBox = team.boxes.find((b) => b.boxId == 3);
+
+                      if (backBox) {
+                        setBoxId(String(backBox.boxId));
+                      } else {
+                        // otherwise select first box available
+                        setBoxId(String(team.boxes[0].boxId));
+                      }
+                    } else {
+                      setBoxId("");
+                    }
+                  }}
                   className={selectStyleClasses}
                 >
                   <option value="">Choose team</option>
@@ -771,6 +971,33 @@ const WrestlingAdmin = () => {
                     </div>
                   );
                 })}
+              </div>
+            )}
+
+            <button
+              onClick={() => setShowProfit(true)}
+              className="mt-6 w-full flex items-center justify-center gap-2 py-3 
+             bg-gradient-to-br from-purple-500/20 to-purple-900/30
+             rounded-xl text-purple-300 font-medium border border-purple-500/30
+             hover:from-purple-500/30 hover:to-purple-900/40
+             transition-all duration-300"
+            >
+              <MdExposure size={18} />
+              VIEW PROFIT SUMMARY
+            </button>
+            {showProfit && MATCH?.mid && (
+              <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+                <div className="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto">
+
+                  <button
+                    onClick={() => setShowProfit(false)}
+                    className="absolute top-4 right-4 z-10 p-2 bg-black/50 rounded-full border border-white/20 text-white hover:bg-white/10"
+                  >
+                    <MdClose size={20} />
+                  </button>
+
+                  <AdminMatchProfitPage mid={MATCH.mid} />
+                </div>
               </div>
             )}
           </div>

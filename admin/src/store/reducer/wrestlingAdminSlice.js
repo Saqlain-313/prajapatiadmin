@@ -13,11 +13,14 @@ export const createWrestlingMatch = createAsyncThunk(
       startTime,
       minbet,
       maxbet,
-      betStatus, // ✅ added
+      betStatus,
+      disqualify,          // ✅ NEW
       teamARates,
       teamASizes,
       teamBRates,
       teamBSizes,
+      disqualifyRates,     // ✅ NEW
+      disqualifySizes,     // ✅ NEW
       img,
     },
     { rejectWithValue }
@@ -34,14 +37,27 @@ export const createWrestlingMatch = createAsyncThunk(
       formData.append("minbet", minbet);
       formData.append("maxbet", maxbet);
 
-      // ✅ NEW
+      // ✅ Betting Status
       formData.append("betStatus", betStatus);
+
+      // ✅ Disqualify Status
+      formData.append("disqualify", disqualify);
 
       /* SEND ARRAYS AS JSON */
       formData.append("teamARates", JSON.stringify(teamARates));
       formData.append("teamASizes", JSON.stringify(teamASizes));
       formData.append("teamBRates", JSON.stringify(teamBRates));
       formData.append("teamBSizes", JSON.stringify(teamBSizes));
+
+      // ✅ Disqualify Market
+      formData.append(
+        "disqualifyRates",
+        JSON.stringify(disqualifyRates)
+      );
+      formData.append(
+        "disqualifySizes",
+        JSON.stringify(disqualifySizes)
+      );
 
       if (img) {
         formData.append("img", img);

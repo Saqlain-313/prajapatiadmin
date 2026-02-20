@@ -39,20 +39,39 @@ export const getBetHistoryByMid = createAsyncThunk(
     }
 );
 
+/* =========================================
+   🔥 ADMIN – Get Match Profit Summary
+========================================= */
+export const getMatchProfitSummary = createAsyncThunk(
+    "wrestlingBetHistory/getProfitSummary",
+    async (mid, { rejectWithValue }) => {
+        try {
+            const { data } = await api.get(
+                `/wrestling-bet-history/match-profit/${mid}`,
+                { withCredentials: true }
+            );
+
+            return data.data; // 👈 controller me data: result bheja tha
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message);
+        }
+    }
+);
+
 const wrestlingBetHistorySlice = createSlice({
     name: "wrestlingBetHistory",
     initialState: {
         loading: false,
         bets: [],
+        profitSummary: null,   // 👈 NEW STATE
         error: null,
     },
     reducers: {
         resetBetHistory: (state) => {
             state.bets = [];
+            state.profitSummary = null;  // 👈 RESET PROFIT ALSO
             state.error = null;
             state.loading = false;
-
-            
         },
     },
     extraReducers: (builder) => {
@@ -82,6 +101,20 @@ const wrestlingBetHistorySlice = createSlice({
                 state.bets = action.payload;
             })
             .addCase(getBetHistoryByMid.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            })
+
+            /* ================= PROFIT SUMMARY ================= */
+            .addCase(getMatchProfitSummary.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(getMatchProfitSummary.fulfilled, (state, action) => {
+                state.loading = false;
+                state.profitSummary = action.payload;
+            })
+            .addCase(getMatchProfitSummary.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
             });

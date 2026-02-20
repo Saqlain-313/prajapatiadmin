@@ -36,28 +36,31 @@ const teamSchema = new mongoose.Schema(
   {
     tid: { type: Number, required: true },
     tname: { type: String, required: true },
+
+    // ✅ UPDATED ENUM
     side: {
       type: String,
-      enum: ["A", "B"],
+      enum: ["A", "B", "DQ"], // ← ADDED DQ
       required: true,
     },
+
     status: {
       type: String,
       enum: ["ACTIVE", "SUSPENDED"],
       default: "ACTIVE",
     },
+
     boxes: {
       type: [boxSchema],
       required: true,
       validate: {
-        validator: v => Array.isArray(v) && v.length === 6,
+        validator: (v) => Array.isArray(v) && v.length === 6,
         message: "Each team must have exactly 6 boxes",
       },
     },
   },
   { _id: false }
 );
-
 
 /* =====================
    MATCH
@@ -76,7 +79,6 @@ const wrestlingMatchSchema = new mongoose.Schema(
       required: true,
     },
 
-    /* 🔥 CRITICAL FOR CRON */
     startTime: {
       type: Date,
       required: true,
@@ -89,12 +91,22 @@ const wrestlingMatchSchema = new mongoose.Schema(
       default: "PENDING",
       index: true,
     },
+
     betStatus: {
       type: String,
       enum: ["ACTIVE", "DEACTIVE"],
       default: "ACTIVE",
       index: true,
     },
+
+    // ✅ NEW FIELD
+    disqualify: {
+      type: String,
+      enum: ["NONE", "TEAM_A", "TEAM_B", "BOTH"],
+      default: "NONE",
+      index: true,
+    },
+
     gameType: {
       type: String,
       default: "ODD",
@@ -111,10 +123,9 @@ const wrestlingMatchSchema = new mongoose.Schema(
     maxbet: { type: Number, default: 0 },
     minbet: { type: Number, default: 0 },
 
-    /* ✅ NEW OPTIONAL IMAGE FIELD */
     img: {
-      type: String,        // store image URL or filename
-      default: null,       // optional
+      type: String,
+      default: null,
     },
 
     matchTimer: {
@@ -126,8 +137,9 @@ const wrestlingMatchSchema = new mongoose.Schema(
       type: [teamSchema],
       required: true,
       validate: {
-        validator: v => Array.isArray(v) && v.length === 2,
-        message: "Match must have exactly 2 teams",
+        validator: (v) =>
+          Array.isArray(v) && (v.length === 2 || v.length === 3),
+        message: "Match must have 2 or 3 teams (A, B, optional DQ)",
       },
     },
   },
@@ -135,8 +147,9 @@ const wrestlingMatchSchema = new mongoose.Schema(
 );
 
 /* =====================
-   INDEXES (IMPORTANT)
+   INDEXES
 ===================== */
 wrestlingMatchSchema.index({ status: 1, startTime: 1 });
+wrestlingMatchSchema.index({ disqualify: 1 });
 
 module.exports = mongoose.model("WrestlingMatch", wrestlingMatchSchema);

@@ -661,18 +661,23 @@ const AdminWrestlingPendingPage = () => {
                         key={bet._id}
                         className="hover:bg-white/5 transition-all duration-200 group"
                       >
+                        {/* USER COLUMN */}
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-white/20 to-white/5 
-                                          flex items-center justify-center border border-white/20">
+                            <div
+                              className="w-8 h-8 rounded-lg bg-gradient-to-br from-white/20 to-white/5 
+                       flex items-center justify-center border border-white/20"
+                            >
                               <span className="text-white font-bold text-sm">
-                                {bet.user?.mobile?.charAt(0) || 'U'}
+                                {bet.userId?.mobile?.charAt(0) || "U"}
                               </span>
                             </div>
+
                             <div>
                               <div className="font-medium text-white text-sm">
-                                User #{bet.user?._id?.slice(-6)}
+                                User #{bet.userId?._id?.slice(-6)}
                               </div>
+
                               <div className="text-xs text-white/40 font-mono">
                                 {bet._id?.slice(-8)}
                               </div>
@@ -680,32 +685,41 @@ const AdminWrestlingPendingPage = () => {
                           </div>
                         </td>
 
+                        {/* MOBILE COLUMN */}
                         <td className="px-5 py-4">
                           <span className="text-white/80 text-sm font-mono">
-                            {bet.user?.mobile || 'N/A'}
+                            {bet.userId?.mobile || "N/A"}
                           </span>
                         </td>
 
+                        {/* TEAM */}
                         <td className="px-5 py-4">
-                          <span className="px-3 py-1.5 bg-gradient-to-br from-white/10 to-white/5 
-                                       rounded-lg text-white/90 text-xs font-medium border border-white/20">
+                          <span
+                            className="px-3 py-1.5 bg-gradient-to-br from-white/10 to-white/5 
+                     rounded-lg text-white/90 text-xs font-medium border border-white/20"
+                          >
                             {bet.teamName}
                           </span>
                         </td>
 
+                        {/* TYPE */}
                         <td className="px-5 py-4">
-                          <span className="px-3 py-1.5 bg-gradient-to-br from-blue-500/10 to-blue-900/20 
-                                       rounded-lg text-blue-300 text-xs font-medium border border-blue-500/30">
-                            {bet.btype}
+                          <span
+                            className="px-3 py-1.5 bg-gradient-to-br from-blue-500/10 to-blue-900/20 
+                     rounded-lg text-blue-300 text-xs font-medium border border-blue-500/30 uppercase"
+                          >
+                            {bet.otype}
                           </span>
                         </td>
 
+                        {/* AMOUNT */}
                         <td className="px-5 py-4">
                           <span className="text-amber-400 font-bold drop-shadow-[0_0_10px_rgba(251,191,36,0.2)]">
-                            ₹{bet.stake?.toLocaleString()}
+                            ₹{bet.betAmount?.toLocaleString()}
                           </span>
                         </td>
 
+                        {/* ACTIONS */}
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-2">
                             <button

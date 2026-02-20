@@ -25,9 +25,7 @@ exports.getAllWrestlingBets = async (req, res) => {
 };
 
 
-/* =====================================
-   2️⃣ GET BET BY ID
-===================================== */
+
 exports.getWrestlingBetById = async (req, res) => {
   try {
     const bet = await WrestlingBet.findById(req.params.id)
@@ -53,9 +51,7 @@ exports.getWrestlingBetById = async (req, res) => {
 };
 
 
-/* =====================================
-   3️⃣ UPDATE BET STATUS (0,1,2)
-===================================== */
+
 exports.updateWrestlingBetStatus = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -76,7 +72,6 @@ exports.updateWrestlingBetStatus = async (req, res) => {
       throw new Error("Bet not found");
     }
 
-    // 🚫 prevent double settlement
     if (bet.status !== 0) {
       throw new Error("Bet already settled");
     }
@@ -84,31 +79,23 @@ exports.updateWrestlingBetStatus = async (req, res) => {
     const stake = Number(bet.betAmount) || 0;
     const profit = Number(bet.resultAmount) || 0;
 
-    /* ===============================
-       STATUS LOGIC
-    =============================== */
 
     bet.status = status;
 
     if (status === 1) {
-      // WON
       bet.betResult = "WON";
       bet.userId.credit += profit;
     }
 
     if (status === 2) {
-      // LOST
       bet.betResult = "LOST";
-      // no credit
     }
 
 
     await bet.userId.save({ session });
     await bet.save({ session });
 
-    /* ===============================
-       UPDATE HISTORY
-    =============================== */
+
 
     await WrestlingBetHistory.updateOne(
       {

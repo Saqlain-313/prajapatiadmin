@@ -42,7 +42,8 @@ const createWrestlingMatch = async (req, res) => {
       startTime,
       minbet,
       maxbet,
-      betStatus, // ✅ NEW
+      betStatus,
+      disqualify, // ✅ NEW
     } = req.body;
 
     /* ================= VALIDATIONS ================= */
@@ -72,13 +73,31 @@ const createWrestlingMatch = async (req, res) => {
     const validBetStatus = ["ACTIVE", "DEACTIVE"];
     const finalBetStatus = validBetStatus.includes(betStatus)
       ? betStatus
-      : "ACTIVE"; // default
+      : "ACTIVE";
+
+    /* ================= VALIDATE DISQUALIFY ================= */
+    const validDisqualify = ["NONE", "TEAM_A", "TEAM_B", "BOTH"];
+    const finalDisqualify = validDisqualify.includes(disqualify)
+      ? disqualify
+      : "NONE";
+
+    /* ================= SAFE PARSE FUNCTION ================= */
+    const safeParse = (value) => {
+      try {
+        return JSON.parse(value || "[]");
+      } catch {
+        return [];
+      }
+    };
 
     /* ================= PARSE MARKET ARRAYS ================= */
     const teamARates = safeParse(req.body.teamARates);
     const teamASizes = safeParse(req.body.teamASizes);
     const teamBRates = safeParse(req.body.teamBRates);
     const teamBSizes = safeParse(req.body.teamBSizes);
+
+    const disqualifyRates = safeParse(req.body.disqualifyRates);   // ✅ NEW
+    const disqualifySizes = safeParse(req.body.disqualifySizes);   // ✅ NEW
 
     /* ================= IMAGE LOGIC ================= */
     let imageUrl = null;
@@ -99,24 +118,29 @@ const createWrestlingMatch = async (req, res) => {
     const eventName = `${teamAName.trim()} vs ${teamBName.trim()}`;
 
     /* ================= BOX CREATOR ================= */
-    const createBoxes = (rates = [], sizes = []) => [
-      { boxId: 1, btype: "BACK", rate: 0, size: 0 },
-      { boxId: 2, btype: "BACK", rate: 0, size: 0 },
-      {
-        boxId: 3,
-        btype: "BACK",
-        rate: Number(rates[0]) || 0,
-        size: Number(sizes[0]) || 0,
-      },
-      {
-        boxId: 4,
-        btype: "LAY",
-        rate: Number(rates[1]) || 0,
-        size: Number(sizes[1]) || 0,
-      },
-      { boxId: 5, btype: "LAY", rate: 0, size: 0 },
-      { boxId: 6, btype: "LAY", rate: 0, size: 0 },
-    ];
+    const createBoxes = (rates = [], sizes = []) => {
+      const backRate = Number(rates[0]) || 0;   // box 3
+      const layRate = Number(rates[1]) || 0;    // box 4
+
+      const backSize = Number(sizes[0]) || 0;
+      const laySize = Number(sizes[1]) || 0;
+
+      // calculated rates
+      const backMinus = backRate > 0 ? +(backRate - 0.01).toFixed(2) : 0;
+      const layPlus = layRate > 0 ? +(layRate + 0.01).toFixed(2) : 0;
+
+      return [
+        // BACK SIDE
+        { boxId: 1, btype: "BACK", rate: backMinus, size: backSize },
+        { boxId: 2, btype: "BACK", rate: backMinus, size: backSize },
+        { boxId: 3, btype: "BACK", rate: backRate, size: backSize },
+
+        // LAY SIDE
+        { boxId: 4, btype: "LAY", rate: layRate, size: laySize },
+        { boxId: 5, btype: "LAY", rate: layPlus, size: laySize },
+        { boxId: 6, btype: "LAY", rate: layPlus, size: laySize },
+      ];
+    };
 
     /* ================= CREATE MATCH ================= */
     const match = await WrestlingMatch.create({
@@ -127,8 +151,8 @@ const createWrestlingMatch = async (req, res) => {
       maxbet: Number(maxbet) || 0,
       status: "PENDING",
 
-      // ✅ NEW FIELD ADDED
       betStatus: finalBetStatus,
+      disqualify: finalDisqualify, // ✅ SAVED
 
       img: imageUrl,
       gameType: "ODD",
@@ -146,6 +170,12 @@ const createWrestlingMatch = async (req, res) => {
           tname: teamBName.trim(),
           side: "B",
           boxes: createBoxes(teamBRates, teamBSizes),
+        },
+        {
+          tid: generateTid(),
+          tname: "Disqualify",
+          side: "DQ", // ✅ THIRD MARKET
+          boxes: createBoxes(disqualifyRates, disqualifySizes),
         },
       ],
     });

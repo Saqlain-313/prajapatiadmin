@@ -243,6 +243,8 @@ const AdminWrestlingAllBetsPage = () => {
   const [filterResult, setFilterResult] = useState("ALL");
   const [selectedBet, setSelectedBet] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [teamFilter, setTeamFilter] = useState("ALL");
+  const [typeFilter, setTypeFilter] = useState("ALL");
 
   useEffect(() => {
     dispatch(getAllBets());
@@ -254,11 +256,29 @@ const AdminWrestlingAllBetsPage = () => {
     }
   }, [error]);
 
+  const teamOptions = useMemo(() => {
+    const teams = new Set();
+
+    bets.forEach(bet => {
+      if (!bet.teamName) return;
+
+      const name = bet.teamName.trim();
+
+      if (name.toUpperCase().includes("DIS")) {
+        teams.add("DISQUALIFY");
+      } else {
+        teams.add(name);
+      }
+    });
+
+    return ["ALL", ...Array.from(teams)];
+  }, [bets]);
+
   // Filter bets based on search and result filter
   const filteredBets = useMemo(() => {
     let filtered = bets;
 
-    // Apply result filter
+    // 🔹 Result Filter
     if (filterResult === "PENDING") {
       filtered = filtered.filter(b => b.status === 0);
     }
@@ -271,20 +291,41 @@ const AdminWrestlingAllBetsPage = () => {
       filtered = filtered.filter(b => b.status === 2);
     }
 
-    // Apply search filter
+    // 🔹 Team Filter
+    if (teamFilter !== "ALL") {
+      filtered = filtered.filter(bet => {
+        if (!bet.teamName) return false;
+
+        const name = bet.teamName.trim().toUpperCase();
+
+        if (teamFilter === "DISQUALIFY") {
+          return name.includes("DIS");
+        }
+
+        return name === teamFilter.toUpperCase();
+      });
+    }
+
+    // 🔹 Otype Filter
+    if (typeFilter !== "ALL") {
+      filtered = filtered.filter(
+        bet => bet.otype?.toUpperCase() === typeFilter
+      );
+    }
+
+    // 🔹 Search Filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
+
       filtered = filtered.filter(b =>
-        b.user?.mobile?.toLowerCase().includes(query) ||
+        b.userId?.mobile?.toLowerCase().includes(query) ||
         b.teamName?.toLowerCase().includes(query) ||
-        b._id?.toLowerCase().includes(query) ||
-        b.user?._id?.toLowerCase().includes(query)
+        b._id?.toLowerCase().includes(query)
       );
     }
 
     return filtered;
-  }, [bets, searchQuery, filterResult]);
-
+  }, [bets, searchQuery, filterResult, teamFilter, typeFilter]);
   // Calculate stats
   const stats = useMemo(() => {
     const total = bets.length;
@@ -514,6 +555,7 @@ const AdminWrestlingAllBetsPage = () => {
             </div>
           ) : (
             <div className="overflow-x-auto">
+              
               <table className="w-full">
                 <thead>
                   <tr className="bg-black/40 border-b border-white/10">

@@ -134,25 +134,72 @@ const BetTypeBadge = ({ btype }) => {
    MATCH CARD COMPONENT
 -------------------------------------------------------- */
 const MatchCard = ({ game, isOpen, onToggle }) => {
-  // Admin Profit / Loss Calculation (Only Settled Bets)
-  const adminSummary = game.bets.reduce(
+  const [teamFilter, setTeamFilter] = useState("ALL");
+  const [typeFilter, setTypeFilter] = useState("ALL");
+
+  // 🔥 Extract Teams Properly (including Disqualify)
+  const matchTeams = useMemo(() => {
+    const teams = new Set();
+
+    game.bets.forEach(bet => {
+      if (!bet.teamName) return;
+
+      const name = bet.teamName.trim();
+
+      if (name.toUpperCase().includes("DIS")) {
+        teams.add("DISQUALIFY");
+      } else {
+        teams.add(name);
+      }
+    });
+
+    return ["ALL", ...Array.from(teams)];
+  }, [game.bets]);
+
+  // 🔥 FILTER LOGIC (Team -> Then Otype)
+  const filteredBets = useMemo(() => {
+    let filtered = game.bets;
+
+    // Team Filter
+    if (teamFilter !== "ALL") {
+      filtered = filtered.filter(bet => {
+        if (!bet.teamName) return false;
+
+        const name = bet.teamName.trim().toUpperCase();
+
+        if (teamFilter === "DISQUALIFY") {
+          return name.includes("DIS");
+        }
+
+        return name === teamFilter.toUpperCase();
+      });
+    }
+
+    // Type Filter
+    if (typeFilter !== "ALL") {
+      filtered = filtered.filter(
+        bet => bet.otype?.toUpperCase() === typeFilter
+      );
+    }
+
+    return filtered;
+  }, [game.bets, teamFilter, typeFilter]);
+
+  // 🔥 Admin Profit Calculation (Filtered Data)
+  const adminSummary = filteredBets.reduce(
     (acc, bet) => {
       if (bet.status === 0) return acc;
 
-      if (bet.otype === "BACK") {
-        if (bet.status === 1) {
-          acc.loss += bet.profit || 0;
-        } else if (bet.status === 2) {
-          acc.profit += bet.betAmount || 0;
-        }
+      const type = bet.otype?.toUpperCase();
+
+      if (type === "BACK") {
+        if (bet.status === 1) acc.loss += bet.profit || 0;
+        if (bet.status === 2) acc.profit += bet.betAmount || 0;
       }
 
-      if (bet.otype === "LAY") {
-        if (bet.status === 1) {
-          acc.profit += bet.liability || 0;
-        } else if (bet.status === 2) {
-          acc.loss += bet.profit || 0;
-        }
+      if (type === "LAY") {
+        if (bet.status === 1) acc.profit += bet.liability || 0;
+        if (bet.status === 2) acc.loss += bet.profit || 0;
       }
 
       return acc;
@@ -162,213 +209,151 @@ const MatchCard = ({ game, isOpen, onToggle }) => {
 
   const netAdmin = adminSummary.profit - adminSummary.loss;
 
-  // Calculate total bets and stake
-  const totalBets = game.bets.length;
-  const settledBets = game.bets.filter(b => b.status !== 0).length;
-  const totalStake = game.bets.reduce((sum, b) => sum + (b.betAmount || 0), 0);
+  const totalBets = filteredBets.length;
+  const settledBets = filteredBets.filter(b => b.status !== 0).length;
+  const totalStake = filteredBets.reduce((sum, b) => sum + (b.betAmount || 0), 0);
 
   return (
     <div className={`${gradientCardClass} overflow-hidden mb-6`}>
-      {/* Header - Clickable */}
+      {/* HEADER */}
       <div
         onClick={onToggle}
         className="cursor-pointer p-6 border-b border-white/10 hover:bg-white/5 transition-all duration-300"
       >
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          {/* Left Section */}
-          <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500/20 to-orange-900/30 
-                          flex items-center justify-center border border-orange-500/30
-                          shadow-[0_0_20px_rgba(255,165,0,0.1)]">
-              <MdSportsKabaddi size={30} className="text-orange-400" />
-            </div>
-
-            <div>
-              <div className="flex items-center gap-3 mb-1">
-                <h2 className="text-2xl font-bold text-white drop-shadow-[0_2px_5px_black]">
-                  Match #{game.mid}
-                </h2>
-                <span className="px-3 py-1 bg-white/10 rounded-full text-xs text-white/80 border border-white/20">
-                  {totalBets} bets
-                </span>
-              </div>
-
-              <p className="text-lg text-white/80 font-medium mb-3">
-                {game.eventName}
-              </p>
-
-              <div className="flex flex-wrap items-center gap-4 text-sm">
-                <span className="text-white/60 flex items-center gap-1">
-                  <MdAttachMoney size={16} className="text-amber-400" />
-                  Total Stake: ₹{totalStake.toLocaleString()}
-                </span>
-                <span className="text-white/60 flex items-center gap-1">
-                  <MdCheckCircle size={16} className="text-emerald-400" />
-                  Settled: {settledBets}/{totalBets}
-                </span>
-              </div>
-            </div>
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-2xl font-bold text-white">
+              Match {game.eventName}
+            </h2>
+            <p className="text-white/60 text-sm mt-1">
+              {game.mid}
+            </p>
           </div>
 
-          {/* Right Section - Admin Summary & Toggle */}
-          <div className="flex flex-col items-end gap-3">
-            <div className="flex items-center gap-4 bg-black/40 px-5 py-3 rounded-2xl border border-white/10">
-              <div className="text-right">
-                <span className="text-white/40 text-xs">Admin Profit</span>
-                <p className="text-emerald-400 font-bold text-lg">
-                  ₹{adminSummary.profit.toLocaleString()}
-                </p>
-              </div>
-              <div className="w-px h-8 bg-white/20" />
-              <div className="text-right">
-                <span className="text-white/40 text-xs">Admin Loss</span>
-                <p className="text-red-400 font-bold text-lg">
-                  ₹{adminSummary.loss.toLocaleString()}
-                </p>
-              </div>
-              <div className="w-px h-8 bg-white/20" />
-              <div className="text-right">
-                <span className="text-white/40 text-xs">Net</span>
-                <p className={`font-bold text-lg ${netAdmin >= 0 ? 'text-emerald-400' : 'text-red-400'
-                  }`}>
-                  ₹{netAdmin.toLocaleString()}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 text-white/40">
-              <span className="text-xs">{isOpen ? 'Hide details' : 'Show details'}</span>
-              {isOpen ?
-                <MdExpandLess size={24} className="text-white/60" /> :
-                <MdExpandMore size={24} className="text-white/60" />
-              }
-            </div>
+          <div className="text-right">
+            <p className={`font-bold text-lg ${netAdmin >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+              ₹{netAdmin.toLocaleString()}
+            </p>
+            <p className="text-white/40 text-xs">Net Admin</p>
           </div>
         </div>
       </div>
 
-      {/* Collapsible Table */}
-      <div
-        className={`transition-all duration-500 ease-in-out ${isOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
-          }`}
-      >
+      {/* COLLAPSIBLE */}
+      <div className={`transition-all duration-500 ${isOpen ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0 overflow-hidden"}`}>
         <div className="p-6 bg-black/40">
+
+          {/* 🔥 FILTER BUTTONS */}
+          <div className="flex flex-wrap gap-3 mb-5 items-center">
+
+            {/* TEAM BUTTONS */}
+            {matchTeams.map(team => (
+              <button
+                key={team}
+                onClick={() => setTeamFilter(team)}
+                className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all
+                ${teamFilter === team
+                    ? "bg-white text-black border-white"
+                    : "bg-white/5 text-white border-white/10 hover:bg-white/10"
+                  }`}
+              >
+                {team}
+              </button>
+            ))}
+
+            <div className="w-full h-px bg-white/10 my-2" />
+
+            {/* TYPE BUTTONS */}
+            {["ALL", "BACK", "LAY"].map(type => (
+              <button
+                key={type}
+                onClick={() => setTypeFilter(type)}
+                className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all
+                ${typeFilter === type
+                    ? type === "BACK"
+                      ? "bg-emerald-500 text-white border-emerald-400"
+                      : type === "LAY"
+                        ? "bg-red-500 text-white border-red-400"
+                        : "bg-white text-black border-white"
+                    : "bg-white/5 text-white border-white/10 hover:bg-white/10"
+                  }`}
+              >
+                {type}
+              </button>
+            ))}
+
+            {/* CLEAR */}
+            <button
+              onClick={() => {
+                setTeamFilter("ALL");
+                setTypeFilter("ALL");
+              }}
+              className="ml-auto px-4 py-2 rounded-xl text-sm border border-white/20 bg-white/5 text-white hover:bg-white/10"
+            >
+              Clear
+            </button>
+
+            {/* STATS */}
+            <div className="ml-auto text-sm text-white/50 flex items-center gap-4">
+              <span>Total: {totalBets}</span>
+              <span>Settled: {settledBets}</span>
+              <span>Stake: ₹{totalStake.toLocaleString()}</span>
+            </div>
+          </div>
+
+          {/* TABLE */}
           <div className="overflow-x-auto rounded-xl border border-white/10">
             <table className="w-full">
               <thead>
                 <tr className="bg-black/60 border-b border-white/10">
-                  <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
-                    User
-                  </th>
-                  <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
-                    Mobile
-                  </th>
-                  <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
-                    Team
-                  </th>
-                  <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
-                    Rate
-                  </th>
-                  <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
-                    Stake
-                  </th>
-                  <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
-                    Profit
-                  </th>
-                  <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
-                    Liability
-                  </th>
-                  <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
-                    Result
-                  </th>
-                  <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
-                    Date
-                  </th>
+                  <th className="px-4 py-3 text-left text-xs text-white/60">User</th>
+                  <th className="px-4 py-3 text-left text-xs text-white/60">Team</th>
+                  <th className="px-4 py-3 text-left text-xs text-white/60">Type</th>
+                  <th className="px-4 py-3 text-left text-xs text-white/60">Rate</th>
+                  <th className="px-4 py-3 text-left text-xs text-white/60">Stake</th>
+                  <th className="px-4 py-3 text-left text-xs text-white/60">Profit</th>
+                  <th className="px-4 py-3 text-left text-xs text-white/60">Liability</th>
+                  <th className="px-4 py-3 text-left text-xs text-white/60">Result</th>
                 </tr>
               </thead>
+
               <tbody className="divide-y divide-white/5">
-                {game.bets.map((bet) => (
-                  <tr key={bet._id} className="hover:bg-white/5 transition-all duration-200">
-
-                    {/* USER */}
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-white/20 to-white/5 
-                      flex items-center justify-center border border-white/20">
-                          <span className="text-white font-bold text-sm">
-                            {bet.userId?.mobile?.charAt(0) || "U"}
-                          </span>
-                        </div>
-                        <div>
-                          <div className="font-medium text-white text-sm">
-                            {bet.userId?.mobile || "N/A"}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* MOBILE */}
-                    <td className="px-5 py-4 text-white/80 text-sm font-mono">
+                {filteredBets.map(bet => (
+                  <tr key={bet._id} className="hover:bg-white/5">
+                    <td className="px-4 py-3 text-white text-sm">
                       {bet.userId?.mobile || "N/A"}
                     </td>
-
-                    {/* TEAM */}
-                    <td className="px-5 py-4">
-                      <span className="px-3 py-1.5 bg-white/10 rounded-lg text-xs border border-white/20">
-                        {bet.teamName}
-                      </span>
+                    <td className="px-4 py-3 text-white/80 text-sm">
+                      {bet.teamName}
                     </td>
-
-                    {/* TYPE */}
-                    <td className="px-5 py-4">
-                      <BetTypeBadge btype={bet.otype} />
+                    <td className="px-4 py-3">
+                      <BetTypeBadge btype={bet.otype?.toUpperCase()} />
                     </td>
-
-                    {/* RATE */}
-                    <td className="px-5 py-4 text-white font-mono">
+                    <td className="px-4 py-3 text-white font-mono">
                       {bet.price?.toFixed(2)}
                     </td>
-
-                    {/* STAKE */}
-                    <td className="px-5 py-4 text-amber-400 font-bold">
+                    <td className="px-4 py-3 text-amber-400 font-bold">
                       ₹{bet.betAmount?.toLocaleString()}
                     </td>
-
-                    {/* PROFIT */}
-                    <td className="px-5 py-4 text-emerald-400 font-semibold">
+                    <td className="px-4 py-3 text-emerald-400">
                       ₹{bet.profit?.toLocaleString() || 0}
                     </td>
-
-                    {/* LIABILITY */}
-                    <td className="px-5 py-4 text-red-400 font-semibold">
+                    <td className="px-4 py-3 text-red-400">
                       ₹{bet.liability?.toLocaleString() || 0}
                     </td>
-
-                    {/* RESULT */}
-                    <td className="px-5 py-4">
+                    <td className="px-4 py-3">
                       <ResultBadge status={bet.status} />
                     </td>
-
-                    {/* STATUS */}
-                    <td className="px-5 py-4">
-                      <StatusBadge status={bet.status} />
-                    </td>
-
-                    {/* DATE */}
-                    <td className="px-5 py-4 text-white/40 text-xs">
-                      {new Date(bet.createdAt).toLocaleString()}
-                    </td>
-
                   </tr>
                 ))}
               </tbody>
             </table>
+
+            {filteredBets.length === 0 && (
+              <div className="text-center py-8 text-white/40">
+                No bets found for selected filter
+              </div>
+            )}
           </div>
         </div>
       </div>

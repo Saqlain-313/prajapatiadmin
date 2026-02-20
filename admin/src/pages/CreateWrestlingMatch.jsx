@@ -111,6 +111,11 @@ const CreateWrestlingMatch = () => {
   const [teamASizes, setTeamASizes] = useState(["", ""]);
   const [teamBRates, setTeamBRates] = useState(["", ""]);
   const [teamBSizes, setTeamBSizes] = useState(["", ""]);
+  // ================= NEW STATES ADD =================
+  const [disqualify, setDisqualify] = useState("NONE");
+
+  const [disqualifyRates, setDisqualifyRates] = useState(["", ""]);
+  const [disqualifySizes, setDisqualifySizes] = useState(["", ""]);
 
   /* IMAGE STATES */
   const [image, setImage] = useState(null);
@@ -196,11 +201,18 @@ const CreateWrestlingMatch = () => {
         startTime,
         minbet: Number(minbet),
         maxbet: Number(maxbet),
-        betStatus, // ✅ ADD HERE
+
+        betStatus,
+
+        // ✅ NEW ADDITIONS
+        disqualify,
         teamARates,
         teamASizes,
         teamBRates,
         teamBSizes,
+        disqualifyRates,
+        disqualifySizes,
+
         img: image,
       })
     );
@@ -475,6 +487,63 @@ const CreateWrestlingMatch = () => {
                     placeholder="Size"
                     value={teamBSizes[1]}
                     onChange={(e) => setTeamBSizes([teamBSizes[0], e.target.value])}
+                    className={inputStyleClasses}
+                  />
+                </div>
+
+              </div>
+            </div>
+
+            {/* DISQUALIFY MARKET */}
+            <div className="md:col-span-2 space-y-4">
+              <h2 className="text-white font-semibold text-lg border-b border-white/10 pb-2">
+                Disqualify Market (Box 3 & 4)
+              </h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                {/* BACK - BOX 3 */}
+                <div className="p-4 bg-black/40 rounded-xl border border-white/10 space-y-2">
+                  <p className="text-xs text-white/50">BACK - Box 3</p>
+                  <input
+                    type="number"
+                    placeholder="Rate"
+                    value={disqualifyRates[0]}
+                    onChange={(e) =>
+                      setDisqualifyRates([e.target.value, disqualifyRates[1]])
+                    }
+                    className={inputStyleClasses}
+                  />
+                  <input
+                    type="number"
+                    placeholder="Size"
+                    value={disqualifySizes[0]}
+                    onChange={(e) =>
+                      setDisqualifySizes([e.target.value, disqualifySizes[1]])
+                    }
+                    className={inputStyleClasses}
+                  />
+                </div>
+
+                {/* LAY - BOX 4 */}
+                <div className="p-4 bg-black/40 rounded-xl border border-white/10 space-y-2">
+                  <p className="text-xs text-white/50">LAY - Box 4</p>
+                  <input
+                    type="number"
+                    placeholder="Rate"
+                    value={disqualifyRates[1]}
+                    onChange={(e) =>
+                      setDisqualifyRates([disqualifyRates[0], e.target.value])
+                    }
+                    className={inputStyleClasses}
+                  />
+                  <input
+                    type="number"
+                    placeholder="Size"
+                    value={disqualifySizes[1]}
+                    onChange={(e) =>
+                      setDisqualifySizes([disqualifySizes[0], e.target.value])
+                    }
                     className={inputStyleClasses}
                   />
                 </div>

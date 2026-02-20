@@ -22,9 +22,6 @@ const initSocket = (io) => {
 
         if (!matchId || !mid || !tid || !boxId) return;
 
-        // 🔒 Only BACK(3) & LAY(4)
-        if (![3, 4].includes(Number(boxId))) return;
-
         const match = await WrestlingMatch.findById(matchId);
         if (!match) return;
 
@@ -33,12 +30,12 @@ const initSocket = (io) => {
         );
         if (!team) return;
 
+        // 🔓 Allow all valid boxes
         const box = team.boxes.find(
           (b) => Number(b.boxId) === Number(boxId)
         );
         if (!box) return;
 
-        /* ===== PATCH VALUES ===== */
         if (rate !== undefined && rate !== null) {
           box.rate = Number(rate);
         }
@@ -53,9 +50,8 @@ const initSocket = (io) => {
 
         await match.save();
 
-        /* ===== BROADCAST TO ROOM (FIXED) ===== */
         io.to(String(mid)).emit("box:update", {
-          mid: String(mid),       // 🔥 IMPORTANT
+          mid: String(mid),
           tid: Number(tid),
           boxId: Number(boxId),
           rate: box.rate,

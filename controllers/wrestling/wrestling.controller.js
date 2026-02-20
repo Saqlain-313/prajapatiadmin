@@ -119,26 +119,30 @@ const createWrestlingMatch = async (req, res) => {
 
     /* ================= BOX CREATOR ================= */
     const createBoxes = (rates = [], sizes = []) => {
-      const backRate = Number(rates[0]) || 0;   // box 3
-      const layRate = Number(rates[1]) || 0;    // box 4
+      const backRate = Number(rates[0]) || 0;   
+      const layRate = Number(rates[1]) || 0;   
 
       const backSize = Number(sizes[0]) || 0;
       const laySize = Number(sizes[1]) || 0;
 
-      // calculated rates
-      const backMinus = backRate > 0 ? +(backRate - 0.01).toFixed(2) : 0;
-      const layPlus = layRate > 0 ? +(layRate + 0.01).toFixed(2) : 0;
+      // BACK ladder
+      const box2Back = backRate > 0 ? +(backRate - 0.01).toFixed(2) : 0;
+      const box1Back = box2Back > 0 ? +(box2Back - 0.01).toFixed(2) : 0;
+
+      // LAY ladder
+      const box5Lay = layRate > 0 ? +(layRate + 0.01).toFixed(2) : 0;
+      const box6Lay = box5Lay > 0 ? +(box5Lay + 0.01).toFixed(2) : 0;
 
       return [
-        // BACK SIDE
-        { boxId: 1, btype: "BACK", rate: backMinus, size: backSize },
-        { boxId: 2, btype: "BACK", rate: backMinus, size: backSize },
+        // BACK
+        { boxId: 1, btype: "BACK", rate: box1Back, size: backSize },
+        { boxId: 2, btype: "BACK", rate: box2Back, size: backSize },
         { boxId: 3, btype: "BACK", rate: backRate, size: backSize },
 
-        // LAY SIDE
+        // LAY
         { boxId: 4, btype: "LAY", rate: layRate, size: laySize },
-        { boxId: 5, btype: "LAY", rate: layPlus, size: laySize },
-        { boxId: 6, btype: "LAY", rate: layPlus, size: laySize },
+        { boxId: 5, btype: "LAY", rate: box5Lay, size: laySize },
+        { boxId: 6, btype: "LAY", rate: box6Lay, size: laySize },
       ];
     };
 

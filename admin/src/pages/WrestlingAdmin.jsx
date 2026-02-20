@@ -266,202 +266,159 @@ const WrestlingAdmin = () => {
   const minRate = 0.00;
   const maxRate = 1.99;
 
-  const handleIncreaseRate = () => {
-    if (!MATCH || !tid) return;
+  /* =====================================================
+     🔥 TEAM SWITCH (A ↔ B ONLY, DQ IGNORE)
+  ===================================================== */
+  const switchTeam = (currentTeam) => {
+    if (!MATCH || !MATCH.teams) return;
 
-    const team = MATCH?.teams?.find(
-      (t) => String(t.tid) === String(tid)
+    // Only playable teams
+    const playableTeams = MATCH.teams.filter(
+      (t) => t.side === "A" || t.side === "B"
     );
-    if (!team) return;
 
-    const backBox = team.boxes.find((b) => b.boxId == 3);
-    const layBox = team.boxes.find((b) => b.boxId == 4);
-    if (!backBox || !layBox) return;
+    if (playableTeams.length < 2) return;
 
-    const currentBack = Number(backBox.rate || 0);
-    const currentLay = Number(layBox.rate || 0);
-    const step = Number(rateStep);
+    const nextTeam = playableTeams.find(
+      (t) => String(t.tid) !== String(currentTeam.tid)
+    );
 
-    /* ===============================
-       🔁 TEAM SWITCH LOGIC
-    =============================== */
-    /* ===============================
-       🔁 TEAM SWITCH LOGIC (UPDATED)
-    =============================== */
+    if (!nextTeam) return;
 
-    if (currentBack >= maxRate || currentLay >= maxRate) {
-
-      const suspendedTeamId = team.tid;
-
-      const otherTeam = MATCH.teams.find(
-        (t) => String(t.tid) !== String(suspendedTeamId)
-      );
-
-      /* 🔥 SUSPEND CURRENT TEAM */
-      socket.emit("admin:update-team-status", {
-        matchId: MATCH._id,
-        mid: MATCH.mid,
-        tid: suspendedTeamId,
-        status: "SUSPENDED",
-      });
-
-      /* 🔥 ACTIVATE OTHER TEAM */
-      if (otherTeam) {
-        socket.emit("admin:update-team-status", {
-          matchId: MATCH._id,
-          mid: MATCH.mid,
-          tid: otherTeam.tid,
-          status: "ACTIVE",
-        });
-
-        // Switch selected team in UI
-        setTimeout(() => {
-          setTid(String(otherTeam.tid));
-
-          const otherBack = otherTeam.boxes.find((b) => b.boxId == 3);
-          if (otherBack) {
-            setBoxId(String(otherBack.boxId));
-          }
-        }, 50);
-      }
-
-      showToast("Team auto suspended (Back/Lay hit max) 🔁", "info");
-      return;
-    }
-
-    /* ===============================
-       📈 NORMAL RATE INCREASE (Maintain Gap)
-    =============================== */
-
-    if (MATCH.status !== "OPEN") return;
-
-    let newBackRate = Number((currentBack + step).toFixed(2));
-    let newLayRate = Number((currentLay + step).toFixed(2));
-
-    if (newBackRate > maxRate) newBackRate = maxRate;
-    if (newLayRate > maxRate) newLayRate = maxRate;
-
-    socket.emit("admin:update-box", {
+    // Suspend current
+    socket.emit("admin:update-team-status", {
       matchId: MATCH._id,
       mid: MATCH.mid,
-      tid,
-      boxId: 3,
-      rate: newBackRate,
-      size: backBox.size || 0,
-      timer: backBox.timer || 0,
+      tid: currentTeam.tid,
+      status: "SUSPENDED",
     });
 
-    socket.emit("admin:update-box", {
+    // Activate next
+    socket.emit("admin:update-team-status", {
       matchId: MATCH._id,
       mid: MATCH.mid,
-      tid,
-      boxId: 4,
-      rate: newLayRate,
-      size: layBox.size || 0,
-      timer: layBox.timer || 0,
+      tid: nextTeam.tid,
+      status: "ACTIVE",
+    });
+
+    // UI switch
+    setTimeout(() => {
+      setTid(String(nextTeam.tid));
+      setBoxId("3");
+    }, 80);
+
+    showToast("Team Switched 🔁", "info");
+  };
+
+
+  /* =====================================================
+     🔥 LADDER ENGINE (All 6 Boxes Auto Update)
+  ===================================================== */
+  const updateAllBoxes = (team, newBackRate, newLayRate) => {
+    const gap = 0.01;
+
+    // Clamp inside range
+    newBackRate = Math.max(minRate, Math.min(maxRate, newBackRate));
+    newLayRate = Math.max(minRate, Math.min(maxRate, newLayRate));
+
+    // Maintain Back < Lay
+    if (newLayRate <= newBackRate) {
+      newLayRate = +(newBackRate + gap).toFixed(2);
+    }
+
+    // BACK ladder
+    const box2Back = +(newBackRate - gap).toFixed(2);
+    const box1Back = +(box2Back - gap).toFixed(2);
+
+    // LAY ladder
+    const box5Lay = +(newLayRate + gap).toFixed(2);
+    const box6Lay = +(box5Lay + gap).toFixed(2);
+
+    const ladder = [
+      { boxId: 1, rate: box1Back },
+      { boxId: 2, rate: box2Back },
+      { boxId: 3, rate: newBackRate },
+      { boxId: 4, rate: newLayRate },
+      { boxId: 5, rate: box5Lay },
+      { boxId: 6, rate: box6Lay },
+    ];
+
+    ladder.forEach((box) => {
+      const existing = team.boxes.find(b => b.boxId == box.boxId);
+      if (!existing) return;
+
+      socket.emit("admin:update-box", {
+        matchId: MATCH._id,
+        mid: MATCH.mid,
+        tid: team.tid,
+        boxId: box.boxId,
+        rate: box.rate,
+        size: existing.size || 0,
+        timer: existing.timer || 0,
+      });
     });
   };
 
-  const handleDecreaseRate = () => {
-    if (!MATCH || MATCH.status !== "OPEN") return;
-    if (!tid) return;
 
-    const team = MATCH?.teams?.find(
+  /* =====================================================
+     🔼 HANDLE INCREASE
+  ===================================================== */
+  const handleIncreaseRate = () => {
+    if (!MATCH || MATCH.status !== "OPEN" || !tid) return;
+
+    const team = MATCH.teams.find(
       (t) => String(t.tid) === String(tid)
     );
     if (!team) return;
 
+    const backBox = team.boxes.find(b => b.boxId == 3);
+    const layBox = team.boxes.find(b => b.boxId == 4);
+    if (!backBox || !layBox) return;
+
     const step = Number(rateStep);
 
-    const backBox = team.boxes.find((b) => b.boxId == 3);
-    const layBox = team.boxes.find((b) => b.boxId == 4);
+    let newBackRate = +(Number(backBox.rate) + step).toFixed(2);
+    let newLayRate = +(Number(layBox.rate) + step).toFixed(2);
 
-    const currentBack = Number(backBox?.rate || 0);
-    const currentLay = Number(layBox?.rate || 0);
-
-    let newBackRate = currentBack;
-    let newLayRate = currentLay;
-
-    if (backBox) {
-      newBackRate = Number((currentBack - step).toFixed(2));
-      if (newBackRate < minRate) newBackRate = minRate;
-    }
-
-    if (layBox) {
-      newLayRate = Number((currentLay - step).toFixed(2));
-      if (newLayRate < minRate) newLayRate = minRate;
-    }
-
-    /* ===============================
-       🔁 TEAM SWITCH LOGIC (MIN HIT)
-    =============================== */
-
-    if (newBackRate <= minRate || newLayRate <= minRate) {
-
-      const suspendedTeamId = team.tid;
-
-      const otherTeam = MATCH.teams.find(
-        (t) => String(t.tid) !== String(suspendedTeamId)
-      );
-
-      // 🔥 Suspend current team
-      socket.emit("admin:update-team-status", {
-        matchId: MATCH._id,
-        mid: MATCH.mid,
-        tid: suspendedTeamId,
-        status: "SUSPENDED",
-      });
-
-      // 🔥 Activate other team
-      if (otherTeam) {
-        socket.emit("admin:update-team-status", {
-          matchId: MATCH._id,
-          mid: MATCH.mid,
-          tid: otherTeam.tid,
-          status: "ACTIVE",
-        });
-
-        setTimeout(() => {
-          setTid(String(otherTeam.tid));
-
-          const otherBack = otherTeam.boxes.find((b) => b.boxId == 3);
-          if (otherBack) {
-            setBoxId(String(otherBack.boxId));
-          }
-        }, 50);
-      }
-
-      showToast("Team auto suspended (Min rate hit) 🔁", "info");
+    // AUTO SUSPEND ON MAX
+    if (newBackRate >= maxRate || newLayRate >= maxRate) {
+      switchTeam(team);
+      showToast("Auto Suspended (MAX hit) 🔁", "info");
       return;
     }
 
-    /* ===============================
-       📉 NORMAL RATE DECREASE
-    =============================== */
+    updateAllBoxes(team, newBackRate, newLayRate);
+  };
 
-    if (backBox) {
-      socket.emit("admin:update-box", {
-        matchId: MATCH._id,
-        mid: MATCH.mid,
-        tid,
-        boxId: 3,
-        rate: newBackRate,
-        size: backBox.size || 0,
-        timer: backBox.timer || 0,
-      });
+
+  /* =====================================================
+     🔽 HANDLE DECREASE
+  ===================================================== */
+  const handleDecreaseRate = () => {
+    if (!MATCH || MATCH.status !== "OPEN" || !tid) return;
+
+    const team = MATCH.teams.find(
+      (t) => String(t.tid) === String(tid)
+    );
+    if (!team) return;
+
+    const backBox = team.boxes.find(b => b.boxId == 3);
+    const layBox = team.boxes.find(b => b.boxId == 4);
+    if (!backBox || !layBox) return;
+
+    const step = Number(rateStep);
+
+    let newBackRate = +(Number(backBox.rate) - step).toFixed(2);
+    let newLayRate = +(Number(layBox.rate) - step).toFixed(2);
+
+    // AUTO SUSPEND ON MIN
+    if (newBackRate <= minRate || newLayRate <= minRate) {
+      switchTeam(team);
+      showToast("Auto Suspended (MIN hit) 🔁", "info");
+      return;
     }
 
-    if (layBox) {
-      socket.emit("admin:update-box", {
-        matchId: MATCH._id,
-        mid: MATCH.mid,
-        tid,
-        boxId: 4,
-        rate: newLayRate,
-        size: layBox.size || 0,
-        timer: layBox.timer || 0,
-      });
-    }
+    updateAllBoxes(team, newBackRate, newLayRate);
   };
 
   useEffect(() => {

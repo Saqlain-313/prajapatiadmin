@@ -45,17 +45,24 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     Dashboard: "/",
     "Active Users": "/users/active",
     Deposit: "/deposit",
-    Withdrawals: "/withdrawals",
+    "Withdrawals Success": "/withdrawals/success",
+    "Withdrawals Pending": "/withdrawals/pending",
+    "Withdrawals Rejected": "/withdrawals/rejected",
     Matches: "/matches",
     "Create Match": "/admin/wrestling/create",
     "All Bets": "/admin/wrestling-bets/all",
     "Pending Bets": "/admin/wrestling-bets/pending",
     "Settled Bets": "/admin/wrestling-bets/settled",
     "Bet History": "/admin/wrestling-bet-history",
-    "Referral Settings": "/admin/referral-settings", // ✅ ADDED
-
-
-    // ✅ Images Page
+    "Referral Settings": "/admin/referral-settings",
+    
+    // Deposit pages
+    "DepositManualSuccess": "/deposit/manual/success",
+    "DepositManualPending": "/deposit/manual/pending",
+    "DepositManualRejected": "/deposit/manual/rejected",
+    "DepositOnlineSuccess": "/deposit/online/success",
+    "DepositOnlinePending": "/deposit/online/pending",
+    "DepositOnlineRejected": "/deposit/online/rejected",
   };
 
   /* =========================
@@ -72,7 +79,11 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
   }, [location.pathname]);
 
   const toggleDropdown = (menu) => {
-    setOpenDropdown(openDropdown === menu ? null : menu);
+    // Only close if clicking a different dropdown, keep open if clicking same one
+    if (openDropdown !== menu) {
+      setOpenDropdown(menu);
+    }
+    // If clicking the same dropdown, it stays open (no state change)
   };
 
   const handleNavigation = (page) => {
@@ -81,6 +92,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
       navigate(target);
       setSidebarOpen(false);
     }
+    // Don't close dropdown when navigating
+    // setOpenDropdown(null); // Removed this line
   };
 
   // Remove banner upload handler, navigation handled by banner box onClick
@@ -110,14 +123,37 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     {
       name: "Deposit",
       icon: CreditCard,
-      page: "Deposit",
-      type: "single",
+      type: "dropdown",
+      items: [
+        {
+          name: "Manual Pay",
+          type: "nested",
+          items: [
+            { name: "Success", page: "DepositManualSuccess" },
+            { name: "Pending", page: "DepositManualPending" },
+            { name: "Rejected", page: "DepositManualRejected" },
+          ],
+        },
+        {
+          name: "Online Pay",
+          type: "nested",
+          items: [
+            { name: "Success", page: "DepositOnlineSuccess" },
+            { name: "Pending", page: "DepositOnlinePending" },
+            { name: "Rejected", page: "DepositOnlineRejected" },
+          ],
+        },
+      ],
     },
     {
       name: "Withdrawals",
       icon: ArrowDownCircle,
-      page: "Withdrawals",
-      type: "single",
+      type: "dropdown",
+      items: [
+        { name: "Success", page: "Withdrawals Success" },
+        { name: "Pending", page: "Withdrawals Pending" },
+        { name: "Rejected", page: "Withdrawals Rejected" },
+      ],
     },
     {
       name: "Wrestling",
@@ -139,6 +175,51 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
       type: "single",
     },
   ];
+
+  // Function to render nested dropdown items
+  const renderNestedItems = (items, parentName) => {
+    return items.map((subItem) => {
+      if (subItem.type === "nested" && subItem.items) {
+        return (
+          <div key={subItem.name} className="ml-2 mt-1">
+            <div className="text-white/50 text-xs font-medium px-4 py-1">
+              {subItem.name}
+            </div>
+            <div className="space-y-1">
+              {subItem.items.map((nestedItem) => (
+                <button
+                  key={nestedItem.name}
+                  onClick={() => handleNavigation(nestedItem.page)}
+                  className={`flex w-full items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-all duration-300 ml-2
+                    ${isActive(nestedItem.page)
+                      ? "bg-white/10 text-white border border-white/20 shadow-[0_0_15px_rgba(255,255,255,0.1)]"
+                      : "text-white/60 hover:text-white hover:bg-white/5"
+                    }`}
+                >
+                  <ChevronRight size={14} className="text-white/40" />
+                  {nestedItem.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      }
+      return (
+        <button
+          key={subItem.name}
+          onClick={() => handleNavigation(subItem.page)}
+          className={`flex w-full items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-all duration-300
+            ${isActive(subItem.page)
+              ? "bg-white/10 text-white border border-white/20 shadow-[0_0_15px_rgba(255,255,255,0.1)]"
+              : "text-white/60 hover:text-white hover:bg-white/5"
+            }`}
+        >
+          <ChevronRight size={14} className="text-white/40" />
+          {subItem.name}
+        </button>
+      );
+    });
+  };
 
   return (
     <>
@@ -198,8 +279,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
             <h3 className="text-white/80 text-sm font-medium">Banner Image</h3>
           </div>
 
-
-
           {/* Upload Button */}
           <label className="flex items-center justify-center gap-2 w-full py-2.5 px-3 
                           bg-white/5 hover:bg-white/10 border border-white/20 rounded-xl
@@ -209,8 +288,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
             <Upload size={16} />
             <span>{bannerPreview ? 'Change Banner' : 'Upload Banner'}</span>
             <input
-
-
               className="hidden"
             />
           </label>
@@ -240,30 +317,21 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                   />
                 </button>
 
-                {/* Dropdown Items */}
+                {/* Dropdown Items with nested structure */}
                 {openDropdown === item.name && (
                   <div className="ml-6 mt-1 space-y-1 border-l border-white/10 pl-3">
-                    {item.items.map((sub) => (
-                      <button
-                        key={sub.name}
-                        onClick={() => handleNavigation(sub.page)}
-                        className={`flex w-full items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-all duration-300
-                          ${isActive(sub.page)
-                            ? "bg-white/10 text-white border border-white/20 shadow-[0_0_15px_rgba(255,255,255,0.1)]"
-                            : "text-white/60 hover:text-white hover:bg-white/5"
-                          }`}
-                      >
-                        <ChevronRight size={14} className="text-white/40" />
-                        {sub.name}
-                      </button>
-                    ))}
+                    {renderNestedItems(item.items, item.name)}
                   </div>
                 )}
               </div>
             ) : (
               <button
                 key={item.name}
-                onClick={() => handleNavigation(item.page)}
+                onClick={() => {
+                  handleNavigation(item.page);
+                  // Don't close dropdown when navigating
+                  // setOpenDropdown(null); // Removed this line
+                }}
                 className={`flex w-full items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300
                   ${isActive(item.page)
                     ? "bg-white/10 text-white border border-white/30 shadow-[0_0_20px_rgba(255,255,255,0.15)]"
@@ -276,33 +344,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
             )
           )}
         </nav>
-
-        {/* Footer Section — with utility links */}
-        {/* <div className="mt-auto p-6 border-t border-white/10">
-          <div className="space-y-2">
-            <button className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-white/60 
-                             hover:text-white hover:bg-white/5 transition-all duration-300 text-sm
-                             border border-transparent hover:border-white/20">
-              <Settings size={16} />
-              <span>Settings</span>
-            </button>
-            <button className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-white/60 
-                             hover:text-white hover:bg-white/5 transition-all duration-300 text-sm
-                             border border-transparent hover:border-white/20">
-              <HelpCircle size={16} />
-              <span>Help & Support</span>
-            </button>
-          </div>
-
-          <div className="mt-6 pt-4 border-t border-white/10">
-            <p className="text-white/40 text-xs text-center">
-              © {new Date().getFullYear()} Wrestling
-            </p>
-            <p className="text-white/30 text-[10px] text-center mt-1">
-              v2.0.0 • Premium Admin
-            </p>
-          </div>
-        </div> */}
       </aside>
 
       <style jsx global>{`
@@ -325,3 +366,4 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
 };
 
 export default Sidebar;
+

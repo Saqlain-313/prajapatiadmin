@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useLocation } from "react-router-dom";
 import {
   MdAttachMoney,
   MdCheckCircle,
@@ -197,6 +198,7 @@ const showToast = (message, type = "success") => {
 -------------------------------------------------------- */
 const AdminWithdrawals = () => {
   const dispatch = useDispatch();
+  const location = useLocation();
   const { withdrawals = [], loading, error, successMessage } = useSelector(
     (state) => state.withdrawal
   );
@@ -207,6 +209,21 @@ const AdminWithdrawals = () => {
     type: "approve",
   });
   const [rejectRemark, setRejectRemark] = useState("");
+
+  // Determine current page based on URL
+  const getCurrentPageInfo = () => {
+    const path = location.pathname;
+    if (path.includes('/withdrawals/success')) {
+      return { status: 'approved', title: 'Approved Withdrawals' };
+    } else if (path.includes('/withdrawals/pending')) {
+      return { status: 'pending', title: 'Pending Withdrawals' };
+    } else if (path.includes('/withdrawals/rejected')) {
+      return { status: 'rejected', title: 'Rejected Withdrawals' };
+    }
+    return { status: 'all', title: 'All Withdrawal Requests' };
+  };
+
+  const currentPage = getCurrentPageInfo();
 
   useEffect(() => {
     dispatch(getAllWithdrawals()).then((res) => {
@@ -230,6 +247,12 @@ const AdminWithdrawals = () => {
       showToast(error, "error");
     }
   }, [error]);
+
+  // Filter withdrawals based on current page
+  const filteredWithdrawals = withdrawals.filter(w => {
+    if (currentPage.status === 'all') return true;
+    return w.status === currentPage.status;
+  });
 
   const handleApproveClick = (id) => {
     setConfirmation({
@@ -264,6 +287,28 @@ const AdminWithdrawals = () => {
     }).format(amount || 0);
   };
 
+  const formatDate = (date) => {
+    return new Date(date).toLocaleString('en-IN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  // Get counts for each status
+  const getCounts = () => {
+    return {
+      total: withdrawals.length,
+      pending: withdrawals.filter(w => w.status === 'pending').length,
+      approved: withdrawals.filter(w => w.status === 'approved').length,
+      rejected: withdrawals.filter(w => w.status === 'rejected').length,
+    };
+  };
+
+  const counts = getCounts();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-[#0A0C0F] to-[#030405] p-4 md:p-6 lg:p-8">
       {/* Header Section */}
@@ -277,17 +322,41 @@ const AdminWithdrawals = () => {
             </div>
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-white drop-shadow-[0_2px_5px_black]">
-                Withdrawal Requests
+                {currentPage.title}
               </h1>
-              <p className="text-white/40 text-sm mt-0.5 flex items-center gap-2">
-                <span>{withdrawals.length} total</span>
-                <span className="w-1 h-1 rounded-full bg-white/40" />
-                <span className="text-amber-400">
-                  {withdrawals.filter(w => w.status === "pending").length} pending
-                </span>
+              <p className="text-white/40 text-sm mt-0.5 flex items-center gap-2 flex-wrap">
+                <span>{filteredWithdrawals.length} withdrawals</span>
+                {currentPage.status === 'all' && (
+                  <>
+                    <span className="w-1 h-1 rounded-full bg-white/40" />
+                    <span className="text-amber-400">{counts.pending} pending</span>
+                    <span className="w-1 h-1 rounded-full bg-white/40" />
+                    <span className="text-emerald-400">{counts.approved} approved</span>
+                    <span className="w-1 h-1 rounded-full bg-white/40" />
+                    <span className="text-red-400">{counts.rejected} rejected</span>
+                  </>
+                )}
               </p>
             </div>
           </div>
+
+          {/* Status Summary Cards */}
+          {currentPage.status === 'all' && (
+            <div className="flex gap-2">
+              <div className="px-4 py-2 bg-amber-500/10 rounded-xl border border-amber-500/20">
+                <p className="text-amber-300 text-xs">Pending</p>
+                <p className="text-white font-bold text-lg">{counts.pending}</p>
+              </div>
+              <div className="px-4 py-2 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+                <p className="text-emerald-300 text-xs">Approved</p>
+                <p className="text-white font-bold text-lg">{counts.approved}</p>
+              </div>
+              <div className="px-4 py-2 bg-red-500/10 rounded-xl border border-red-500/20">
+                <p className="text-red-300 text-xs">Rejected</p>
+                <p className="text-white font-bold text-lg">{counts.rejected}</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -314,7 +383,7 @@ const AdminWithdrawals = () => {
       )}
 
       {/* Withdrawals Table */}
-      {!loading && withdrawals.length > 0 && (
+      {!loading && filteredWithdrawals.length > 0 && (
         <div className={`${gradientCardClass} overflow-hidden`}>
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -333,12 +402,20 @@ const AdminWithdrawals = () => {
                     Status
                   </th>
                   <th className="px-4 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
+                    Date
+                  </th>
+                  {currentPage.status === 'rejected' && (
+                    <th className="px-4 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
+                      Rejection Reason
+                    </th>
+                  )}
+                  <th className="px-4 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {withdrawals.map((w) => (
+                {filteredWithdrawals.map((w) => (
                   <tr
                     key={w._id}
                     className="border-t border-white/5 hover:bg-white/5 transition-all duration-200 group"
@@ -379,6 +456,20 @@ const AdminWithdrawals = () => {
                         {w.status}
                       </span>
                     </td>
+
+                    <td className="p-4">
+                      <span className="text-white/60 text-sm">
+                        {formatDate(w.createdAt)}
+                      </span>
+                    </td>
+
+                    {currentPage.status === 'rejected' && (
+                      <td className="p-4">
+                        <span className="text-white/60 text-sm max-w-[200px] block truncate" title={w.rejectionReason}>
+                          {w.rejectionReason || 'No reason provided'}
+                        </span>
+                      </td>
+                    )}
 
                     <td className="p-4">
                       {w.status === "pending" ? (
@@ -424,11 +515,21 @@ const AdminWithdrawals = () => {
       )}
 
       {/* Empty State */}
-      {!loading && withdrawals.length === 0 && (
+      {!loading && filteredWithdrawals.length === 0 && (
         <div className={`${gradientCardClass} p-12 text-center`}>
           <MdOpenWith size={48} className="text-white/20 mx-auto mb-4" />
-          <p className="text-white/50 text-lg font-medium">No withdrawal requests found</p>
-          <p className="text-white/30 text-sm mt-1">New withdrawal requests will appear here</p>
+          <p className="text-white/50 text-lg font-medium">
+            {currentPage.status === 'all' 
+              ? 'No withdrawal requests found'
+              : `No ${currentPage.status} withdrawals found`}
+          </p>
+          <p className="text-white/30 text-sm mt-1">
+            {currentPage.status === 'pending' 
+              ? 'New withdrawal requests will appear here'
+              : currentPage.status === 'approved'
+              ? 'Approved withdrawals will appear here'
+              : 'Rejected withdrawals will appear here'}
+          </p>
         </div>
       )}
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useLocation } from "react-router-dom";
 import {
   MdAttachMoney,
   MdCheckCircle,
@@ -10,6 +11,8 @@ import {
   MdComment,
   MdWarning,
   MdClose,
+  MdPayment,
+  MdAccountBalanceWallet,
 } from "react-icons/md";
 import { FiAlertCircle, FiCheckCircle, FiXCircle } from "react-icons/fi";
 import { toast } from "react-hot-toast";
@@ -63,6 +66,11 @@ const statusBadgeClass = {
   approved: "bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.2)]",
   rejected: "bg-red-500/20 text-red-300 border border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.2)]",
   pending: "bg-amber-500/20 text-amber-300 border border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.2)]",
+};
+
+const paymentTypeBadgeClass = {
+  manual: "bg-purple-500/20 text-purple-300 border border-purple-500/50",
+  online: "bg-blue-500/20 text-blue-300 border border-blue-500/50",
 };
 
 /* --------------------------------------------------------
@@ -177,6 +185,7 @@ const showToast = (message, type = "success") => {
 -------------------------------------------------------- */
 const AdminDeposits = () => {
   const dispatch = useDispatch();
+  const location = useLocation();
   const { deposits = [], loading, success, error } = useSelector(
     (state) => state.adminDeposits
   );
@@ -189,6 +198,21 @@ const AdminDeposits = () => {
     type: "approve",
   });
 
+  // Determine current page based on URL
+  const getCurrentPageInfo = () => {
+    const path = location.pathname;
+    if (path.includes('/manual/')) {
+      const status = path.split('/').pop();
+      return { type: 'manual', status, title: `Manual Pay - ${status.charAt(0).toUpperCase() + status.slice(1)}` };
+    } else if (path.includes('/online/')) {
+      const status = path.split('/').pop();
+      return { type: 'online', status, title: `Online Pay - ${status.charAt(0).toUpperCase() + status.slice(1)}` };
+    }
+    return { type: 'all', status: 'all', title: 'All Deposits' };
+  };
+
+  const currentPage = getCurrentPageInfo();
+
   useEffect(() => {
     dispatch(getAllDeposits()).then((res) => {
       if (res?.payload?.message) {
@@ -200,9 +224,7 @@ const AdminDeposits = () => {
   useEffect(() => {
     if (success) {
       setRemarks({});
-
       dispatch(getAllDeposits());
-
       dispatch(clearDepositStatus());
       showToast("Deposit status updated successfully", "success");
     }
@@ -213,6 +235,13 @@ const AdminDeposits = () => {
       showToast(error, "error");
     }
   }, [error]);
+
+  // Filter deposits based on current page
+  const filteredDeposits = deposits.filter(deposit => {
+    const matchesType = currentPage.type === 'all' || deposit.paymentType === currentPage.type;
+    const matchesStatus = currentPage.status === 'all' || deposit.status === currentPage.status;
+    return matchesType && matchesStatus;
+  });
 
   const handleActionClick = (id, status) => {
     setConfirmation({
@@ -242,6 +271,39 @@ const AdminDeposits = () => {
     }).format(amount || 0);
   };
 
+  const formatDate = (date) => {
+    return new Date(date).toLocaleString('en-IN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  // Get counts for each category
+  const getCounts = () => {
+    const manual = deposits.filter(d => d.paymentType === 'manual');
+    const online = deposits.filter(d => d.paymentType === 'online');
+    
+    return {
+      manual: {
+        total: manual.length,
+        pending: manual.filter(d => d.status === 'pending').length,
+        approved: manual.filter(d => d.status === 'approved').length,
+        rejected: manual.filter(d => d.status === 'rejected').length,
+      },
+      online: {
+        total: online.length,
+        pending: online.filter(d => d.status === 'pending').length,
+        approved: online.filter(d => d.status === 'approved').length,
+        rejected: online.filter(d => d.status === 'rejected').length,
+      }
+    };
+  };
+
+  const counts = getCounts();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-[#0A0C0F] to-[#030405] p-4 md:p-6 lg:p-8">
       {/* Header Section */}
@@ -255,17 +317,49 @@ const AdminDeposits = () => {
             </div>
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-white drop-shadow-[0_2px_5px_black]">
-                Deposit Requests
+                {currentPage.title}
               </h1>
-              <p className="text-white/40 text-sm mt-0.5 flex items-center gap-2">
-                <span>{deposits.length} total</span>
-                <span className="w-1 h-1 rounded-full bg-white/40" />
-                <span className="text-amber-400">
-                  {deposits.filter(d => d.status === "pending").length} pending
-                </span>
+              <p className="text-white/40 text-sm mt-0.5 flex items-center gap-2 flex-wrap">
+                <span>{filteredDeposits.length} {currentPage.type !== 'all' ? currentPage.type : ''} deposits</span>
+                {currentPage.status === 'all' && (
+                  <>
+                    <span className="w-1 h-1 rounded-full bg-white/40" />
+                    <span className="text-amber-400">
+                      {filteredDeposits.filter(d => d.status === "pending").length} pending
+                    </span>
+                    <span className="w-1 h-1 rounded-full bg-white/40" />
+                    <span className="text-emerald-400">
+                      {filteredDeposits.filter(d => d.status === "approved").length} approved
+                    </span>
+                    <span className="w-1 h-1 rounded-full bg-white/40" />
+                    <span className="text-red-400">
+                      {filteredDeposits.filter(d => d.status === "rejected").length} rejected
+                    </span>
+                  </>
+                )}
               </p>
             </div>
           </div>
+
+          {/* Summary Cards */}
+          {currentPage.type === 'all' && (
+            <div className="flex gap-3">
+              <div className="px-4 py-2 bg-purple-500/10 rounded-xl border border-purple-500/20">
+                <p className="text-purple-300 text-xs">Manual</p>
+                <p className="text-white font-bold">
+                  {counts.manual.total} 
+                  <span className="text-xs text-white/40 ml-1">({counts.manual.pending} pending)</span>
+                </p>
+              </div>
+              <div className="px-4 py-2 bg-blue-500/10 rounded-xl border border-blue-500/20">
+                <p className="text-blue-300 text-xs">Online</p>
+                <p className="text-white font-bold">
+                  {counts.online.total}
+                  <span className="text-xs text-white/40 ml-1">({counts.online.pending} pending)</span>
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -292,7 +386,7 @@ const AdminDeposits = () => {
       )}
 
       {/* Deposits Table */}
-      {!loading && deposits.length > 0 && (
+      {!loading && filteredDeposits.length > 0 && (
         <div className={`${gradientCardClass} overflow-hidden`}>
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -305,7 +399,13 @@ const AdminDeposits = () => {
                     Amount
                   </th>
                   <th className="px-4 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
+                    Payment Type
+                  </th>
+                  <th className="px-4 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
                     Status
+                  </th>
+                  <th className="px-4 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
+                    Date
                   </th>
                   <th className="px-4 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
                     Admin Remark
@@ -316,7 +416,7 @@ const AdminDeposits = () => {
                 </tr>
               </thead>
               <tbody>
-                {deposits.map((d) => (
+                {filteredDeposits.map((d) => (
                   <tr
                     key={d._id}
                     className="border-t border-white/5 hover:bg-white/5 transition-all duration-200 group"
@@ -350,10 +450,26 @@ const AdminDeposits = () => {
 
                     <td className="p-4">
                       <span
+                        className={`px-3 py-1.5 text-xs font-bold rounded-full border capitalize flex items-center gap-1 w-fit
+                          ${paymentTypeBadgeClass[d.paymentType]}`}
+                      >
+                        {d.paymentType === 'manual' ? <MdAccountBalanceWallet size={12} /> : <MdPayment size={12} />}
+                        {d.paymentType || 'N/A'}
+                      </span>
+                    </td>
+
+                    <td className="p-4">
+                      <span
                         className={`px-3 py-1.5 text-xs font-bold rounded-full border capitalize
                           ${statusBadgeClass[d.status] || statusBadgeClass.pending}`}
                       >
                         {d.status}
+                      </span>
+                    </td>
+
+                    <td className="p-4">
+                      <span className="text-white/60 text-sm">
+                        {formatDate(d.createdAt)}
                       </span>
                     </td>
 
@@ -410,11 +526,15 @@ const AdminDeposits = () => {
       )}
 
       {/* Empty State */}
-      {!loading && deposits.length === 0 && (
+      {!loading && filteredDeposits.length === 0 && (
         <div className={`${gradientCardClass} p-12 text-center`}>
           <MdAttachMoney size={48} className="text-white/20 mx-auto mb-4" />
-          <p className="text-white/50 text-lg font-medium">No deposit requests found</p>
-          <p className="text-white/30 text-sm mt-1">New deposits will appear here</p>
+          <p className="text-white/50 text-lg font-medium">No {currentPage.type} deposit requests found</p>
+          <p className="text-white/30 text-sm mt-1">
+            {currentPage.status !== 'all' 
+              ? `No ${currentPage.status} ${currentPage.type} deposits available`
+              : `New ${currentPage.type} deposits will appear here`}
+          </p>
         </div>
       )}
 

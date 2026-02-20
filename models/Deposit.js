@@ -52,9 +52,14 @@ const depositSchema = new mongoose.Schema(
     // ======================
     status: {
       type: String,
-      enum: ["pending", "approved", "rejected"],
+      enum: ["pending", "approved", "rejected", "cancelled", "abandoned"],
       default: "pending",
-      index: true,
+    },
+
+    remark: {
+      type: String,
+      default: null,
+
     },
 
     adminRemark: {

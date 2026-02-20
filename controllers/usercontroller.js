@@ -181,12 +181,14 @@ const getProfile = async (req, res) => {
    LOGOUT
 ========================= */
 const logout = async (req, res) => {
-  res.cookie("admin", "", {
+  res.clearCookie("admin", {
     httpOnly: true,
-    expires: new Date(0),
+    secure: true,          // production me true
+    sameSite: "none",      // agar set karte waqt none diya tha
+    path: "/",             // same path hona chahiye
   });
 
-  res.status(200).json({
+  return res.status(200).json({
     success: true,
     message: "Logged out successfully",
   });

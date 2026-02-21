@@ -259,8 +259,23 @@ exports.updateWrestlingBetStatus = async (req, res) => {
       const user = await User.findById(bet.userId);
       if (!user) continue;
 
-      const isWin =
-        bet.teamName === team && bet.otype === type;
+      // opposite type
+      const oppositeType = type === "back" ? "lay" : "back";
+
+      // find opposite team dynamically
+      const oppositeTeam = bet.teamName === team ? null : bet.teamName;
+
+      let isWin = false;
+
+      // Condition 1: Same Team + Same Type
+      if (bet.teamName === team && bet.otype === type) {
+        isWin = true;
+      }
+
+      // Condition 2: Opposite Team + Opposite Type
+      if (bet.teamName !== team && bet.otype === oppositeType) {
+        isWin = true;
+      }
 
       let payout = 0;
 
@@ -272,10 +287,10 @@ exports.updateWrestlingBetStatus = async (req, res) => {
         }
 
         user.credit += payout;
-        bet.status = 1;
+        bet.status = 1; // Win
         bet.resultAmount = payout;
       } else {
-        bet.status = 2;
+        bet.status = 2; // Loss
         bet.resultAmount = 0;
       }
 
@@ -285,7 +300,7 @@ exports.updateWrestlingBetStatus = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "All bets settled",
+      message: "All bets settled with opposite logic",
     });
 
   } catch (error) {

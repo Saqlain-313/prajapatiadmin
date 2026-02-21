@@ -44,44 +44,74 @@ const AdminMatchProfitPage = ({ mid, onClose }) => {
       {profitSummary && (
         <div className="grid md:grid-cols-2 gap-4">
           {Object.entries(profitSummary.teamSummary).map(
-            ([team, data]) => (
-              <div
-                key={team}
-                className="bg-gray-800 p-4 rounded"
-              >
-                <h3 className="text-yellow-400 mb-3 text-lg font-semibold">
-                  Team {team}
-                </h3>
+            ([team, data]) => {
+              
+              const totalStake =
+                (data.totalBackStake || 0) +
+                (data.totalLayStake || 0);
 
-                <p>
-                  Total Back Stake:{" "}
-                  <span className="text-blue-400">
-                    {format(data.totalBackStake)}
-                  </span>
-                </p>
+              const totalLiability =
+                (data.totalBackProfit || 0) +
+                (data.totalLayLiability || 0);
 
-                <p>
-                  Total Back Liability:{" "}
-                  <span className="text-red-400">
-                    {format(data.totalBackProfit)}
-                  </span>
-                </p>
+              return (
+                <div
+                  key={team}
+                  className="bg-gray-800 p-4 rounded"
+                >
+                  <h3 className="text-yellow-400 mb-3 text-lg font-semibold">
+                    Team {team}
+                  </h3>
 
-                <p>
-                  Total Lay Stake:{" "}
-                  <span className="text-green-400">
-                    {format(data.totalLayStake)}
-                  </span>
-                </p>
+                  {/* BACK */}
+                  <p>
+                    Back Stake:
+                    <span className="text-blue-400 ml-2">
+                      {format(data.totalBackStake)}
+                    </span>
+                  </p>
 
-                <p>
-                  Total Lay Liability:{" "}
-                  <span className="text-red-400">
-                    {format(data.totalLayLiability)}
-                  </span>
-                </p>
-              </div>
-            )
+                  <p>
+                    Back Liability:
+                    <span className="text-red-400 ml-2">
+                      {format(data.totalBackProfit)}
+                    </span>
+                  </p>
+
+                  {/* LAY */}
+                  <p>
+                    Lay Stake:
+                    <span className="text-green-400 ml-2">
+                      {format(data.totalLayStake)}
+                    </span>
+                  </p>
+
+                  <p>
+                    Lay Liability:
+                    <span className="text-red-400 ml-2">
+                      {format(data.totalLayLiability)}
+                    </span>
+                  </p>
+
+                  {/* COMBINED TOTAL */}
+                  <div className="border-t border-gray-600 mt-3 pt-3">
+                    <p className="font-semibold">
+                      Total Stake:
+                      <span className="text-purple-400 ml-2">
+                        {format(totalStake)}
+                      </span>
+                    </p>
+
+                    <p className="font-semibold">
+                      Total Liability:
+                      <span className="text-red-500 ml-2">
+                        {format(totalLiability)}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              );
+            }
           )}
         </div>
       )}

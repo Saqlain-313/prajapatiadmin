@@ -1,5 +1,6 @@
 const WrestlingBet = require("../../models/WRESTLING/WrestlingBet");
 const WrestlingBetHistory = require("../../models/WRESTLING/WrestlingBetHistory");
+const User = require('../../models/usermodel')
 const mongoose = require("mongoose");
 
 /* =====================================
@@ -52,78 +53,242 @@ exports.getWrestlingBetById = async (req, res) => {
 
 
 
+// exports.updateWrestlingBetStatus = async (req, res) => {
+//   const session = await mongoose.startSession();
+//   session.startTransaction();
+
+//   try {
+//     const { status } = req.body;
+
+
+//     if (![0, 1, 2].includes(status)) {
+//       throw new Error("Invalid status value");
+//     }
+
+//     const bet = await WrestlingBet.findById(req.params.id)
+//       .populate("userId")
+//       .session(session);
+
+//     if (!bet) {
+//       throw new Error("Bet not found");
+//     }
+
+//     if (bet.status !== 0) {
+//       throw new Error("Bet already settled");
+//     }
+
+//     const stake = Number(bet.betAmount) || 0;
+//     const profit = Number(bet.resultAmount) || 0;
+
+
+//     bet.status = status;
+
+//     if (status === 1) {
+//       bet.betResult = "WON";
+//       bet.userId.credit += profit;
+//     }
+
+//     if (status === 2) {
+//       bet.betResult = "LOST";
+//     }
+
+
+//     await bet.userId.save({ session });
+//     await bet.save({ session });
+
+
+
+//     await WrestlingBetHistory.updateOne(
+//       {
+//         userId: bet.userId._id,
+//         sid: bet.sid,
+//         gameId: bet.gameId,
+//       },
+//       {
+//         status: status,
+//         betResult: bet.betResult,
+//         resultAmount: bet.resultAmount,
+//       },
+//       { session }
+//     );
+
+//     await session.commitTransaction();
+//     session.endSession();
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Bet status updated successfully",
+//       bet,
+//     });
+
+//   } catch (error) {
+//     await session.abortTransaction();
+//     session.endSession();
+
+//     return res.status(500).json({
+//       success: false,
+//       message: error.message,
+//     });
+//   }
+// };
+
+// exports.updateWrestlingBetStatus = async (req, res) => {
+//   const session = await mongoose.startSession();
+//   session.startTransaction();
+
+//   try {
+//     const { status } = req.body;
+
+//     if (![1, 2].includes(status)) {
+//       throw new Error("Invalid status value");
+//     }
+
+//     const bet = await WrestlingBet.findById(req.params.id)
+//       .populate("userId")
+//       .session(session);
+
+//     if (!bet) {
+//       throw new Error("Bet not found");
+//     }
+
+//     if (bet.status !== 0) {
+//       throw new Error("Bet already settled");
+//     }
+
+//     let winAmount = 0;
+
+//     // ================= BACK =================
+//     if (bet.otype === "back") {
+
+//       if (status === 1) {
+//         // BACK WIN
+//         winAmount = bet.price + bet.betAmount;
+
+//         bet.userId.credit += winAmount;
+//         bet.userId.profitLoss += bet.betAmount;
+
+//         bet.betResult = "WON";
+//         bet.resultAmount = winAmount;
+
+//       } else {
+//         // BACK LOSS
+//         bet.userId.profitLoss -= bet.price;
+
+//         bet.betResult = "LOST";
+//         bet.resultAmount = bet.price;
+//       }
+
+//     }
+
+//     // ================= LAY =================
+//     else if (bet.otype === "lay") {
+
+//       if (status === 1) {
+//         // LAY WIN
+//         winAmount = bet.betAmount;
+
+//         bet.userId.credit += winAmount;
+//         bet.userId.profitLoss += bet.betAmount;
+
+//         bet.betResult = "WON";
+//         bet.resultAmount = winAmount;
+
+//       } else {
+//         // LAY LOSS
+//         bet.userId.profitLoss -= bet.price;
+
+//         bet.betResult = "LOST";
+//         bet.resultAmount = bet.price;
+//       }
+
+//     }
+
+//     bet.status = status;
+
+//     await bet.userId.save({ session });
+//     await bet.save({ session });
+
+//     await WrestlingBetHistory.updateOne(
+//       {
+//         userId: bet.userId._id,
+//         sid: bet.sid,
+//         gameId: bet.gameId,
+//       },
+//       {
+//         status: bet.status,
+//         betResult: bet.betResult,
+//         resultAmount: bet.resultAmount,
+//       },
+//       { session }
+//     );
+
+//     await session.commitTransaction();
+//     session.endSession();
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Bet settled successfully",
+//       bet,
+//     });
+
+//   } catch (error) {
+//     await session.abortTransaction();
+//     session.endSession();
+
+//     return res.status(500).json({
+//       success: false,
+//       message: error.message,
+//     });
+//   }
+// };
+
 exports.updateWrestlingBetStatus = async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
   try {
-    const { status } = req.body;
+    const { team, type } = req.body;
 
-
-    if (![0, 1, 2].includes(status)) {
-      throw new Error("Invalid status value");
+    if (!team || !type) {
+      return res.status(400).json({
+        success: false,
+        message: "Team and type required",
+      });
     }
 
-    const bet = await WrestlingBet.findById(req.params.id)
-      .populate("userId")
-      .session(session);
+    const pendingBets = await WrestlingBet.find({ status: 0 });
 
-    if (!bet) {
-      throw new Error("Bet not found");
+    for (const bet of pendingBets) {
+      const user = await User.findById(bet.userId);
+      if (!user) continue;
+
+      const isWin =
+        bet.teamName === team && bet.otype === type;
+
+      let payout = 0;
+
+      if (isWin) {
+        if (bet.otype === "back") {
+          payout = bet.price + bet.betAmount;
+        } else {
+          payout = bet.betAmount;
+        }
+
+        user.credit += payout;
+        bet.status = 1;
+        bet.resultAmount = payout;
+      } else {
+        bet.status = 2;
+        bet.resultAmount = 0;
+      }
+
+      await bet.save();
+      await user.save();
     }
-
-    if (bet.status !== 0) {
-      throw new Error("Bet already settled");
-    }
-
-    const stake = Number(bet.betAmount) || 0;
-    const profit = Number(bet.resultAmount) || 0;
-
-
-    bet.status = status;
-
-    if (status === 1) {
-      bet.betResult = "WON";
-      bet.userId.credit += profit;
-    }
-
-    if (status === 2) {
-      bet.betResult = "LOST";
-    }
-
-
-    await bet.userId.save({ session });
-    await bet.save({ session });
-
-
-
-    await WrestlingBetHistory.updateOne(
-      {
-        userId: bet.userId._id,
-        sid: bet.sid,
-        gameId: bet.gameId,
-      },
-      {
-        status: status,
-        betResult: bet.betResult,
-        resultAmount: bet.resultAmount,
-      },
-      { session }
-    );
-
-    await session.commitTransaction();
-    session.endSession();
 
     return res.status(200).json({
       success: true,
-      message: "Bet status updated successfully",
-      bet,
+      message: "All bets settled",
     });
 
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
-
     return res.status(500).json({
       success: false,
       message: error.message,

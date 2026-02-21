@@ -32,7 +32,7 @@ const showToast = (message, type = "success") => {
     warning: <MdWarning className="text-yellow-400" size={20} />,
   };
 
-  toast[type](message, {
+  const commonStyle = {
     icon: icons[type],
     style: {
       background: "#0F1115",
@@ -40,13 +40,21 @@ const showToast = (message, type = "success") => {
       border: "1px solid rgba(255,255,255,0.1)",
       borderRadius: "16px",
       padding: "16px 20px",
-      boxShadow: "0 20px 40px -10px black, 0 0 0 1px rgba(255,255,255,0.05), 0 0 30px rgba(255,255,255,0.1)",
+      boxShadow:
+        "0 20px 40px -10px black, 0 0 0 1px rgba(255,255,255,0.05), 0 0 30px rgba(255,255,255,0.1)",
       backdropFilter: "blur(12px)",
       fontSize: "14px",
       fontWeight: "500",
     },
     duration: 4000,
-  });
+  };
+
+  if (type === "success") return toast.success(message, commonStyle);
+  if (type === "error") return toast.error(message, commonStyle);
+  if (type === "info") return toast(message, commonStyle);
+  if (type === "warning") return toast(message, commonStyle);
+
+  return toast(message, commonStyle);
 };
 
 /* --------------------------------------------------------
@@ -227,6 +235,8 @@ const SettlementConfirmationPopup = ({ isOpen, onClose, onConfirm, betDetails, r
             )}
           </button>
         </div>
+
+
       </div>
     </div>
   );
@@ -723,27 +733,29 @@ const AdminWrestlingPendingPage = () => {
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-2">
                             <button
-                              onClick={() => openSettlementPopup(bet._id, 1, bet)}
+                              onClick={() =>
+                                setSettlementPopup({
+                                  isOpen: true,
+                                  team: bet.teamName,
+                                  type: "back",
+                                })
+                              }
                               className={wonButtonClass}
                             >
-                              <FiCheckCircle size={14} />
-                              WON
+                              {bet.teamName} BACK
                             </button>
 
                             <button
-                              onClick={() => openSettlementPopup(bet._id, 2, bet)}
+                              onClick={() =>
+                                setSettlementPopup({
+                                  isOpen: true,
+                                  team: bet.teamName,
+                                  type: "lay",
+                                })
+                              }
                               className={lostButtonClass}
                             >
-                              <FiXCircle size={14} />
-                              LOST
-                            </button>
-
-                            <button
-                              onClick={() => openSettlementPopup(bet._id, 0, bet)}
-                              className={cancelButtonClass}
-                            >
-                              <MdCancel size={14} />
-                              PENDING
+                              {bet.teamName} LAY
                             </button>
                           </div>
                         </td>

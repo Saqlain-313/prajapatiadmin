@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { loginUser, logoutUser } from "../store/reducer/authReducer";
+import { loginUser } from "../store/reducer/authReducer";
 import { useNavigate } from "react-router-dom";
 
 /* ------------------ ICON LIBRARY (only icons, no emojis) ------------------ */
@@ -55,7 +55,7 @@ const ForgotPassword = ({ onBackToLogin }) => {
   const [mobile, setMobile] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(null);
 
   const handleForgotPassword = (e) => {
     e.preventDefault();
@@ -143,32 +143,28 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [roleError, setRoleError] = useState(null);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [loginAttempted, setLoginAttempted] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); // Password visibility state
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { loading, error, user } = useSelector((state) => state.auth);
 
-  // Handle redirection based on role
   useEffect(() => {
-    if (user && loginAttempted) {
+    if (user) {
       if (user.role === "admin") {
-        navigate("/");
-      } else if (user.role === "subadmin") {
-        navigate("/livematch");
-      } else if (user.role === "user") {
-        setRoleError("You don't have permission to access this admin panel.");
-        // logoutUser the user since they don't have permission
-        dispatch(logoutUser());
+        navigate("/", { replace: true });
+      }
+      else if (user.role === "subadmin") {
+        navigate("/livematch", { replace: true });
+      }
+      else {
+        setRoleError("Unauthorized role.");
       }
     }
-  }, [user, navigate, dispatch, loginAttempted]);
-
+  }, [user, navigate]);
   const handleSubmit = (e) => {
     e.preventDefault();
     setRoleError(null);
-    setLoginAttempted(true);
     dispatch(loginUser({ mobile, password }));
   };
 
@@ -182,11 +178,11 @@ const Login = () => {
       <div className="absolute inset-0 bg-gradient-to-br from-black via-[#0C0D0F] to-[#1A1C22] z-0" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(180,180,200,0.05)_0%,_transparent_70%)] z-0" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_rgba(120,120,140,0.03)_0%,_transparent_60%)] z-0" />
-      
+
       {/* GLOWING ORBS — subtle shine effect */}
       <div className="absolute top-20 left-20 w-96 h-96 bg-gray-600/5 rounded-full blur-[120px] z-0" />
       <div className="absolute bottom-20 right-20 w-96 h-96 bg-gray-500/5 rounded-full blur-[120px] z-0" />
-      
+
       {/* ANIMATED SHINE LINES */}
       <div className="absolute inset-0 opacity-20 mix-blend-overlay z-0">
         <div className="absolute -inset-24 bg-gradient-conic from-gray-600/20 via-transparent to-transparent animate-slowSpin" />
@@ -245,7 +241,7 @@ const Login = () => {
                       value={mobile}
                       onChange={(e) => setMobile(e.target.value)}
                       required
-                      placeholder="Enter your mobile number"
+                      placeholder="admin@wrestling.com"
                     />
                     <HiOutlineIdentification className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
                   </div>

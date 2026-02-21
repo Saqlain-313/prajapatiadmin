@@ -7,7 +7,7 @@ export const getAllBets = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
 
-      const { data } = await api.get(`/admin/wrestling-bets/all`, );
+      const { data } = await api.get(`/admin/wrestling-bets/all`,);
 
       return data.bets;
     } catch (err) {
@@ -18,18 +18,18 @@ export const getAllBets = createAsyncThunk(
 
 export const settleBet = createAsyncThunk(
   "wrestlingBet/settle",
-  async ({ id, status }, { rejectWithValue }) => {
+  async ({ team, type }, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem("token");
-
       const { data } = await api.put(
-        `/admin/wrestling-bets/settle/${id}`,
-        { status },
+        `/admin/wrestling-bets/settle`,
+        { team, type }
       );
 
-      return data.bet;
+      return data;
     } catch (err) {
-      return rejectWithValue(err.response.data.message);
+      return rejectWithValue(
+        err.response?.data?.message || "Settlement failed"
+      );
     }
   }
 );

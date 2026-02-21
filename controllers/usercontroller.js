@@ -8,8 +8,19 @@ const sendResetPasswordOTP = require("../utils/emailService");
 ========================= */
 
 // JWT TOKEN
-const generateToken = (id) =>
-  jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+const generateToken = (id, mobile, role) => {
+  return jwt.sign(
+    {
+      id,
+      mobile,
+      role,
+    },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: "7d"
+    }
+  );
+};
 
 const normalizeEmail = (email) =>
   email ? email.trim().toLowerCase() : null;
@@ -66,7 +77,7 @@ const register = async (req, res) => {
         mobile: user.mobile,
         status: user.status,
         isDemo: user.isDemo,
-        wallet: user.wallet,
+        credit: user.credit,
         myInviteCode: user.myInviteCode,
       },
     });
@@ -125,7 +136,7 @@ const login = async (req, res) => {
       });
     }
 
-    const admin = generateToken(user._id);
+    const admin = generateToken(user._id, user.mobile, user.role);
 
     res.cookie("admin", admin, {
       httpOnly: true,

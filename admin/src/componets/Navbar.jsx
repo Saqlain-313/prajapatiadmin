@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   MdNotificationsNone, 
-  MdLogout, 
   MdSearch,
   MdSettings,
   MdPerson,
@@ -11,18 +10,14 @@ import {
   MdEmail,
   MdPhone,
   MdAdminPanelSettings,
-  MdDashboard,
-  MdUpload,
-  MdImage,
   MdExpandMore,
   MdAccountCircle,
   MdLock,
 } from 'react-icons/md';
 import { FiGlobe, FiLogOut } from 'react-icons/fi';
-import { FaUserCircle } from 'react-icons/fa';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { logoutUser, getProfile } from "../store/reducer/authReducer";
+import { logoutUser, getProfile } from "../store/reducer/authReducer"; // Fixed import
 
 /* -------------------- DARK BLACK & WHITE GLOW THEME -------------------- */
 const gradientNavClass = 
@@ -39,12 +34,6 @@ const buttonIconClass =
   "p-2.5 text-white/70 hover:text-white rounded-xl hover:bg-white/5 transition-all duration-300 \
    border border-transparent hover:border-white/20 hover:shadow-[0_0_15px_rgba(255,255,255,0.1)]";
 
-const glowInputClass =
-  "w-full px-4 py-3 bg-black/60 border border-white/10 rounded-xl text-white \
-   placeholder-white/30 focus:border-white/40 focus:ring-2 focus:ring-white/20 \
-   outline-none transition-all backdrop-blur-sm shadow-[inset_0_2px_8px_rgba(0,0,0,0.6)] \
-   focus:shadow-[0_0_20px_rgba(255,255,255,0.1),inset_0_2px_8px_rgba(0,0,0,0.6)]";
-
 /* -------------------- NAVBAR -------------------- */
 const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -55,9 +44,21 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
   const navigate = useNavigate();
   const { user, loading } = useSelector((state) => state.auth);
 
+  // Get the actual user data (handle nested structure)
+  const getActualUser = () => {
+    if (!user) return null;
+    // Check if user has nested user object
+    return user.user || user;
+  };
+
+  const actualUser = getActualUser();
+
   useEffect(() => {
-    dispatch(getProfile());
-  }, [dispatch]);
+    // Only fetch profile if we don't have user data
+    if (!actualUser) {
+      dispatch(getProfile());
+    }
+  }, [dispatch, actualUser]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -70,9 +71,41 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
   }, []);
 
   const handleLogout = () => {
-    dispatch(logoutUser());
+    dispatch(logoutUser()); // Using logoutUser instead of logout
     localStorage.removeItem("token");
-    navigate("/login");
+    localStorage.removeItem("user");
+    navigate("/login", { replace: true });
+  };
+
+  // Get user display name
+  const getUserDisplayName = () => {
+    if (!actualUser) return 'Admin User';
+    return actualUser.name || actualUser.firstname || actualUser.username || 'Admin User';
+  };
+
+  // Get user email
+  const getUserEmail = () => {
+    if (!actualUser) return 'admin@wrestling.com';
+    return actualUser.email || 'admin@wrestling.com';
+  };
+
+  // Get user mobile
+  const getUserMobile = () => {
+    if (!actualUser) return '+91 98765 43210';
+    return actualUser.mobile || '+91 98765 43210';
+  };
+
+  // Get user role
+  const getUserRole = () => {
+    if (!actualUser) return 'Admin';
+    return actualUser.role || 'Admin';
+  };
+
+  // Get user initial
+  const getUserInitial = () => {
+    if (!actualUser) return 'U';
+    const name = actualUser.name || actualUser.firstname || '';
+    return name.charAt(0) || actualUser.mobile?.charAt(0) || 'U';
   };
 
   return (
@@ -92,7 +125,7 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
           </button>
 
           {/* SEARCH — white glass with glow */}
-          <form className="relative hidden sm:block">
+          <form className="relative hidden sm:block" onSubmit={(e) => e.preventDefault()}>
             <MdSearch
               className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40"
               size={18}
@@ -141,7 +174,7 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
                     <span className="text-white/60">...</span>
                   ) : (
                     <span className="text-white font-bold text-lg drop-shadow-[0_2px_5px_black]">
-                      {(user?.firstname?.charAt(0) || "U").toUpperCase()}
+                      {getUserInitial()}
                     </span>
                   )}
                 </div>
@@ -149,8 +182,8 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
                                border-2 border-black shadow-[0_0_10px_rgba(16,185,129,0.5)]"></span>
               </div>
               <div className="hidden md:block text-left">
-                <p className="text-white text-sm font-medium">{user?.firstname || 'Admin User'}</p>
-                <p className="text-white/40 text-xs">{user?.role || 'Administrator'}</p>
+                <p className="text-white text-sm font-medium">{getUserDisplayName()}</p>
+                <p className="text-white/40 text-xs">{getUserRole()}</p>
               </div>
               <MdExpandMore className={`text-white/60 transition-transform duration-300 ${userDropdownOpen ? 'rotate-180' : ''}`} size={18} />
             </button>
@@ -160,8 +193,8 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
               <div className={`${glassCardClass} absolute right-0 mt-3 w-64 py-2 z-50 animate-fadeIn`}>
                 {/* User info header */}
                 <div className="px-5 py-4 border-b border-white/10">
-                  <p className="text-white font-medium">{user?.firstname || 'John Doe'}</p>
-                  <p className="text-white/40 text-xs mt-0.5">{user?.email || 'admin@wrestling.com'}</p>
+                  <p className="text-white font-medium">{getUserDisplayName()}</p>
+                  <p className="text-white/40 text-xs mt-0.5">{getUserEmail()}</p>
                 </div>
                 
                 <button
@@ -180,6 +213,7 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
                   onClick={() => {
                     // Account settings navigation
                     setUserDropdownOpen(false);
+                    navigate('/settings');
                   }}
                 >
                   <MdLock size={18} className="text-white/60 group-hover:text-white" />
@@ -231,23 +265,23 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
               <div className="flex items-center gap-3 text-white/90">
                 <MdPerson className="text-white/50" size={20} />
                 <span className="text-sm text-white/60 w-20">Name</span>
-                <span className="text-white font-medium">{user?.firstname || 'John Doe'}</span>
+                <span className="text-white font-medium">{getUserDisplayName()}</span>
               </div>
               <div className="flex items-center gap-3 text-white/90">
                 <MdEmail className="text-white/50" size={20} />
                 <span className="text-sm text-white/60 w-20">Email</span>
-                <span className="text-white/90">{user?.email || 'admin@wrestling.com'}</span>
+                <span className="text-white/90">{getUserEmail()}</span>
               </div>
               <div className="flex items-center gap-3 text-white/90">
                 <MdPhone className="text-white/50" size={20} />
                 <span className="text-sm text-white/60 w-20">Phone</span>
-                <span className="text-white/90">{user?.mobile || '+91 98765 43210'}</span>
+                <span className="text-white/90">{getUserMobile()}</span>
               </div>
               <div className="flex items-center gap-3 text-white/90">
                 <MdVpnKey className="text-white/50" size={20} />
                 <span className="text-sm text-white/60 w-20">Role</span>
                 <span className="text-white uppercase text-xs bg-white/10 px-3 py-1.5 rounded-full border border-white/20">
-                  {user?.role || 'Admin'}
+                  {getUserRole()}
                 </span>
               </div>
             </div>
@@ -268,6 +302,7 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
                 onClick={() => {
                   // Edit profile action
                   setShowProfileModal(false);
+                  navigate('/profile/edit');
                 }}
               >
                 <MdAccountCircle size={18} />

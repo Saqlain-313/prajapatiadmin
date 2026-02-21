@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { loginUser } from "../store/reducer/authReducer";
 import { useNavigate } from "react-router-dom";
 
-/* ------------------ ICON LIBRARY (only icons, no emojis) ------------------ */
+/* ------------------ ICON LIBRARY ------------------ */
 import {
   MdLockOutline,
   MdEmail,
@@ -17,7 +17,6 @@ import {
   MdPassword,
 } from "react-icons/md";
 import { FiSend, FiLogIn } from "react-icons/fi";
-
 import { HiOutlineIdentification } from "react-icons/hi";
 
 /* ------------------ SMALL COMPONENTS ------------------ */
@@ -25,7 +24,7 @@ const RequiredStar = () => (
   <span className="text-gradient-shade ml-1">*</span>
 );
 
-/* ------------------ DARK THEME GRADIENT STYLES (fully responsive, glow & shine) ------------------ */
+/* ------------------ DARK THEME GRADIENT STYLES ------------------ */
 const inputStyleClasses =
   "w-full px-5 py-4 bg-black/50 border border-gray-600/30 rounded-2xl text-white text-lg \
    placeholder-gray-500/70 focus:border-gray-400 focus:ring-4 focus:ring-gray-500/30 \
@@ -143,28 +142,70 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [roleError, setRoleError] = useState(null);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
-  const [showPassword, setShowPassword] = useState(false); // Password visibility state
+  const [showPassword, setShowPassword] = useState(false);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { loading, error, user } = useSelector((state) => state.auth);
+  const { loading, error, user, isAuthenticated } = useSelector((state) => state.auth);
+  
+  // Use a ref to prevent multiple redirects
+  const redirectAttempted = useRef(false);
 
+  // Get the actual user data (handle nested structure)
+  const getActualUser = () => {
+    if (!user) return null;
+    // Check if user has nested user object
+    return user.user || user;
+  };
+
+  const actualUser = getActualUser();
+  const userRole = actualUser?.role;
+
+  // Debug logging
+  console.log("Login - State:", {
+    loading,
+    isAuthenticated,
+    user: user,
+    actualUser: actualUser,
+    userRole: userRole,
+    redirectAttempted: redirectAttempted.current
+  });
+
+  // Handle redirect after authentication - with protection against infinite loops
   useEffect(() => {
-    if (user) {
-      if (user.role === "admin") {
+    // Only redirect if authenticated, user exists, and we haven't already tried to redirect
+    if (isAuthenticated && actualUser && !redirectAttempted.current) {
+      console.log("=== LOGIN REDIRECT DEBUG ===");
+      console.log("User authenticated with role:", actualUser.role);
+      console.log("Full user object:", actualUser);
+      console.log("Is admin?", actualUser.role === "admin");
+      console.log("Is subadmin?", actualUser.role === "subadmin");
+      
+      // Mark that we've attempted redirect
+      redirectAttempted.current = true;
+      
+      // Check user role and redirect accordingly
+      if (actualUser.role === "admin") {
+        console.log("Redirecting admin to /");
         navigate("/", { replace: true });
-      }
-      else if (user.role === "subadmin") {
+      } else if (actualUser.role === "subadmin") {
+        console.log("Redirecting subadmin to /livematch");
         navigate("/livematch", { replace: true });
-      }
-      else {
-        setRoleError("Unauthorized role.");
+      } else {
+        console.log("Invalid role detected:", actualUser.role);
+        setRoleError("Only Admin or Subadmin can log in.");
+        // Reset redirect flag if role is invalid
+        redirectAttempted.current = false;
       }
     }
-  }, [user, navigate]);
+  }, [isAuthenticated, actualUser, navigate]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     setRoleError(null);
+    // Reset redirect flag on new login attempt
+    redirectAttempted.current = false;
+    console.log("Login attempt with:", { mobile, password });
     dispatch(loginUser({ mobile, password }));
   };
 
@@ -174,22 +215,22 @@ const Login = () => {
 
   return (
     <div className="relative min-h-screen flex items-center justify-center p-5 overflow-hidden">
-      {/* DARK GRADIENT BACKGROUND — BLACK TO GRAY SHINE */}
+      {/* DARK GRADIENT BACKGROUND */}
       <div className="absolute inset-0 bg-gradient-to-br from-black via-[#0C0D0F] to-[#1A1C22] z-0" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(180,180,200,0.05)_0%,_transparent_70%)] z-0" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_rgba(120,120,140,0.03)_0%,_transparent_60%)] z-0" />
-
-      {/* GLOWING ORBS — subtle shine effect */}
+      
+      {/* GLOWING ORBS */}
       <div className="absolute top-20 left-20 w-96 h-96 bg-gray-600/5 rounded-full blur-[120px] z-0" />
       <div className="absolute bottom-20 right-20 w-96 h-96 bg-gray-500/5 rounded-full blur-[120px] z-0" />
-
+      
       {/* ANIMATED SHINE LINES */}
       <div className="absolute inset-0 opacity-20 mix-blend-overlay z-0">
         <div className="absolute -inset-24 bg-gradient-conic from-gray-600/20 via-transparent to-transparent animate-slowSpin" />
       </div>
 
       <div className="relative w-full max-w-xl z-10">
-        {/* HEADER — signature gradient shape with icon and glow */}
+        {/* HEADER */}
         <div className={`${gradientCardClass} mb-6 p-8 text-center border-t border-gray-700/40 relative overflow-hidden`}>
           <div className="absolute inset-0 bg-gradient-to-t from-white/5 to-transparent opacity-50" />
           <div className="flex flex-col items-center gap-4 relative z-10">
@@ -223,7 +264,7 @@ const Login = () => {
           </div>
         </div>
 
-        {/* FORM — glass gradient card with glow */}
+        {/* FORM */}
         <div className={`${gradientCardClass} relative overflow-hidden`}>
           <div className="absolute inset-0 bg-gradient-to-br from-gray-600/5 to-transparent" />
           <div className="p-8 md:p-10 relative z-10">
@@ -316,7 +357,7 @@ const Login = () => {
           </div>
         </div>
 
-        {/* FOOTER — subtle branding */}
+        {/* FOOTER */}
         <div className="mt-8 text-center text-gray-500 text-xs flex items-center justify-center gap-4">
           <span className="flex items-center gap-1">
             <span className="w-1 h-1 rounded-full bg-gray-500"></span>
@@ -329,32 +370,6 @@ const Login = () => {
           <span>© wrestling panel</span>
         </div>
       </div>
-
-      {/* GLOBAL ANIMATIONS */}
-      <style jsx global>{`
-        @keyframes gradientFade {
-          0% { opacity: 0; transform: translateY(12px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes slowSpin {
-          0% { transform: rotate(0deg) scale(1.5); }
-          100% { transform: rotate(360deg) scale(1.5); }
-        }
-        .animate-gradientFade {
-          animation: gradientFade 0.5s cubic-bezier(0.23, 1, 0.32, 1);
-        }
-        .animate-slowSpin {
-          animation: slowSpin 40s linear infinite;
-        }
-        .bg-gradient-conic {
-          background-image: conic-gradient(from 0deg, rgba(180,180,200,0.1) 0deg, transparent 60deg, transparent 300deg, rgba(180,180,200,0.1) 360deg);
-        }
-        .text-gradient-shade {
-          background: linear-gradient(135deg, #c0c0c0, #ffffff);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-        }
-      `}</style>
     </div>
   );
 };

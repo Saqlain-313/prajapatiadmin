@@ -10,16 +10,16 @@ const {
 const router = express.Router();
 
 router.post(
-    "/notification/upload",
+    "/images/upload",
     upload.any(),
     uploadImages
 );
 
-router.get("/notification/", getImages);
+router.get("/images/", getImages);
 
-router.put("/notification/update/:index",   upload.single("image"), updateImageByIndex);
+router.put("/images/update/:index",   upload.single("image"), updateImageByIndex);
 
-router.delete("/notification/delete/:index", deleteImageByIndex);
+router.delete("/images/delete/:index", deleteImageByIndex);
 
 
 module.exports = router;

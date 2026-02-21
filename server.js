@@ -20,7 +20,7 @@ app.use(
     credentials: true,
   })
 );
-
+//  malikkk
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());

@@ -390,26 +390,38 @@ const AdminWrestlingPendingPage = () => {
   }, [error]);
 
   const handleSettleBet = async () => {
-    setSettlementLoading(true);
-    try {
-      await dispatch(settleBet({
-        id: settlementPopup.betId,
-        status: settlementPopup.result
-      }));
-      const statusText =
-        settlementPopup.result === 1 ? "won" :
-          settlementPopup.result === 2 ? "lost" :
-            "pending";
+    console.log("Settlement Data:", settlementPopup); // 🔥 debug line
 
-      showToast(`Bet settled as ${statusText}`,
-        settlementPopup.result === 1 ? "success" :
-          settlementPopup.result === 2 ? "error" :
-            "info"
+    if (!settlementPopup?.team || !settlementPopup?.type) {
+      showToast("Team and type missing", "error");
+      return;
+    }
+
+    setSettlementLoading(true);
+
+    try {
+      await dispatch(
+        settleBet({
+          team: settlementPopup.team,
+          type: settlementPopup.type,
+        })
+      ).unwrap();
+
+      showToast(
+        `Settled: ${settlementPopup.team} (${settlementPopup.type.toUpperCase()})`,
+        "success"
       );
-      setSettlementPopup({ isOpen: false, betId: null, result: null, betDetails: null });
+
+      setSettlementPopup({
+        isOpen: false,
+        team: null,
+        type: null,
+      });
+
       dispatch(getAllBets());
+
     } catch (err) {
-      showToast(err?.message || "Failed to settle bet", "error");
+      showToast(err, "error");
     } finally {
       setSettlementLoading(false);
     }

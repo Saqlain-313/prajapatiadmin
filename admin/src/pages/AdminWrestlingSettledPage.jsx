@@ -14,6 +14,9 @@ import {
   MdFilterList,
   MdRefresh,
   MdVisibility,
+  MdSportsMma,
+  MdGroups,
+  MdBlock,
 } from "react-icons/md";
 import { FaUserCircle } from "react-icons/fa";
 import { FiAlertCircle, FiCheckCircle, FiXCircle } from "react-icons/fi";
@@ -26,7 +29,7 @@ const showToast = (message, type = "success") => {
   const icons = {
     success: <FiCheckCircle className="text-emerald-400" size={20} />,
     error: <FiXCircle className="text-red-400" size={20} />,
-    info: <FiAlertCircle className="text-blue-400" size={20} />,
+    info: <FiAlertCircle className="text-blue-400" size={20} />,  
   };
 
   toast[type](message, {
@@ -47,7 +50,7 @@ const showToast = (message, type = "success") => {
 };
 
 /* --------------------------------------------------------
-   DARK GRADIENT THEME — consistent with navbar/sidebar
+   DARK GRADIENT THEME
 -------------------------------------------------------- */
 const gradientCardClass =
   "relative bg-gradient-to-br from-[#0B0D10] via-[#15181E] to-[#070809] \
@@ -69,6 +72,12 @@ const inputStyleClasses =
    outline-none transition-all duration-300 backdrop-blur-md \
    shadow-[inset_0_2px_8px_rgba(0,0,0,0.6)] focus:shadow-[0_0_25px_rgba(255,255,255,0.1),inset_0_2px_8px_rgba(0,0,0,0.6)]";
 
+const filterButtonClass = (isActive) => 
+  `flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300
+   ${isActive 
+     ? 'bg-gradient-to-br from-blue-500/30 to-blue-900/40 text-blue-300 border border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.2)]' 
+     : 'bg-gradient-to-br from-[#2A2F37] to-[#0C0E12] text-white/60 border border-white/10 hover:from-[#3A404A] hover:to-[#161A1F] hover:text-white hover:border-white/30'}`;
+
 /* --------------------------------------------------------
    BET DETAILS MODAL
 -------------------------------------------------------- */
@@ -80,7 +89,7 @@ const BetDetailsModal = ({ isOpen, onClose, bet }) => {
       <div className={`${gradientCardClass} w-full max-w-2xl relative overflow-hidden animate-scaleIn`}>
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-white/5 rounded-full blur-3xl" />
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-white/5 rounded-full blur-3xl" />
-
+        
         <div className="relative z-10 p-6 border-b border-white/10">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-white/20 to-white/5 
@@ -90,7 +99,7 @@ const BetDetailsModal = ({ isOpen, onClose, bet }) => {
             </div>
             <div>
               <h2 className="text-2xl font-bold text-white drop-shadow-[0_2px_5px_black]">
-                Settled Bet Details
+                Bet Details
               </h2>
               <p className="text-white/40 text-sm">
                 ID: {bet._id?.slice(-8)}
@@ -138,6 +147,12 @@ const BetDetailsModal = ({ isOpen, onClose, bet }) => {
               </h4>
               <div className="space-y-3">
                 <div className="flex items-center gap-3 text-sm">
+                  <span className="text-white/60 w-20">Match ID</span>
+                  <span className="text-white text-xs font-mono">
+                    {bet.mid || 'N/A'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 text-sm">
                   <span className="text-white/60 w-20">Team</span>
                   <span className="text-white font-medium">
                     {bet.teamName}
@@ -145,8 +160,17 @@ const BetDetailsModal = ({ isOpen, onClose, bet }) => {
                 </div>
                 <div className="flex items-center gap-3 text-sm">
                   <span className="text-white/60 w-20">Type</span>
-                  <span className="px-3 py-1 bg-white/10 rounded-full text-xs text-white/90">
-                    {bet.btype}
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium
+                    ${bet.btype === 'back' 
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
+                      : 'bg-red-500/20 text-red-300 border border-red-500/30'}`}>
+                    {bet.btype?.toUpperCase()}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-white/60 w-20">Rate</span>
+                  <span className="text-white font-bold">
+                    {bet.price?.toFixed(2)}
                   </span>
                 </div>
                 <div className="flex items-center gap-3 text-sm">
@@ -156,13 +180,12 @@ const BetDetailsModal = ({ isOpen, onClose, bet }) => {
                   </span>
                 </div>
                 <div className="flex items-center gap-3 text-sm">
-                  <span className="text-white/60 w-20">Result</span>
+                  <span className="text-white/60 w-20">Status</span>
                   <span className={`px-3 py-1 rounded-full text-xs font-medium
-                    ${bet.result === 'WON' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
-                      bet.result === 'LOST' ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
-                        bet.result === 'CANCELLED' ? 'bg-gray-500/20 text-gray-300 border border-gray-500/30' :
-                          'bg-white/10 text-white/80 border border-white/20'}`}>
-                    {bet.result || 'SETTLED'}
+                    ${bet.settled 
+                      ? 'bg-gray-500/20 text-gray-300 border border-gray-500/30' 
+                      : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'}`}>
+                    {bet.settled ? 'SETTLED' : 'ACTIVE'}
                   </span>
                 </div>
               </div>
@@ -178,7 +201,7 @@ const BetDetailsModal = ({ isOpen, onClose, bet }) => {
                 </p>
               </div>
               <div>
-                <span className="text-white/40 text-xs">Settled At</span>
+                <span className="text-white/40 text-xs">Last Updated</span>
                 <p className="text-white/80 text-sm mt-1">
                   {bet.updatedAt ? new Date(bet.updatedAt).toLocaleString() : 'N/A'}
                 </p>
@@ -199,39 +222,17 @@ const BetDetailsModal = ({ isOpen, onClose, bet }) => {
 };
 
 /* --------------------------------------------------------
-   RESULT BADGE COMPONENT
+   MAIN COMPONENT - Admin Wrestling All Bets Page
 -------------------------------------------------------- */
-const ResultBadge = ({ status }) => {
-  if (status === 1) {
-    return (
-      <span className="px-3 py-1.5 bg-emerald-500/20 rounded-lg text-emerald-300 text-xs font-medium border border-emerald-500/30">
-        WON
-      </span>
-    );
-  }
-
-  if (status === 2) {
-    return (
-      <span className="px-3 py-1.5 bg-red-500/20 rounded-lg text-red-300 text-xs font-medium border border-red-500/30">
-        LOST
-      </span>
-    );
-  }
-
-  return null;
-};
-
-/* --------------------------------------------------------
-   MAIN COMPONENT - Admin Wrestling Settled Page
--------------------------------------------------------- */
-const AdminWrestlingSettledPage = () => {
+const AdminWrestlingAllBetsPage = () => {
   const dispatch = useDispatch();
   const { bets, loading, error } = useSelector(
     (s) => s.wrestlingBetAdmin
   );
-
+  
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterResult, setFilterResult] = useState("ALL");
+  const [selectedTeam, setSelectedTeam] = useState("ALL");
+  const [selectedBetType, setSelectedBetType] = useState("ALL");
   const [selectedBet, setSelectedBet] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
@@ -245,55 +246,65 @@ const AdminWrestlingSettledPage = () => {
     }
   }, [error]);
 
-  const settledBets = bets.filter((b) => b.status !== 0);
+  // Get unique teams from all bets
+  const teams = useMemo(() => {
+    const uniqueTeams = [...new Set(bets.map(bet => bet.teamName))].filter(Boolean);
+    return ['ALL', ...uniqueTeams, 'DISQUALIFY'];
+  }, [bets]);
 
-  // Filter settled bets based on search and result filter
+  // Bet type options
+  const betTypes = ['ALL', 'BACK', 'LAY'];
+
+  // Filter bets based on team and bet type
   const filteredBets = useMemo(() => {
-    let filtered = settledBets;
-
-    // Apply result filter
-    if (filterResult !== "ALL") {
-      if (filterResult === "WON") {
-        filtered = filtered.filter(b => b.status === 1);
-      }
-
-      if (filterResult === "LOST") {
-        filtered = filtered.filter(b => b.status === 2);
-      }
+    let filtered = bets;
+    
+    // Apply team filter
+    if (selectedTeam === 'DISQUALIFY') {
+      // For disqualify, we might want to show bets from teams that are disqualified
+      // This logic can be adjusted based on your data structure
+      filtered = filtered.filter(b => b.isDisqualified === true);
+    } else if (selectedTeam !== 'ALL') {
+      filtered = filtered.filter(b => b.teamName === selectedTeam);
     }
-
+    
+    // Apply bet type filter
+    if (selectedBetType !== 'ALL') {
+      filtered = filtered.filter(b => 
+        b.btype?.toUpperCase() === selectedBetType.toUpperCase()
+      );
+    }
+    
     // Apply search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(b =>
+      filtered = filtered.filter(b => 
         b.user?.mobile?.toLowerCase().includes(query) ||
         b.teamName?.toLowerCase().includes(query) ||
         b._id?.toLowerCase().includes(query) ||
-        b.user?._id?.toLowerCase().includes(query)
+        b.user?._id?.toLowerCase().includes(query) ||
+        b.mid?.toLowerCase().includes(query)
       );
     }
-
+    
     return filtered;
-  }, [settledBets, searchQuery, filterResult]);
+  }, [bets, searchQuery, selectedTeam, selectedBetType]);
 
-  // Calculate stats for settled bets
+  // Calculate stats
   const stats = useMemo(() => {
-    const total = settledBets.length;
-    const won = settledBets.filter(b => b.status === 1).length;
-    const lost = settledBets.filter(b => b.status === 2).length;
-
-    const totalStake = settledBets.reduce(
-      (sum, b) => sum + (b.betAmount || 0),
-      0
-    );
-
-    return { total, won, lost, totalStake };
-  }, [settledBets]);
-  const resultTypes = ["ALL", "WON", "LOST"];
+    const total = bets.length;
+    const totalStake = bets.reduce((sum, b) => sum + (b.stake || 0), 0);
+    const backCount = bets.filter(b => b.btype === 'back').length;
+    const layCount = bets.filter(b => b.btype === 'lay').length;
+    const settledCount = bets.filter(b => b.settled).length;
+    const activeCount = bets.filter(b => !b.settled).length;
+    
+    return { total, totalStake, backCount, layCount, settledCount, activeCount };
+  }, [bets]);
 
   const handleRefresh = () => {
     dispatch(getAllBets());
-    showToast("Refreshing settled bets...", "info");
+    showToast("Refreshing bets...", "info");
   };
 
   const openDetailsModal = (bet) => {
@@ -311,7 +322,7 @@ const AdminWrestlingSettledPage = () => {
               <div className="w-10 h-10 border-2 border-white/10 border-t-white/30 rounded-full animate-ping" />
             </div>
           </div>
-          <p className="text-white/50 text-sm mt-6">Loading settled bets...</p>
+          <p className="text-white/50 text-sm mt-6">Loading bets...</p>
         </div>
       </div>
     );
@@ -319,7 +330,7 @@ const AdminWrestlingSettledPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-[#0A0C0F] to-[#030405] p-4 md:p-6 lg:p-8">
-
+      
       {/* Header Section */}
       <div className={`${gradientCardClass} p-5 md:p-6 mb-6`}>
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
@@ -331,10 +342,10 @@ const AdminWrestlingSettledPage = () => {
             </div>
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-white drop-shadow-[0_2px_5px_black]">
-                Settled Bets
+                All Bets
               </h1>
               <p className="text-white/40 text-sm mt-0.5 flex items-center gap-2">
-                <span>{stats.total} settled bets</span>
+                <span>{stats.total} total bets</span>
                 <span className="w-1 h-1 bg-white/20 rounded-full" />
                 <span>₹{stats.totalStake.toLocaleString()} total stake</span>
               </p>
@@ -352,19 +363,7 @@ const AdminWrestlingSettledPage = () => {
               />
               <MdSearch className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40" size={18} />
             </div>
-
-            <select
-              value={filterResult}
-              onChange={(e) => setFilterResult(e.target.value)}
-              className={`${inputStyleClasses} w-full sm:w-40 appearance-none cursor-pointer`}
-            >
-              {resultTypes.map(type => (
-                <option key={type} value={type} className="bg-[#0B0D10] text-white">
-                  {type}
-                </option>
-              ))}
-            </select>
-
+            
             <button
               onClick={handleRefresh}
               className={buttonGradientClass}
@@ -378,95 +377,200 @@ const AdminWrestlingSettledPage = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-        <div className={`${gradientCardClass} p-5`}>
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
+        <div className={`${gradientCardClass} p-4`}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-white/40 text-xs">Total Settled</p>
-              <p className="text-white text-2xl font-bold mt-1">{stats.total}</p>
+              <p className="text-white/40 text-xs">Total Bets</p>
+              <p className="text-white text-xl font-bold mt-1">{stats.total}</p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-white/20 to-white/5 
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-white/20 to-white/5 
                           flex items-center justify-center border border-white/30">
-              <MdCheckCircle size={20} className="text-white" />
+              <MdSportsKabaddi size={16} className="text-white" />
             </div>
           </div>
         </div>
 
-        <div className={`${gradientCardClass} p-5`}>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-white/40 text-xs">Won</p>
-              <p className="text-emerald-400 text-2xl font-bold mt-1">{stats.won}</p>
-            </div>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-900/30 
-                          flex items-center justify-center border border-emerald-500/30">
-              <FiCheckCircle size={20} className="text-emerald-400" />
-            </div>
-          </div>
-        </div>
-
-        <div className={`${gradientCardClass} p-5`}>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-white/40 text-xs">Lost</p>
-              <p className="text-red-400 text-2xl font-bold mt-1">{stats.lost}</p>
-            </div>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500/20 to-red-900/30 
-                          flex items-center justify-center border border-red-500/30">
-              <FiXCircle size={20} className="text-red-400" />
-            </div>
-          </div>
-        </div>
-
-        <div className={`${gradientCardClass} p-5`}>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-white/40 text-xs">Cancelled</p>
-              <p className="text-gray-400 text-2xl font-bold mt-1">{stats.cancelled}</p>
-            </div>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gray-500/20 to-gray-900/30 
-                          flex items-center justify-center border border-gray-500/30">
-              <MdCancel size={20} className="text-gray-400" />
-            </div>
-          </div>
-        </div>
-
-        <div className={`${gradientCardClass} p-5`}>
+        <div className={`${gradientCardClass} p-4`}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white/40 text-xs">Total Stake</p>
-              <p className="text-amber-400 text-2xl font-bold mt-1">
+              <p className="text-amber-400 text-xl font-bold mt-1">
                 ₹{stats.totalStake.toLocaleString()}
               </p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-900/30 
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-900/30 
                           flex items-center justify-center border border-amber-500/30">
-              <MdAttachMoney size={20} className="text-amber-400" />
+              <MdAttachMoney size={16} className="text-amber-400" />
+            </div>
+          </div>
+        </div>
+
+        <div className={`${gradientCardClass} p-4`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-white/40 text-xs">BACK Bets</p>
+              <p className="text-emerald-400 text-xl font-bold mt-1">{stats.backCount}</p>
+            </div>
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-900/30 
+                          flex items-center justify-center border border-emerald-500/30">
+              <FiCheckCircle size={16} className="text-emerald-400" />
+            </div>
+          </div>
+        </div>
+
+        <div className={`${gradientCardClass} p-4`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-white/40 text-xs">LAY Bets</p>
+              <p className="text-red-400 text-xl font-bold mt-1">{stats.layCount}</p>
+            </div>
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-red-500/20 to-red-900/30 
+                          flex items-center justify-center border border-red-500/30">
+              <FiXCircle size={16} className="text-red-400" />
+            </div>
+          </div>
+        </div>
+
+        <div className={`${gradientCardClass} p-4`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-white/40 text-xs">Active</p>
+              <p className="text-blue-400 text-xl font-bold mt-1">{stats.activeCount}</p>
+            </div>
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-900/30 
+                          flex items-center justify-center border border-blue-500/30">
+              <MdInfo size={16} className="text-blue-400" />
+            </div>
+          </div>
+        </div>
+
+        <div className={`${gradientCardClass} p-4`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-white/40 text-xs">Settled</p>
+              <p className="text-gray-400 text-xl font-bold mt-1">{stats.settledCount}</p>
+            </div>
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-gray-500/20 to-gray-900/30 
+                          flex items-center justify-center border border-gray-500/30">
+              <MdCheckCircle size={16} className="text-gray-400" />
             </div>
           </div>
         </div>
       </div>
 
+      {/* Filter Section */}
+      <div className={`${gradientCardClass} p-5 mb-6`}>
+        <div className="flex items-center gap-2 mb-4">
+          <MdFilterList className="text-white/40" size={20} />
+          <h2 className="text-white font-semibold">Filters</h2>
+        </div>
+
+        {/* First Row - Team Filter with ALL/Team Names/Disqualify */}
+        <div className="mb-6">
+          <label className="text-white/60 text-sm mb-2 block">Filter by Team</label>
+          <div className="flex flex-wrap gap-2">
+            {teams.map((team) => (
+              <button
+                key={team}
+                onClick={() => setSelectedTeam(team)}
+                className={filterButtonClass(selectedTeam === team)}
+              >
+                {team === 'DISQUALIFY' ? (
+                  <>
+                    <MdBlock size={16} />
+                    Disqualify
+                  </>
+                ) : team === 'ALL' ? (
+                  <>
+                    <MdSportsMma size={16} />
+                    All
+                  </>
+                ) : (
+                  <>
+                    <MdGroups size={16} />
+                    {team}
+                  </>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Second Row - Bet Type Filter (BACK/LAY) */}
+        <div>
+          <label className="text-white/60 text-sm mb-2 block">Filter by Bet Type</label>
+          <div className="flex flex-wrap gap-2">
+            {betTypes.map((type) => (
+              <button
+                key={type}
+                onClick={() => setSelectedBetType(type)}
+                className={filterButtonClass(selectedBetType === type)}
+              >
+                {type === 'ALL' ? (
+                  <>All Types</>
+                ) : type === 'BACK' ? (
+                  <span className="text-emerald-400">BACK</span>
+                ) : (
+                  <span className="text-red-400">LAY</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Active Filters Display */}
+        {(selectedTeam !== 'ALL' || selectedBetType !== 'ALL') && (
+          <div className="mt-4 pt-4 border-t border-white/10 flex items-center gap-2 flex-wrap">
+            <span className="text-white/40 text-xs">Active Filters:</span>
+            {selectedTeam !== 'ALL' && (
+              <span className="px-2 py-1 bg-white/10 rounded-lg text-white/80 text-xs border border-white/20">
+                Team: {selectedTeam}
+              </span>
+            )}
+            {selectedBetType !== 'ALL' && (
+              <span className="px-2 py-1 bg-white/10 rounded-lg text-white/80 text-xs border border-white/20">
+                Type: {selectedBetType}
+              </span>
+            )}
+            <button
+              onClick={() => {
+                setSelectedTeam('ALL');
+                setSelectedBetType('ALL');
+                setSearchQuery('');
+              }}
+              className="text-xs text-white/40 hover:text-white ml-auto"
+            >
+              Clear all filters
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Main Table Card */}
       <div className={`${gradientCardClass} overflow-hidden`}>
         <div className="relative z-10">
-
+          
           {/* Table Header with count */}
           <div className="p-5 border-b border-white/10 flex justify-between items-center bg-black/20">
             <div className="flex items-center gap-3">
               <MdInfo className="text-white/40" size={18} />
               <span className="text-white/60 text-sm">
-                Showing {filteredBets.length} of {settledBets.length} settled bets
+                Showing {filteredBets.length} of {bets.length} total bets
               </span>
             </div>
-
-            {searchQuery && (
+            
+            {(searchQuery || selectedTeam !== 'ALL' || selectedBetType !== 'ALL') && (
               <button
-                onClick={() => setSearchQuery("")}
+                onClick={() => {
+                  setSearchQuery("");
+                  setSelectedTeam("ALL");
+                  setSelectedBetType("ALL");
+                }}
                 className="text-white/40 hover:text-white text-xs px-3 py-1.5 
                          rounded-lg hover:bg-white/5 transition"
               >
-                Clear search
+                Clear filters
               </button>
             )}
           </div>
@@ -478,11 +582,11 @@ const AdminWrestlingSettledPage = () => {
                             flex items-center justify-center border border-white/20">
                 <MdSportsKabaddi size={32} className="text-white/30" />
               </div>
-              <p className="text-white/50 text-lg font-medium">No settled bets found</p>
+              <p className="text-white/50 text-lg font-medium">No bets found</p>
               <p className="text-white/30 text-sm mt-1">
-                {searchQuery || filterResult !== 'ALL'
+                {searchQuery || selectedTeam !== 'ALL' || selectedBetType !== 'ALL'
                   ? 'Try adjusting your filters'
-                  : 'No bets have been settled yet'}
+                  : 'No bets have been placed yet'}
               </p>
             </div>
           ) : (
@@ -503,10 +607,13 @@ const AdminWrestlingSettledPage = () => {
                       Type
                     </th>
                     <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
+                      Rate
+                    </th>
+                    <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
                       Stake
                     </th>
                     <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
-                      Result
+                      Status
                     </th>
                     <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
                       Actions
@@ -515,22 +622,21 @@ const AdminWrestlingSettledPage = () => {
                 </thead>
                 <tbody className="divide-y divide-white/5">
                   {filteredBets.map((bet) => (
-                    <tr
-                      key={bet._id}
+                    <tr 
+                      key={bet._id} 
                       className="hover:bg-white/5 transition-all duration-200 group"
                     >
-                      {/* USER */}
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-white/20 to-white/5 
-                        flex items-center justify-center border border-white/20">
+                                        flex items-center justify-center border border-white/20">
                             <span className="text-white font-bold text-sm">
-                              {bet.userId?.mobile?.charAt(0) || "U"}
+                              {bet.user?.mobile?.charAt(0) || 'U'}
                             </span>
                           </div>
                           <div>
                             <div className="font-medium text-white text-sm">
-                              User #{bet.userId?._id?.slice(-6) || "N/A"}
+                              User #{bet.user?._id?.slice(-6)}
                             </div>
                             <div className="text-xs text-white/40 font-mono">
                               {bet._id?.slice(-8)}
@@ -538,49 +644,56 @@ const AdminWrestlingSettledPage = () => {
                           </div>
                         </div>
                       </td>
-
-                      {/* MOBILE */}
+                      
                       <td className="px-5 py-4">
                         <span className="text-white/80 text-sm font-mono">
-                          {bet.userId?.mobile || "N/A"}
+                          {bet.user?.mobile || 'N/A'}
                         </span>
                       </td>
-
-                      {/* TEAM */}
+                      
                       <td className="px-5 py-4">
                         <span className="px-3 py-1.5 bg-gradient-to-br from-white/10 to-white/5 
-                     rounded-lg text-white/90 text-xs font-medium border border-white/20">
+                                     rounded-lg text-white/90 text-xs font-medium border border-white/20">
                           {bet.teamName}
                         </span>
                       </td>
-
-                      {/* TYPE */}
+                      
                       <td className="px-5 py-4">
-                        <span className="px-3 py-1.5 bg-gradient-to-br from-blue-500/10 to-blue-900/20 
-                     rounded-lg text-blue-300 text-xs font-medium border border-blue-500/30">
-                          {bet.otype}
+                        <span className={`px-3 py-1.5 rounded-lg text-xs font-medium border
+                          ${bet.btype === 'back' 
+                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' 
+                            : 'bg-red-500/20 text-red-300 border-red-500/30'}`}>
+                          {bet.btype?.toUpperCase()}
                         </span>
                       </td>
-
-                      {/* STAKE */}
+                      
+                      <td className="px-5 py-4">
+                        <span className="text-white font-bold">
+                          {bet.price?.toFixed(2)}
+                        </span>
+                      </td>
+                      
                       <td className="px-5 py-4">
                         <span className="text-amber-400 font-bold drop-shadow-[0_0_10px_rgba(251,191,36,0.2)]">
-                          ₹{bet.betAmount?.toLocaleString() || 0}
+                          ₹{bet.stake?.toLocaleString()}
                         </span>
                       </td>
-
-                      {/* RESULT */}
+                      
                       <td className="px-5 py-4">
-                        <ResultBadge status={bet.status} />
+                        <span className={`px-3 py-1.5 rounded-lg text-xs font-medium border
+                          ${bet.settled 
+                            ? 'bg-gray-500/20 text-gray-300 border-gray-500/30' 
+                            : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'}`}>
+                          {bet.settled ? 'SETTLED' : 'ACTIVE'}
+                        </span>
                       </td>
-
-                      {/* ACTION */}
+                      
                       <td className="px-5 py-4">
                         <button
                           onClick={() => openDetailsModal(bet)}
                           className="p-2 text-white/70 hover:text-white rounded-lg 
-                   hover:bg-white/5 border border-transparent hover:border-white/20
-                   transition-all duration-300"
+                                   hover:bg-white/5 border border-transparent hover:border-white/20
+                                   transition-all duration-300"
                           title="View Details"
                         >
                           <MdVisibility size={18} />
@@ -629,17 +742,9 @@ const AdminWrestlingSettledPage = () => {
         .overflow-x-auto::-webkit-scrollbar-thumb:hover {
           background: rgba(255,255,255,0.3);
         }
-        
-        select {
-          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='rgba(255,255,255,0.4)' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
-          background-position: right 0.5rem center;
-          background-repeat: no-repeat;
-          background-size: 1.5em 1.5em;
-          padding-right: 2.5rem;
-        }
       `}</style>
     </div>
   );
 };
 
-export default AdminWrestlingSettledPage;
+export default AdminWrestlingAllBetsPage;

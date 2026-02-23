@@ -1,5 +1,5 @@
 const express = require("express");
-const { createWithdrawal, getMyWithdrawals, getAllWithdrawals, approveWithdrawal, rejectWithdrawal } = require("../controllers/withdrawalController");
+const { createWithdrawal, getMyWithdrawals, getAllWithdrawals, approveWithdrawal, rejectWithdrawal, getWithdrawals } = require("../controllers/withdrawalController");
 const protect = require("../middlewares/authMiddleware");
 const router = express.Router();
 
@@ -10,6 +10,9 @@ const router = express.Router();
 ====================== */
 router.post("/withdrawal/request", protect, createWithdrawal);
 router.get("/withdrawal/my", protect, getMyWithdrawals);
+
+router.get("/withdrawals", getWithdrawals);
+
 
 /* ======================
    ADMIN

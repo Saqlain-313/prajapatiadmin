@@ -166,3 +166,28 @@ exports.rejectWithdrawal = async (req, res) => {
     session.endSession();
   }
 };
+
+
+exports.getWithdrawals = async (req, res) => {
+  try {
+    const { status } = req.query;
+
+    const filter = status ? { status } : {};
+
+    const withdrawals = await Withdrawal.find(filter)
+      .populate("user", "name mobile balance")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: withdrawals.length,
+      withdrawals,
+    });
+  } catch (error) {
+    console.error("GET WITHDRAWALS ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+};

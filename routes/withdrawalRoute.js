@@ -11,7 +11,7 @@ const router = express.Router();
 router.post("/withdrawal/request", protect, createWithdrawal);
 router.get("/withdrawal/my", protect, getMyWithdrawals);
 
-router.get("/withdrawals", getWithdrawals);
+router.get("/withdrawal/getwithdrawals", getWithdrawals);
 
 
 /* ======================

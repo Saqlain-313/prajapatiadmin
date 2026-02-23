@@ -126,8 +126,6 @@ exports.getAllDeposits = async (req, res) => {
   }
 };
 
-
-
 // ===============================
 // UPDATE RECHARGE STATUS (ADMIN)
 // ===============================
@@ -221,6 +219,31 @@ exports.updateDepositStatus = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Status update failed",
+    });
+  }
+};
+
+
+exports.getDeposits = async (req, res) => {
+  try {
+    const { status } = req.query;
+
+    const filter = status ? { status } : {};
+
+    const deposits = await Deposit.find(filter)
+      .populate("user", "name mobile balance")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: deposits.length,
+      deposits,
+    });
+  } catch (error) {
+    console.error("GET DEPOSITS ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
     });
   }
 };

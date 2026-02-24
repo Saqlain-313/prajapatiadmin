@@ -44,8 +44,9 @@ import {
 } from "../store/reducer/wrestlingAdminSlice";
 import { getBetHistoryByMid } from "../store/reducer/wrestlingBetHistorySlice";
 import AdminMatchProfitPage from "./AdminMatchProfitPage";
+import { host } from "../store/reducer/api";
 
-const socket = io("http://localhost:5200/", {
+const socket = io(`${host}`, {
   transports: ["websocket"],
 });
 

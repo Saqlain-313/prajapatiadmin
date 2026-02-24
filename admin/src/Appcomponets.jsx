@@ -13,7 +13,6 @@ import Dashboard from "./pages/Dashboard";
 import ActiveUsers from "./pages/ActiveUsers";
 import UserDetailsPage from "./pages/UserDetailsPage";
 
-import AdminDeposit from "./pages/AdminDeposits";
 import AdminWithdrawals from "./pages/AdminWithdrawals";
 
 import WrestlingMatches from "./pages/WrestlingMatches";
@@ -28,6 +27,7 @@ import AdminWrestlingSettledPage from "./pages/AdminWrestlingSettledPage";
 import ImagesPage from "./pages/ImagesPage";
 import ReferralSettings from "./pages/ReferralSettings";
 import Matchcontrol from "./pages/live/Matchcontrol";
+
 import SuccessDeposit from "./pages/Deposit/Onlinepay/SuccessDeposit";
 import RejectedDeposit from "./pages/Deposit/Onlinepay/RejectedDeposit";
 import PendingDeposit from "./pages/Deposit/Onlinepay/PendingDeposit";
@@ -35,12 +35,11 @@ import PendingDeposit from "./pages/Deposit/Onlinepay/PendingDeposit";
 import Success from "./pages/Deposit/Manualpay/SuccessDeposit";
 import Rejected from "./pages/Deposit/Manualpay/RejectedDeposit";
 import Pending from "./pages/Deposit/Manualpay/PendingDeposit";
+
 import AdminUpiSettings from "./pages/AdminUpiSettings";
 import AdminGeneralSettings from "./pages/AdminGeneralSettings";
 import AdminCreateNotification from "./pages/AdminCreateNotification";
 import UserNotifications from "./pages/UserNotifications";
-
-
 
 /* =========================
    🔐 Private Route
@@ -53,15 +52,13 @@ function PrivateRoute({ allowedRole }) {
   }
 
   if (allowedRole && user.role !== allowedRole) {
-    // Role mismatch redirect
-    if (user.role === "admin") return <Navigate to="/" replace />;
+    if (user.role === "admin") return <Navigate to="/dashboard" replace />;
     if (user.role === "subadmin") return <Navigate to="/livematch" replace />;
     return <Navigate to="/login" replace />;
   }
 
   return <Outlet />;
 }
-
 
 /* =========================
    🟢 Admin Layout
@@ -71,18 +68,12 @@ function AdminLayout() {
 
   return (
     <div className="flex h-screen bg-black overflow-hidden">
-      <Sidebar
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-      />
+      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Navbar
-          sidebarOpen={sidebarOpen}
-          setSidebarOpen={setSidebarOpen}
-        />
+        <Navbar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-        <main className="flex-1 overflow-y-auto overflow-x-hidden bg-black">
+        <main className="flex-1 overflow-y-auto bg-black">
           <div className="p-4 md:p-6">
             <Outlet />
           </div>
@@ -91,7 +82,6 @@ function AdminLayout() {
     </div>
   );
 }
-
 
 /* =========================
    🔵 SubAdmin Layout
@@ -104,7 +94,6 @@ function SubAdminLayout() {
   );
 }
 
-
 /* =========================
    🚀 Main App Component
 ========================= */
@@ -114,33 +103,37 @@ function AppComponent() {
   return (
     <Routes>
 
-      {/* ================= PUBLIC ROUTES ================= */}
+      {/* Default Route */}
+      <Route path="/" element={<Navigate to="/login" replace />} />
+
+      {/* ================= LOGIN ROUTE ================= */}
       <Route
         path="/login"
         element={
           isAuthenticated ? (
             user?.role === "admin" ? (
-              <Navigate to="/" />
+              <Navigate to="/dashboard" replace />
             ) : (
-              <Navigate to="/livematch" />
+              <Navigate to="/livematch" replace />
             )
           ) : (
             <Login />
           )
         }
       />
+
       <Route path="/forget" element={<Forget />} />
 
-      {/* ================= SUBADMIN ROUTE ================= */}
+      {/* ================= SUBADMIN ================= */}
       <Route element={<PrivateRoute allowedRole="subadmin" />}>
         <Route path="/livematch" element={<SubAdminLayout />} />
       </Route>
 
-      {/* ================= ADMIN ROUTES ================= */}
+      {/* ================= ADMIN ================= */}
       <Route element={<PrivateRoute allowedRole="admin" />}>
         <Route element={<AdminLayout />}>
 
-          <Route index element={<Dashboard />} />
+          <Route path="/dashboard" element={<Dashboard />} />
 
           <Route path="/users/active" element={<ActiveUsers />} />
           <Route path="/user/:userId" element={<UserDetailsPage />} />
@@ -155,8 +148,6 @@ function AppComponent() {
           <Route path="/manual/rejected" element={<Rejected />} />
           <Route path="/manual/pending" element={<Pending />} />
 
-
-
           <Route path="/matches" element={<WrestlingMatches />} />
           <Route path="/admin/wrestling/:matchId" element={<WrestlingAdmin />} />
           <Route path="/admin/wrestling/create" element={<CreateWrestlingMatch />} />
@@ -165,15 +156,14 @@ function AppComponent() {
           <Route path="/admin/wrestling-bets/all" element={<AdminWrestlingAllBetsPage />} />
           <Route path="/admin/wrestling-bets/pending" element={<AdminWrestlingPendingPage />} />
           <Route path="/admin/wrestling-bets/settled" element={<AdminWrestlingSettledPage />} />
-          <Route path="/admin/upiUpdate" element={<AdminUpiSettings />} />
 
+          <Route path="/admin/upiUpdate" element={<AdminUpiSettings />} />
+          <Route path="/admin/general-settings" element={<AdminGeneralSettings />} />
           <Route path="/admin/create-notification" element={<AdminCreateNotification />} />
           <Route path="/notifications" element={<UserNotifications />} />
 
           <Route path="/admin/referral-settings" element={<ReferralSettings />} />
           <Route path="/uploadbanner" element={<ImagesPage />} />
-
-
 
           <Route
             path="*"
@@ -188,6 +178,9 @@ function AppComponent() {
 
         </Route>
       </Route>
+
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/login" replace />} />
 
     </Routes>
   );

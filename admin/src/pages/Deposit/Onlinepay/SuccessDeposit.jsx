@@ -37,9 +37,12 @@ const SuccessDeposit = () => {
   const { deposits = [], loading, error } = useSelector(
     (state) => state.adminDeposits
   );
-  // Filter only approved deposits
-  const approvedDeposits = deposits.filter(d => d.status === "approved");
 
+  console.log(deposits)
+  // Filter only approved deposits
+  const approvedDeposits = deposits.filter(
+    (d) => d.status?.toLowerCase() === "approved"
+  );
   useEffect(() => {
     dispatch(getAllDeposits());
   }, [dispatch]);
@@ -130,7 +133,7 @@ const SuccessDeposit = () => {
                                       flex items-center justify-center border border-white/20
                                       shadow-[0_0_15px_rgba(255,255,255,0.05)]">
                           <span className="text-white font-bold text-sm">
-                            {(d.user?.uid?.charAt(0) || "U").toUpperCase()}
+                            {(d.userId?.uid?.charAt(0) || "U").toUpperCase()}
                           </span>
                         </div>
                         <div>

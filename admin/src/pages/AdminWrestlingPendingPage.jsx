@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { getAllBets, settleBet } from "../store/reducer/wrestlingBetAdminSlice";
+import { getAllBets, settleBet, disqualifyBet }
+  from "../store/reducer/wrestlingBetAdminSlice";
 import {
   MdSearch,
   MdSportsKabaddi,
@@ -57,9 +58,7 @@ const showToast = (message, type = "success") => {
   return toast(message, commonStyle);
 };
 
-/* --------------------------------------------------------
-   DARK GRADIENT THEME — consistent with navbar/sidebar
--------------------------------------------------------- */
+
 const gradientCardClass =
   "relative bg-gradient-to-br from-[#0B0D10] via-[#15181E] to-[#070809] \
    border border-white/10 rounded-3xl shadow-[0_30px_60px_-15px_black,0_0_0_1px_rgba(255,255,255,0.02)] \
@@ -389,6 +388,42 @@ const AdminWrestlingPendingPage = () => {
     }
   }, [error]);
 
+  const handleDisqualifyBet = async () => {
+    if (!settlementPopup?.team || !settlementPopup?.type) {
+      showToast("Team and type missing", "error");
+      return;
+    }
+
+    setSettlementLoading(true);
+
+    try {
+      await dispatch(
+        disqualifyBet({
+          team: settlementPopup.team,
+          type: settlementPopup.type,
+        })
+      ).unwrap();
+
+      showToast(
+        `Disqualified: ${settlementPopup.team} (${settlementPopup.type.toUpperCase()})`,
+        "warning"
+      );
+
+      setSettlementPopup({
+        isOpen: false,
+        team: null,
+        type: null,
+      });
+
+      dispatch(getAllBets());
+
+    } catch (err) {
+      showToast(err, "error");
+    } finally {
+      setSettlementLoading(false);
+    }
+  };
+
   const handleSettleBet = async () => {
     console.log("Settlement Data:", settlementPopup); // 🔥 debug line
 
@@ -442,6 +477,8 @@ const AdminWrestlingPendingPage = () => {
   };
 
   const pendingBets = bets.filter((b) => b.status === 0);
+
+  const teams = [...new Set(bets.map(b => b.teamName))];
 
   // Filter bets based on search and type
   const filteredBets = useMemo(() => {
@@ -657,69 +694,43 @@ const AdminWrestlingPendingPage = () => {
                 <table className="w-full">
                   <thead>
                     <tr className="bg-black/40 border-b border-white/10">
-                      <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
-                        User
-                      </th>
-                      <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
-                        Mobile
-                      </th>
-                      <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
-                        Team
-                      </th>
-                      <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
-                        Type
-                      </th>
-                      <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
-                        Stake
-                      </th>
-                      <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
-                        Actions
-                      </th>
+                      <th className="px-5 py-4 text-left text-xs text-white/60 uppercase">Event</th>
+                      <th className="px-5 py-4 text-left text-xs text-white/60 uppercase">User</th>
+                      <th className="px-5 py-4 text-left text-xs text-white/60 uppercase">Team</th>
+                      <th className="px-5 py-4 text-left text-xs text-white/60 uppercase">Type</th>
+                      <th className="px-5 py-4 text-left text-xs text-white/60 uppercase">Stake</th>
+                      <th className="px-5 py-4 text-left text-xs text-white/60 uppercase">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
                     {filteredBets.map((bet) => (
                       <tr
                         key={bet._id}
-                        className="hover:bg-white/5 transition-all duration-200 group"
+                        className="hover:bg-white/5 transition-all duration-200"
                       >
-                        {/* USER COLUMN */}
+                        {/* EVENT NAME FIRST */}
                         <td className="px-5 py-4">
-                          <div className="flex items-center gap-3">
-                            <div
-                              className="w-8 h-8 rounded-lg bg-gradient-to-br from-white/20 to-white/5 
-                       flex items-center justify-center border border-white/20"
-                            >
-                              <span className="text-white font-bold text-sm">
-                                {bet.userId?.mobile?.charAt(0) || "U"}
-                              </span>
-                            </div>
-
-                            <div>
-                              <div className="font-medium text-white text-sm">
-                                User #{bet.userId?._id?.slice(-6)}
-                              </div>
-
-                              <div className="text-xs text-white/40 font-mono">
-                                {bet._id?.slice(-8)}
-                              </div>
-                            </div>
+                          <div className="text-white font-semibold text-sm">
+                            {bet.eventName}
+                          </div>
+                          <div className="text-xs text-white/40">
+                            {bet.gameName}
                           </div>
                         </td>
 
-                        {/* MOBILE COLUMN */}
+                        {/* USER DETAILS */}
                         <td className="px-5 py-4">
-                          <span className="text-white/80 text-sm font-mono">
-                            {bet.userId?.mobile || "N/A"}
-                          </span>
+                          <div className="text-white text-sm font-medium">
+                            User #{bet.userId?._id?.slice(-6)}
+                          </div>
+                          <div className="text-xs text-white/40 font-mono">
+                            {bet.userId?.mobile}
+                          </div>
                         </td>
 
                         {/* TEAM */}
                         <td className="px-5 py-4">
-                          <span
-                            className="px-3 py-1.5 bg-gradient-to-br from-white/10 to-white/5 
-                     rounded-lg text-white/90 text-xs font-medium border border-white/20"
-                          >
+                          <span className="px-3 py-1.5 bg-white/10 rounded-lg text-xs text-white">
                             {bet.teamName}
                           </span>
                         </td>
@@ -727,48 +738,103 @@ const AdminWrestlingPendingPage = () => {
                         {/* TYPE */}
                         <td className="px-5 py-4">
                           <span
-                            className="px-3 py-1.5 bg-gradient-to-br from-blue-500/10 to-blue-900/20 
-                     rounded-lg text-blue-300 text-xs font-medium border border-blue-500/30 uppercase"
+                            className={`px-3 py-1 rounded-lg text-xs font-semibold uppercase
+            ${bet.otype === "back"
+                                ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                                : "bg-red-500/20 text-red-300 border border-red-500/40"
+                              }`}
                           >
                             {bet.otype}
                           </span>
                         </td>
 
-                        {/* AMOUNT */}
+                        {/* STAKE */}
                         <td className="px-5 py-4">
-                          <span className="text-amber-400 font-bold drop-shadow-[0_0_10px_rgba(251,191,36,0.2)]">
-                            ₹{bet.betAmount?.toLocaleString()}
+                          <span className="text-amber-400 font-bold">
+                            ₹{Math.abs(bet.betAmount)?.toLocaleString()}
                           </span>
                         </td>
 
-                        {/* ACTIONS */}
+                        {/* SINGLE ACTION BUTTON */}
                         <td className="px-5 py-4">
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() =>
-                                setSettlementPopup({
-                                  isOpen: true,
-                                  team: bet.teamName,
-                                  type: "back",
-                                })
-                              }
-                              className={wonButtonClass}
-                            >
-                              {bet.teamName} BACK
-                            </button>
+                          <div className="flex flex-col gap-3">
 
-                            <button
-                              onClick={() =>
-                                setSettlementPopup({
-                                  isOpen: true,
-                                  team: bet.teamName,
-                                  type: "lay",
-                                })
-                              }
-                              className={lostButtonClass}
-                            >
-                              {bet.teamName} LAY
-                            </button>
+                            {teams.map((team, index) => (
+                              <div
+                                key={index}
+                                className="flex flex-col gap-2 border border-gray-700 p-2 rounded-lg"
+                              >
+
+                                <div className="text-xs font-semibold text-gray-300">
+                                  {team}
+                                </div>
+
+                                <div className="flex flex-wrap gap-2">
+
+                                  {/* BACK SETTLE - GREEN */}
+                                  <button
+                                    onClick={() =>
+                                      setSettlementPopup({
+                                        isOpen: true,
+                                        team: team,
+                                        type: "back",
+                                        action: "settle",
+                                      })
+                                    }
+                                    className="px-3 py-1 bg-emerald-500/20 text-emerald-300 rounded text-xs border border-emerald-500/40"
+                                  >
+                                    Back Settle
+                                  </button>
+
+                                  {/* LAY SETTLE - RED */}
+                                  <button
+                                    onClick={() =>
+                                      setSettlementPopup({
+                                        isOpen: true,
+                                        team: team,
+                                        type: "lay",
+                                        action: "settle",
+                                      })
+                                    }
+                                    className="px-3 py-1 bg-red-500/20 text-red-300 rounded text-xs border border-red-500/40"
+                                  >
+                                    Lay Settle
+                                  </button>
+
+                                  {/* BACK DISQUALIFY - GREEN */}
+                                  <button
+                                    onClick={() =>
+                                      setSettlementPopup({
+                                        isOpen: true,
+                                        team: team,
+                                        type: "back",
+                                        action: "disqualify",
+                                      })
+                                    }
+                                    className="px-3 py-1 bg-emerald-500/20 text-emerald-300 rounded text-xs border border-emerald-500/40"
+                                  >
+                                    Back DQ
+                                  </button>
+
+                                  {/* LAY DISQUALIFY - RED */}
+                                  <button
+                                    onClick={() =>
+                                      setSettlementPopup({
+                                        isOpen: true,
+                                        team: team,
+                                        type: "lay",
+                                        action: "disqualify",
+                                      })
+                                    }
+                                    className="px-3 py-1 bg-red-500/20 text-red-300 rounded text-xs border border-red-500/40"
+                                  >
+                                    Lay DQ
+                                  </button>
+
+                                </div>
+                              </div>
+                            ))}
+
                           </div>
                         </td>
                       </tr>
@@ -785,8 +851,11 @@ const AdminWrestlingPendingPage = () => {
       <SettlementConfirmationPopup
         isOpen={settlementPopup.isOpen}
         onClose={() => setSettlementPopup({ isOpen: false, betId: null, result: null, betDetails: null })}
-        onConfirm={handleSettleBet}
-        betDetails={settlementPopup.betDetails}
+        onConfirm={
+          settlementPopup.action === "disqualify"
+            ? handleDisqualifyBet
+            : handleSettleBet
+        } betDetails={settlementPopup.betDetails}
         result={settlementPopup.result}
         isLoading={settlementLoading}
       />

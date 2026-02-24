@@ -43,8 +43,11 @@ exports.getUserNotifications = async (req, res) => {
     const userId = req.user._id;
 
     const notifications = await Notification.find({
-      isGlobal: true,
       isActive: true,
+      $or: [
+        { isGlobal: true },                 // Global notifications
+        { targetUsers: userId },            // User specific notifications (agar field hai)
+      ],
       $or: [
         { expiresAt: null },
         { expiresAt: { $gte: new Date() } },
@@ -54,20 +57,21 @@ exports.getUserNotifications = async (req, res) => {
       .lean();
 
     const formatted = notifications.map((n) => {
-      const isRead = n.readBy.some(
+      const isRead = n.readBy?.some(
         (r) => r.user.toString() === userId.toString()
       );
 
       return {
         ...n,
-        isRead,
+        isRead: !!isRead, // true/false return karega
       };
     });
 
     return res.status(200).json({
       success: true,
-      notifications: formatted,
+      notifications: formatted, // read + unread dono
     });
+
   } catch (error) {
     console.error("GET NOTIFICATIONS ERROR:", error);
     return res.status(500).json({

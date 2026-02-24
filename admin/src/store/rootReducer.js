@@ -6,6 +6,9 @@ import wrestlingBetHistoryReducer from "./reducer/wrestlingBetHistorySlice";
 import wrestlingBetAdminReducer from "./reducer/wrestlingBetAdminSlice"; // ✅ NEW
 import imageReducer from './reducer/imageSlice';
 import referralReducer from './reducer/referralSettingSlice'
+import depositReducer from "./reducer/depositSlice";
+import notificationReducer from "./reducer/notificationSlice"      // user side
+import upiReducer from './reducer/upiSlice'
 const rootReducer = {
   auth: authReducer,
   adminDeposits: adminDepositsReducer,
@@ -15,6 +18,10 @@ const rootReducer = {
   wrestlingBetAdmin: wrestlingBetAdminReducer,
   images: imageReducer,
   referral: referralReducer,
+  deposits: depositReducer,
+  notification: notificationReducer,
+  upi: upiReducer
+
 
 
 };

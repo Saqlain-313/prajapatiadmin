@@ -17,13 +17,15 @@ import {
   MdSportsMma,
   MdGroups,
   MdBlock,
+  MdExpandMore,
+  MdExpandLess,
 } from "react-icons/md";
 import { FaUserCircle } from "react-icons/fa";
 import { FiAlertCircle, FiCheckCircle, FiXCircle } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 
 /* --------------------------------------------------------
-   TOAST CONFIG — consistent with dark theme
+   TOAST CONFIG
 -------------------------------------------------------- */
 const showToast = (message, type = "success") => {
   const icons = {
@@ -134,7 +136,7 @@ const BetDetailsModal = ({ isOpen, onClose, bet }) => {
                   <MdPhone className="text-white/40" size={16} />
                   <span className="text-white/60 w-20">Mobile</span>
                   <span className="text-white">
-                    {bet.user?.mobile || 'N/A'}
+                    {bet.userId?.mobile || 'N/A'}
                   </span>
                 </div>
               </div>
@@ -161,10 +163,10 @@ const BetDetailsModal = ({ isOpen, onClose, bet }) => {
                 <div className="flex items-center gap-3 text-sm">
                   <span className="text-white/60 w-20">Type</span>
                   <span className={`px-3 py-1 rounded-full text-xs font-medium
-                    ${bet.btype === 'back' 
+                    ${bet.otype === 'back' 
                       ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
                       : 'bg-red-500/20 text-red-300 border border-red-500/30'}`}>
-                    {bet.btype?.toUpperCase()}
+                    {bet.otype?.toUpperCase()}
                   </span>
                 </div>
                 <div className="flex items-center gap-3 text-sm">
@@ -222,19 +224,270 @@ const BetDetailsModal = ({ isOpen, onClose, bet }) => {
 };
 
 /* --------------------------------------------------------
-   MAIN COMPONENT - Admin Wrestling All Bets Page
+   TEAM BOX COMPONENT
 -------------------------------------------------------- */
-const AdminWrestlingAllBetsPage = () => {
+const TeamBox = ({ matchName, teams, bets, isOpen, onToggle }) => {
+  const [selectedTeam, setSelectedTeam] = useState('ALL');
+  const [selectedBetType, setSelectedBetType] = useState('ALL');
+  
+  // Only status===1 (Settled) bets are passed to this component now.
+
+  // Get team names
+  const teamNames = Array.from(teams);
+  
+  // Filter bets based on selections
+  const filteredBets = useMemo(() => {
+    let filtered = bets;
+
+    // Apply team filter
+    if (selectedTeam !== 'ALL' && selectedTeam !== 'DISQUALIFY') {
+      filtered = filtered.filter(bet => bet.teamName === selectedTeam);
+    } else if (selectedTeam === 'DISQUALIFY') {
+      filtered = [];
+    }
+    
+    // Apply bet type filter
+    if (selectedBetType !== 'ALL') {
+      filtered = filtered.filter(bet => 
+        bet.otype?.toUpperCase() === selectedBetType
+      );
+    }
+    
+    return filtered;
+  }, [bets, selectedTeam, selectedBetType]);
+
+  const totalStake = filteredBets.reduce((sum, b) => sum + (b.stake || 0), 0);
+
+  return (
+    <div className={`${gradientCardClass} mb-4 overflow-hidden`}>
+      <div 
+        className="p-5 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-all duration-300"
+        onClick={() => onToggle(matchName)}
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-white/20 to-white/5 
+                        flex items-center justify-center border border-white/30">
+            <MdGroups size={20} className="text-white" />
+          </div>
+          <div>
+            <h3 className="text-white font-semibold text-lg">{matchName}</h3>
+            <p className="text-white/40 text-xs mt-1">
+              {filteredBets.length} bets • Total Stake: ₹{totalStake.toLocaleString()}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-white/40 text-sm">Click to {isOpen ? 'close' : 'open'}</span>
+          {isOpen ? <MdExpandLess size={24} className="text-white/60" /> : <MdExpandMore size={24} className="text-white/60" />}
+        </div>
+      </div>
+
+      {isOpen && (
+        <div className="p-5 border-t border-white/10">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setSelectedTeam('ALL')}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300
+                  ${selectedTeam === 'ALL' 
+                    ? 'bg-blue-500/30 text-blue-300 border border-blue-500/50' 
+                    : 'bg-white/5 text-white/60 border border-white/10 hover:bg-white/10'}`}
+              >
+                All
+              </button>
+              {teamNames.map((team) => (
+                <button
+                  key={team}
+                  onClick={() => setSelectedTeam(team)}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300
+                    ${selectedTeam === team 
+                      ? 'bg-blue-500/30 text-blue-300 border border-blue-500/50' 
+                      : 'bg-white/5 text-white/60 border border-white/10 hover:bg-white/10'}`}
+                >
+                  {team}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setSelectedTeam('DISQUALIFY')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300
+                ${selectedTeam === 'DISQUALIFY'
+                  ? 'bg-red-500/30 text-red-300 border border-red-500/50'
+                  : 'bg-white/5 text-white/60 border border-white/10 hover:bg-white/10'}`}
+            >
+              <MdBlock size={16} />
+              Disqualify
+            </button>
+          </div>
+
+          <div className="flex items-center gap-3 mb-6">
+            <span className="text-white/40 text-sm">Bet Type:</span>
+            <button
+              onClick={() => setSelectedBetType('ALL')}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300
+                ${selectedBetType === 'ALL'
+                  ? 'bg-blue-500/30 text-blue-300 border border-blue-500/50'
+                  : 'bg-white/5 text-white/60 border border-white/10 hover:bg-white/10'}`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setSelectedBetType('BACK')}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300
+                ${selectedBetType === 'BACK'
+                  ? 'bg-emerald-500/30 text-emerald-300 border border-emerald-500/50'
+                  : 'bg-white/5 text-white/60 border border-white/10 hover:bg-white/10'}`}
+            >
+              BACK
+            </button>
+            <button
+              onClick={() => setSelectedBetType('LAY')}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300
+                ${selectedBetType === 'LAY'
+                  ? 'bg-red-500/30 text-red-300 border border-red-500/50'
+                  : 'bg-white/5 text-white/60 border border-white/10 hover:bg-white/10'}`}
+            >
+              LAY
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-black/40 border-b border-white/10">
+                  <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
+                    User
+                  </th>
+                  <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
+                    Mobile
+                  </th>
+                  <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
+                    Team
+                  </th>
+                  <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
+                    Type
+                  </th>
+                  <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
+                    Rate
+                  </th>
+                  <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
+                    Stake
+                  </th>
+                  <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {filteredBets.length === 0 ? (
+                  <tr>
+                    <td colSpan="8" className="px-5 py-8 text-center text-white/40">
+                      No bets found for this filter
+                    </td>
+                  </tr>
+                ) : (
+                  filteredBets.map((bet) => (
+                    <tr key={bet._id} className="hover:bg-white/5 transition-all duration-200 group">
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-white/20 to-white/5 
+                                        flex items-center justify-center border border-white/20">
+                            <span className="text-white font-bold text-sm">
+                              {bet.userId?.mobile?.charAt(0) || 'U'}
+                            </span>
+                          </div>
+                          <div>
+                            <div className="font-medium text-white text-sm">
+                              User #{bet.user?._id?.slice(-6)}
+                            </div>
+                            <div className="text-xs text-white/40 font-mono">
+                              {bet._id?.slice(-8)}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      
+                      <td className="px-5 py-4">
+                        <span className="text-white/80 text-sm font-mono">
+                          {bet.userId?.mobile || 'N/A'}
+                        </span>
+                      </td>
+                      
+                      <td className="px-5 py-4">
+                        <span className="px-3 py-1.5 bg-gradient-to-br from-white/10 to-white/5 
+                                     rounded-lg text-white/90 text-xs font-medium border border-white/20">
+                          {bet.teamName}
+                        </span>
+                      </td>
+                      
+                      <td className="px-5 py-4">
+                        <span className={`px-3 py-1.5 rounded-lg text-xs font-medium border
+                          ${bet.otype === 'back' 
+                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' 
+                            : 'bg-red-500/20 text-red-300 border-red-500/30'}`}>
+                          {bet.otype?.toUpperCase()}
+                        </span>
+                      </td>
+                      
+                      <td className="px-5 py-4">
+                        <span className="text-white font-bold">
+                          {bet.price?.toFixed(2)}
+                        </span>
+                      </td>
+                      
+                      <td className="px-5 py-4">
+                        <span className="text-amber-400 font-bold drop-shadow-[0_0_10px_rgba(251,191,36,0.2)]">
+                          ₹{bet.stake?.toLocaleString()}
+                        </span>
+                      </td>
+                      
+                      <td className="px-5 py-4">
+                        <span className={`px-3 py-1.5 rounded-lg text-xs font-medium border
+                          ${bet.settled 
+                            ? 'bg-gray-500/20 text-gray-300 border-gray-500/30' 
+                            : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'}`}>
+                          {bet.settled ? 'SETTLED' : 'ACTIVE'}
+                        </span>
+                      </td>
+                      
+                      <td className="px-5 py-4">
+                        <button
+                          onClick={() => openDetailsModal(bet)}
+                          className="p-2 text-white/70 hover:text-white rounded-lg 
+                                   hover:bg-white/5 border border-transparent hover:border-white/20
+                                   transition-all duration-300"
+                          title="View Details"
+                        >
+                          <MdVisibility size={18} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* --------------------------------------------------------
+   MAIN COMPONENT
+-------------------------------------------------------- */
+const AdminWrestlingSettledPage = () => {
   const dispatch = useDispatch();
   const { bets, loading, error } = useSelector(
     (s) => s.wrestlingBetAdmin
   );
   
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTeam, setSelectedTeam] = useState("ALL");
-  const [selectedBetType, setSelectedBetType] = useState("ALL");
   const [selectedBet, setSelectedBet] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [openMatches, setOpenMatches] = useState({});
 
   useEffect(() => {
     dispatch(getAllBets());
@@ -246,61 +499,64 @@ const AdminWrestlingAllBetsPage = () => {
     }
   }, [error]);
 
-  // Get unique teams from all bets
-  const teams = useMemo(() => {
-    const uniqueTeams = [...new Set(bets.map(bet => bet.teamName))].filter(Boolean);
-    return ['ALL', ...uniqueTeams, 'DISQUALIFY'];
+  // Filter only "status:1" (settled) bets
+  const settledBets = useMemo(() => {
+    return bets.filter((b) => b.status === 1);
   }, [bets]);
 
-  // Bet type options
-  const betTypes = ['ALL', 'BACK', 'LAY'];
+  // Group only settled bets by match/event
+  const matches = useMemo(() => {
+    const matchMap = new Map();
+    settledBets.forEach(bet => {
+      const matchName = bet.eventName || 'Unknown Match';
+      if (!matchMap.has(matchName)) {
+        matchMap.set(matchName, {
+          matchName,
+          teams: new Set(),
+          bets: []
+        });
+      }
+      const match = matchMap.get(matchName);
+      match.bets.push(bet);
+      if (bet.teamName) {
+        match.teams.add(bet.teamName);
+      }
+    });
+    return Array.from(matchMap.values());
+  }, [settledBets]);
 
-  // Filter bets based on team and bet type
-  const filteredBets = useMemo(() => {
-    let filtered = bets;
+  // Filter matches based on search
+  const filteredMatches = useMemo(() => {
+    if (!searchQuery) return matches;
     
-    // Apply team filter
-    if (selectedTeam === 'DISQUALIFY') {
-      // For disqualify, we might want to show bets from teams that are disqualified
-      // This logic can be adjusted based on your data structure
-      filtered = filtered.filter(b => b.isDisqualified === true);
-    } else if (selectedTeam !== 'ALL') {
-      filtered = filtered.filter(b => b.teamName === selectedTeam);
-    }
-    
-    // Apply bet type filter
-    if (selectedBetType !== 'ALL') {
-      filtered = filtered.filter(b => 
-        b.btype?.toUpperCase() === selectedBetType.toUpperCase()
-      );
-    }
-    
-    // Apply search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(b => 
+    const query = searchQuery.toLowerCase();
+    return matches.filter(match => 
+      match.matchName.toLowerCase().includes(query) ||
+      match.bets.some(b => 
         b.user?.mobile?.toLowerCase().includes(query) ||
         b.teamName?.toLowerCase().includes(query) ||
-        b._id?.toLowerCase().includes(query) ||
-        b.user?._id?.toLowerCase().includes(query) ||
-        b.mid?.toLowerCase().includes(query)
-      );
-    }
-    
-    return filtered;
-  }, [bets, searchQuery, selectedTeam, selectedBetType]);
+        b._id?.toLowerCase().includes(query)
+      )
+    );
+  }, [matches, searchQuery]);
 
-  // Calculate stats
+  // Initialize open state for first match
+  useEffect(() => {
+    if (filteredMatches.length > 0 && Object.keys(openMatches).length === 0) {
+      setOpenMatches({ [filteredMatches[0].matchName]: true });
+    }
+  }, [filteredMatches]);
+
+  // Calculate stats using only settled bets
   const stats = useMemo(() => {
-    const total = bets.length;
-    const totalStake = bets.reduce((sum, b) => sum + (b.stake || 0), 0);
-    const backCount = bets.filter(b => b.btype === 'back').length;
-    const layCount = bets.filter(b => b.btype === 'lay').length;
-    const settledCount = bets.filter(b => b.settled).length;
-    const activeCount = bets.filter(b => !b.settled).length;
-    
+    const total = settledBets.length;
+    const totalStake = settledBets.reduce((sum, b) => sum + (b.stake || 0), 0);
+    const backCount = settledBets.filter(b => b.btype === 'back').length;
+    const layCount = settledBets.filter(b => b.btype === 'lay').length;
+    const settledCount = total;
+    const activeCount = 0;
     return { total, totalStake, backCount, layCount, settledCount, activeCount };
-  }, [bets]);
+  }, [settledBets]);
 
   const handleRefresh = () => {
     dispatch(getAllBets());
@@ -310,6 +566,13 @@ const AdminWrestlingAllBetsPage = () => {
   const openDetailsModal = (bet) => {
     setSelectedBet(bet);
     setShowDetailsModal(true);
+  };
+
+  const toggleMatch = (matchName) => {
+    setOpenMatches(prev => ({
+      ...prev,
+      [matchName]: !prev[matchName]
+    }));
   };
 
   if (loading) {
@@ -342,10 +605,10 @@ const AdminWrestlingAllBetsPage = () => {
             </div>
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-white drop-shadow-[0_2px_5px_black]">
-                All Bets
+                Settled Bets
               </h1>
               <p className="text-white/40 text-sm mt-0.5 flex items-center gap-2">
-                <span>{stats.total} total bets</span>
+                <span>{stats.total} settled bets</span>
                 <span className="w-1 h-1 bg-white/20 rounded-full" />
                 <span>₹{stats.totalStake.toLocaleString()} total stake</span>
               </p>
@@ -359,7 +622,7 @@ const AdminWrestlingAllBetsPage = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className={inputStyleClasses}
-                placeholder="Search by mobile, team, ID..."
+                placeholder="Search by mobile, team, match..."
               />
               <MdSearch className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40" size={18} />
             </div>
@@ -381,7 +644,7 @@ const AdminWrestlingAllBetsPage = () => {
         <div className={`${gradientCardClass} p-4`}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-white/40 text-xs">Total Bets</p>
+              <p className="text-white/40 text-xs">Settled Bets</p>
               <p className="text-white text-xl font-bold mt-1">{stats.total}</p>
             </div>
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-white/20 to-white/5 
@@ -459,253 +722,31 @@ const AdminWrestlingAllBetsPage = () => {
         </div>
       </div>
 
-      {/* Filter Section */}
-      <div className={`${gradientCardClass} p-5 mb-6`}>
-        <div className="flex items-center gap-2 mb-4">
-          <MdFilterList className="text-white/40" size={20} />
-          <h2 className="text-white font-semibold">Filters</h2>
-        </div>
-
-        {/* First Row - Team Filter with ALL/Team Names/Disqualify */}
-        <div className="mb-6">
-          <label className="text-white/60 text-sm mb-2 block">Filter by Team</label>
-          <div className="flex flex-wrap gap-2">
-            {teams.map((team) => (
-              <button
-                key={team}
-                onClick={() => setSelectedTeam(team)}
-                className={filterButtonClass(selectedTeam === team)}
-              >
-                {team === 'DISQUALIFY' ? (
-                  <>
-                    <MdBlock size={16} />
-                    Disqualify
-                  </>
-                ) : team === 'ALL' ? (
-                  <>
-                    <MdSportsMma size={16} />
-                    All
-                  </>
-                ) : (
-                  <>
-                    <MdGroups size={16} />
-                    {team}
-                  </>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Second Row - Bet Type Filter (BACK/LAY) */}
-        <div>
-          <label className="text-white/60 text-sm mb-2 block">Filter by Bet Type</label>
-          <div className="flex flex-wrap gap-2">
-            {betTypes.map((type) => (
-              <button
-                key={type}
-                onClick={() => setSelectedBetType(type)}
-                className={filterButtonClass(selectedBetType === type)}
-              >
-                {type === 'ALL' ? (
-                  <>All Types</>
-                ) : type === 'BACK' ? (
-                  <span className="text-emerald-400">BACK</span>
-                ) : (
-                  <span className="text-red-400">LAY</span>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Active Filters Display */}
-        {(selectedTeam !== 'ALL' || selectedBetType !== 'ALL') && (
-          <div className="mt-4 pt-4 border-t border-white/10 flex items-center gap-2 flex-wrap">
-            <span className="text-white/40 text-xs">Active Filters:</span>
-            {selectedTeam !== 'ALL' && (
-              <span className="px-2 py-1 bg-white/10 rounded-lg text-white/80 text-xs border border-white/20">
-                Team: {selectedTeam}
-              </span>
-            )}
-            {selectedBetType !== 'ALL' && (
-              <span className="px-2 py-1 bg-white/10 rounded-lg text-white/80 text-xs border border-white/20">
-                Type: {selectedBetType}
-              </span>
-            )}
-            <button
-              onClick={() => {
-                setSelectedTeam('ALL');
-                setSelectedBetType('ALL');
-                setSearchQuery('');
-              }}
-              className="text-xs text-white/40 hover:text-white ml-auto"
-            >
-              Clear all filters
-            </button>
+      {/* Match Boxes */}
+      <div className="space-y-4">
+        {filteredMatches.map((match) => (
+          <TeamBox
+            key={match.matchName}
+            matchName={match.matchName}
+            teams={match.teams}
+            bets={match.bets}
+            isOpen={openMatches[match.matchName] || false}
+            onToggle={toggleMatch}
+          />
+        ))}
+        
+        {filteredMatches.length === 0 && (
+          <div className={`${gradientCardClass} p-8 text-center`}>
+            <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-white/10 to-white/5 
+                          flex items-center justify-center border border-white/20">
+              <MdSportsKabaddi size={32} className="text-white/30" />
+            </div>
+            <p className="text-white/50 text-lg font-medium">No matches found</p>
+            <p className="text-white/30 text-sm mt-1">
+              {searchQuery ? 'Try adjusting your search' : 'No settled bets found'}
+            </p>
           </div>
         )}
-      </div>
-
-      {/* Main Table Card */}
-      <div className={`${gradientCardClass} overflow-hidden`}>
-        <div className="relative z-10">
-          
-          {/* Table Header with count */}
-          <div className="p-5 border-b border-white/10 flex justify-between items-center bg-black/20">
-            <div className="flex items-center gap-3">
-              <MdInfo className="text-white/40" size={18} />
-              <span className="text-white/60 text-sm">
-                Showing {filteredBets.length} of {bets.length} total bets
-              </span>
-            </div>
-            
-            {(searchQuery || selectedTeam !== 'ALL' || selectedBetType !== 'ALL') && (
-              <button
-                onClick={() => {
-                  setSearchQuery("");
-                  setSelectedTeam("ALL");
-                  setSelectedBetType("ALL");
-                }}
-                className="text-white/40 hover:text-white text-xs px-3 py-1.5 
-                         rounded-lg hover:bg-white/5 transition"
-              >
-                Clear filters
-              </button>
-            )}
-          </div>
-
-          {/* Table */}
-          {filteredBets.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-white/10 to-white/5 
-                            flex items-center justify-center border border-white/20">
-                <MdSportsKabaddi size={32} className="text-white/30" />
-              </div>
-              <p className="text-white/50 text-lg font-medium">No bets found</p>
-              <p className="text-white/30 text-sm mt-1">
-                {searchQuery || selectedTeam !== 'ALL' || selectedBetType !== 'ALL'
-                  ? 'Try adjusting your filters'
-                  : 'No bets have been placed yet'}
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-black/40 border-b border-white/10">
-                    <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
-                      User
-                    </th>
-                    <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
-                      Mobile
-                    </th>
-                    <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
-                      Team
-                    </th>
-                    <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
-                      Type
-                    </th>
-                    <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
-                      Rate
-                    </th>
-                    <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
-                      Stake
-                    </th>
-                    <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-5 py-4 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {filteredBets.map((bet) => (
-                    <tr 
-                      key={bet._id} 
-                      className="hover:bg-white/5 transition-all duration-200 group"
-                    >
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-white/20 to-white/5 
-                                        flex items-center justify-center border border-white/20">
-                            <span className="text-white font-bold text-sm">
-                              {bet.user?.mobile?.charAt(0) || 'U'}
-                            </span>
-                          </div>
-                          <div>
-                            <div className="font-medium text-white text-sm">
-                              User #{bet.user?._id?.slice(-6)}
-                            </div>
-                            <div className="text-xs text-white/40 font-mono">
-                              {bet._id?.slice(-8)}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      
-                      <td className="px-5 py-4">
-                        <span className="text-white/80 text-sm font-mono">
-                          {bet.user?.mobile || 'N/A'}
-                        </span>
-                      </td>
-                      
-                      <td className="px-5 py-4">
-                        <span className="px-3 py-1.5 bg-gradient-to-br from-white/10 to-white/5 
-                                     rounded-lg text-white/90 text-xs font-medium border border-white/20">
-                          {bet.teamName}
-                        </span>
-                      </td>
-                      
-                      <td className="px-5 py-4">
-                        <span className={`px-3 py-1.5 rounded-lg text-xs font-medium border
-                          ${bet.btype === 'back' 
-                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' 
-                            : 'bg-red-500/20 text-red-300 border-red-500/30'}`}>
-                          {bet.btype?.toUpperCase()}
-                        </span>
-                      </td>
-                      
-                      <td className="px-5 py-4">
-                        <span className="text-white font-bold">
-                          {bet.price?.toFixed(2)}
-                        </span>
-                      </td>
-                      
-                      <td className="px-5 py-4">
-                        <span className="text-amber-400 font-bold drop-shadow-[0_0_10px_rgba(251,191,36,0.2)]">
-                          ₹{bet.stake?.toLocaleString()}
-                        </span>
-                      </td>
-                      
-                      <td className="px-5 py-4">
-                        <span className={`px-3 py-1.5 rounded-lg text-xs font-medium border
-                          ${bet.settled 
-                            ? 'bg-gray-500/20 text-gray-300 border-gray-500/30' 
-                            : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'}`}>
-                          {bet.settled ? 'SETTLED' : 'ACTIVE'}
-                        </span>
-                      </td>
-                      
-                      <td className="px-5 py-4">
-                        <button
-                          onClick={() => openDetailsModal(bet)}
-                          className="p-2 text-white/70 hover:text-white rounded-lg 
-                                   hover:bg-white/5 border border-transparent hover:border-white/20
-                                   transition-all duration-300"
-                          title="View Details"
-                        >
-                          <MdVisibility size={18} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Bet Details Modal */}
@@ -747,4 +788,4 @@ const AdminWrestlingAllBetsPage = () => {
   );
 };
 
-export default AdminWrestlingAllBetsPage;
+export default AdminWrestlingSettledPage;

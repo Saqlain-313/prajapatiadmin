@@ -47,6 +47,7 @@ app.use("/api", require("./routes/userDepositRoutes"));
 app.use("/api", require("./routes/wrestling/wrestlingRoutes"));
 app.use('/api',require('./routes/wrestling/wrestlingBetHistoryRoutes'))
 app.use('/api',require('./routes/wrestling/wrestlingBetAdminRoutes'))
+app.use('/api',require("./routes/upiroutes"))
 const startMatchCron = require("./cron/matchAutoStart");
 
 startMatchCron();

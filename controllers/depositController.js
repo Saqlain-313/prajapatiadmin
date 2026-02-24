@@ -132,6 +132,7 @@ exports.getAllDeposits = async (req, res) => {
 exports.updateDepositStatus = async (req, res) => {
   try {
     const { status, remark } = req.body;
+    const depositId = req.params.id;
 
     if (!["approved", "rejected"].includes(status)) {
       return res.status(400).json({
@@ -140,7 +141,7 @@ exports.updateDepositStatus = async (req, res) => {
       });
     }
 
-    const deposit = await Deposit.findById(req.params.id);
+    const deposit = await Deposit.findById(depositId);
 
     if (!deposit) {
       return res.status(404).json({
@@ -156,16 +157,32 @@ exports.updateDepositStatus = async (req, res) => {
       });
     }
 
-    deposit.status = status;
-    deposit.adminRemark = remark || null;
-    await deposit.save();
+    // ===============================
+    // UPDATE DEPOSIT STATUS (NO save())
+    // ===============================
+
+    const updateFields = {
+      status,
+      adminRemark: remark || null,
+    };
+
+    if (status === "approved") {
+      updateFields.approvedAt = new Date();
+    }
+
+    if (status === "rejected") {
+      updateFields.rejectedAt = new Date();
+    }
+
+    await Deposit.findByIdAndUpdate(depositId, updateFields);
 
     // ===============================
-    // IF APPROVED
+    // IF APPROVED → ADD USER CREDIT
     // ===============================
     if (status === "approved") {
 
       const user = await User.findById(deposit.user);
+
       if (!user) {
         return res.status(404).json({
           success: false,
@@ -173,9 +190,10 @@ exports.updateDepositStatus = async (req, res) => {
         });
       }
 
-      // Add recharge amount
-      user.credit += deposit.amount;
-      await user.save();
+      // 💰 Add recharge amount
+      await User.findByIdAndUpdate(user._id, {
+        $inc: { credit: deposit.amount },
+      });
 
       // ===============================
       // REFERRAL COMMISSION
@@ -202,8 +220,9 @@ exports.updateDepositStatus = async (req, res) => {
             const commission =
               (deposit.amount * setting.percent) / 100;
 
-            referrer.credit += commission;
-            await referrer.save();
+            await User.findByIdAndUpdate(referrer._id, {
+              $inc: { credit: commission },
+            });
           }
         }
       }

@@ -7,7 +7,6 @@ export const getAllDeposits = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const { data } = await api.get("/user-deposit/admin/all");
-      console.log("respoi--",data)
       return data.deposits;
     } catch (err) {
       console.log("response error--",err)

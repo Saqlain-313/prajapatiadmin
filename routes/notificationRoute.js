@@ -12,7 +12,7 @@ const adminMiddleware = require("../middlewares/adminMiddleware");
 
 
 router.post(
-  "/notification/admin/create",
+  "/admin/notification/create",
   protect,
 //   adminMiddleware,
   createNotification
@@ -20,13 +20,13 @@ router.post(
 
 
 router.get(
-  "/notification/user",
+  "/admin/notification/user",
   protect,
   getUserNotifications
 );
 
 router.put(
-  "/notification/read/:notificationId",
+  "/admin/notification/read/:notificationId",
   protect,
   markNotificationAsRead
 );

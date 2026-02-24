@@ -28,6 +28,18 @@ import AdminWrestlingSettledPage from "./pages/AdminWrestlingSettledPage";
 import ImagesPage from "./pages/ImagesPage";
 import ReferralSettings from "./pages/ReferralSettings";
 import Matchcontrol from "./pages/live/Matchcontrol";
+import SuccessDeposit from "./pages/Deposit/Onlinepay/SuccessDeposit";
+import RejectedDeposit from "./pages/Deposit/Onlinepay/RejectedDeposit";
+import PendingDeposit from "./pages/Deposit/Onlinepay/PendingDeposit";
+
+import Success from "./pages/Deposit/Manualpay/SuccessDeposit";
+import Rejected from "./pages/Deposit/Manualpay/RejectedDeposit";
+import Pending from "./pages/Deposit/Manualpay/PendingDeposit";
+import AdminUpiSettings from "./pages/AdminUpiSettings";
+import AdminGeneralSettings from "./pages/AdminGeneralSettings";
+import AdminCreateNotification from "./pages/AdminCreateNotification";
+import UserNotifications from "./pages/UserNotifications";
+
 
 
 /* =========================
@@ -133,8 +145,17 @@ function AppComponent() {
           <Route path="/users/active" element={<ActiveUsers />} />
           <Route path="/user/:userId" element={<UserDetailsPage />} />
 
-          <Route path="/deposit/*" element={<AdminDeposit />} />
           <Route path="/withdrawals/*" element={<AdminWithdrawals />} />
+
+          <Route path="/online/deposit" element={<SuccessDeposit />} />
+          <Route path="/online/rejected" element={<RejectedDeposit />} />
+          <Route path="/online/pending" element={<PendingDeposit />} />
+
+          <Route path="/manual/success" element={<Success />} />
+          <Route path="/manual/rejected" element={<Rejected />} />
+          <Route path="/manual/pending" element={<Pending />} />
+
+
 
           <Route path="/matches" element={<WrestlingMatches />} />
           <Route path="/admin/wrestling/:matchId" element={<WrestlingAdmin />} />
@@ -144,9 +165,15 @@ function AppComponent() {
           <Route path="/admin/wrestling-bets/all" element={<AdminWrestlingAllBetsPage />} />
           <Route path="/admin/wrestling-bets/pending" element={<AdminWrestlingPendingPage />} />
           <Route path="/admin/wrestling-bets/settled" element={<AdminWrestlingSettledPage />} />
+          <Route path="/admin/upiUpdate" element={<AdminUpiSettings />} />
+
+          <Route path="/admin/create-notification" element={<AdminCreateNotification />} />
+          <Route path="/notifications" element={<UserNotifications />} />
 
           <Route path="/admin/referral-settings" element={<ReferralSettings />} />
           <Route path="/uploadbanner" element={<ImagesPage />} />
+
+
 
           <Route
             path="*"

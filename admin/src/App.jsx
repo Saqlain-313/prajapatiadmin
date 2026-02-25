@@ -7,19 +7,19 @@ import { Toaster } from 'react-hot-toast'
 
 function App() {
   return (
-    <BrowserRouter>
+    <>
       <AppComponent />
-           <Toaster 
-      position="top-right"
-      toastOptions={{
-        duration: 4000,
-        style: {
-          background: '#ffffff',
-          color: '#000000',
-        },
-      }}
-    />
-    </BrowserRouter>
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#ffffff',
+            color: '#000000',
+          },
+        }}
+      />
+    </>
   );
 }
 

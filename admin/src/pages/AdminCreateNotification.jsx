@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom"; // ✅ add this
 import {
   createNotification,
   resetNotificationState,
@@ -7,6 +8,7 @@ import {
 
 const AdminCreateNotification = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate(); // ✅ add this
   const { createLoading, success, error } = useSelector(
     (state) => state.notification
   );
@@ -52,6 +54,15 @@ const AdminCreateNotification = () => {
 
   return (
     <div className="max-w-2xl mx-auto mt-10 bg-white shadow-xl rounded-xl p-6">
+      
+      {/* ✅ Back Button */}
+      <button
+        onClick={() => navigate(-1)}
+        className="mb-4 text-sm bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded"
+      >
+        ← Back
+      </button>
+
       <h2 className="text-2xl font-bold mb-6 text-center">
         Create Notification
       </h2>

@@ -448,7 +448,7 @@ const UserTableRow = ({ user, onView, onDelete }) => {
   const navigate = useNavigate();
 
   const handleView = () => {
-    navigate(`/users/active/${user._id}`);
+    navigate(`/users/${user._id}`);
   };
 
   return (
@@ -682,7 +682,7 @@ const ActiveUsers = () => {
                   <UserTableRow
                     key={user._id}
                     user={user}
-                    onView={() => navigate(`/users/active/${user._id}`)}
+                    onView={() => navigate(`/users/${user._id}`)}
                     onDelete={handleDeleteClick}
                   />
                 ))}

@@ -69,11 +69,7 @@ exports.updateWrestlingBetStatus = async (req, res) => {
       const user = await User.findById(bet.userId);
       if (!user) continue;
 
-      // opposite type
       const oppositeType = type === "back" ? "lay" : "back";
-
-      // find opposite team dynamically
-      const oppositeTeam = bet.teamName === team ? null : bet.teamName;
 
       let isWin = false;
 
@@ -88,17 +84,15 @@ exports.updateWrestlingBetStatus = async (req, res) => {
       }
 
       let payout = 0;
+      let betResult = "LOSS";
 
       if (isWin) {
-        if (bet.otype === "back") {
-          payout = bet.price + bet.betAmount;
-        } else {
-          payout = bet.price + bet.betAmount;
-        }
+        payout = bet.price + bet.betAmount;
 
         user.credit += payout;
         bet.status = 1;
         bet.resultAmount = payout;
+        betResult = "WIN";
       } else {
         bet.status = 2;
         bet.resultAmount = 0;
@@ -106,11 +100,21 @@ exports.updateWrestlingBetStatus = async (req, res) => {
 
       await bet.save();
       await user.save();
+
+      // 🔥 UPDATE HISTORY
+      await WrestlingBetHistory.findOneAndUpdate(
+        { userId: bet.userId, sid: bet.sid, gameId: bet.gameId, status: 0 },
+        {
+          status: bet.status,
+          resultAmount: bet.resultAmount,
+          betResult: betResult,
+        }
+      );
     }
 
     return res.status(200).json({
       success: true,
-      message: "All bets settled with opposite logic",
+      message: "All bets settled & history updated",
     });
 
   } catch (error) {
@@ -132,7 +136,6 @@ exports.disqualifyWrestlingBets = async (req, res) => {
       });
     }
 
-    // Only pending bets
     const pendingBets = await WrestlingBet.find({ status: 0 });
 
     for (const bet of pendingBets) {
@@ -140,27 +143,38 @@ exports.disqualifyWrestlingBets = async (req, res) => {
       if (!user) continue;
 
       let payout = 0;
+      let betResult = "LOSS";
 
       if (bet.teamName === team && bet.otype === type) {
-        payout = bet.price + bet.betAmount; // refund stake only
+        payout = bet.price + bet.betAmount;
 
         user.credit += payout;
 
-        bet.status = 1; // settled (refund)
+        bet.status = 1;
         bet.resultAmount = payout;
+        betResult = "REFUND";
       } else {
-        // ❌ Everyone else LOSS
         bet.status = 2;
         bet.resultAmount = 0;
       }
 
       await bet.save();
       await user.save();
+
+      // 🔥 UPDATE HISTORY
+      await WrestlingBetHistory.findOneAndUpdate(
+        { userId: bet.userId, sid: bet.sid, gameId: bet.gameId, status: 0 },
+        {
+          status: bet.status,
+          resultAmount: bet.resultAmount,
+          betResult: betResult,
+        }
+      );
     }
 
     return res.status(200).json({
       success: true,
-      message: "Disqualified bets refunded, others marked as loss",
+      message: "Disqualified bets refunded & history updated",
     });
 
   } catch (error) {

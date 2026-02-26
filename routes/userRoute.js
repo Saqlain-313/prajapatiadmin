@@ -11,6 +11,8 @@ const {
   verifyOTPAndReset,
   getAllUsers,
   deleteUser,
+  getUserById,
+  updateUserById,
 } = require("../controllers/usercontroller");
 
 const protect = require("../middlewares/authMiddleware");
@@ -27,5 +29,10 @@ router.post("/admin/reset-password", verifyOTPAndReset);
 
 router.get("/admin/users", protect, getAllUsers);
 router.delete("/admin/users/:userId", protect, deleteUser);
+router.get("/admin/users/:userId", protect, getUserById);
+router.patch("/admin/users/:userId", protect, updateUserById);
+
+
+
 
 module.exports = router;

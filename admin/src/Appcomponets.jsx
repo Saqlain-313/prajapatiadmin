@@ -136,7 +136,7 @@ function AppComponent() {
           <Route path="/dashboard" element={<Dashboard />} />
 
           <Route path="/users/active" element={<ActiveUsers />} />
-          <Route path="/user/:userId" element={<UserDetailsPage />} />
+          <Route path="/users/:userId" element={<UserDetailsPage />} />
 
           <Route path="/withdrawals/*" element={<AdminWithdrawals />} />
 

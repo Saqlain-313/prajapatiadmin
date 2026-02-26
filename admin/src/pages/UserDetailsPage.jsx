@@ -19,8 +19,7 @@ import {
 import { FaRegIdCard } from "react-icons/fa";
 import { FiAlertCircle, FiCheckCircle, FiXCircle } from "react-icons/fi";
 import { toast } from "react-hot-toast";
-import { getAllUsers, deleteUser } from "../store/reducer/authReducer";
-
+import { deleteUser, getUserById, updateUser } from "../store/reducer/authReducer";
 /* --------------------------------------------------------
    TOAST CONFIG
 -------------------------------------------------------- */
@@ -85,7 +84,7 @@ const DeleteConfirmationPopup = ({ isOpen, onClose, onConfirm, userName, isLoadi
         {/* Decorative glows */}
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-red-500/10 rounded-full blur-3xl" />
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-red-500/10 rounded-full blur-3xl" />
-        
+
         {/* Header */}
         <div className="relative z-10 p-6 border-b border-white/10">
           <div className="flex items-center gap-4">
@@ -167,61 +166,83 @@ const DeleteConfirmationPopup = ({ isOpen, onClose, onConfirm, userName, isLoadi
 -------------------------------------------------------- */
 const UserDetailsPage = () => {
   const navigate = useNavigate();
-  const { id } = useParams();
+  const { userId } = useParams();
   const dispatch = useDispatch();
-  const { users = [], loading: usersLoading } = useSelector((state) => state.auth);
-  
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({});
+  const [updateLoading, setUpdateLoading] = useState(false);
+  const { selectedUser, loading } = useSelector((state) => state.auth);
+
+  const user = selectedUser;
+
+
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [error, setError] = useState(null);
 
   // Load user data
   useEffect(() => {
-    const loadUser = async () => {
-      setLoading(true);
-      try {
-        // If users are not loaded, fetch them
-        if (users.length === 0) {
-          await dispatch(getAllUsers());
-        }
-      } catch (err) {
-        setError(err.message || "Failed to load user data");
-        showToast("Failed to load user data", "error");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadUser();
-  }, [dispatch, users.length]);
-
-  // Find user from Redux store
-  useEffect(() => {
-    if (users.length > 0 && id) {
-      const foundUser = users.find((u) => u._id === id);
-      if (foundUser) {
-        setUser(foundUser);
-        setError(null);
-      } else {
-        setError("User not found");
-      }
+    if (userId) {
+      console.log("Dispatching getUserById with id:", userId);
+      dispatch(getUserById(userId));
     }
-  }, [id, users]);
+  }, [userId, dispatch]);
+  // Find user from Redux store
+
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        password: "",
+        role: user.role || "user",
+        credit: user.credit || 0,
+      });
+    }
+  }, [user]);
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleUpdate = async () => {
+    try {
+      setUpdateLoading(true);
+
+      const result = await dispatch(
+        updateUser({
+          userId,
+          updateData: formData,
+        })
+      );
+
+      if (result.meta.requestStatus === "fulfilled") {
+        showToast("User updated successfully", "success");
+        setIsEditing(false);
+      } else {
+        showToast(result.payload || "Update failed", "error");
+      }
+    } catch (err) {
+      showToast("Something went wrong", "error");
+    } finally {
+      setUpdateLoading(false);
+    }
+  };
+
 
   // Handle delete user
   const handleDelete = async () => {
     setDeleteLoading(true);
     try {
-      const result = await dispatch(deleteUser(id));
-      
+      const result = await dispatch(deleteUser(userId));
+
       if (result?.payload?.message) {
         showToast(result.payload.message, "success");
       } else {
         showToast("User deleted successfully", "success");
       }
-      
+
       setShowDeletePopup(false);
       navigate("/users/active");
     } catch (err) {
@@ -238,7 +259,7 @@ const UserDetailsPage = () => {
   };
 
   // Loading state
-  if (loading || usersLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-black via-[#0A0C0F] to-[#030405] p-4 md:p-6 lg:p-8 flex items-center justify-center">
         <div className={`${gradientCardClass} p-12 text-center max-w-md w-full`}>
@@ -295,7 +316,7 @@ const UserDetailsPage = () => {
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-white/5 rounded-full blur-3xl" />
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-white/5 rounded-full blur-3xl" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-white/5 rounded-full blur-3xl opacity-30" />
-        
+
         {/* Header with back button */}
         <div className="relative z-10 p-6 border-b border-white/10 flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -323,16 +344,8 @@ const UserDetailsPage = () => {
               </p>
             </div>
           </div>
-          
+
           {/* Status Badge */}
-          <div className="flex items-center gap-2">
-            <span className={`px-3 py-1.5 text-xs font-bold rounded-full border
-              ${user.is_verified 
-                ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/50" 
-                : "bg-yellow-500/20 text-yellow-300 border-yellow-500/50"}`}>
-              {user.is_verified ? "Verified" : "Pending"}
-            </span>
-          </div>
         </div>
 
         {/* Profile content */}
@@ -348,7 +361,7 @@ const UserDetailsPage = () => {
                                 flex items-center justify-center border-2 border-white/40 mb-4
                                 shadow-[0_0_40px_rgba(255,255,255,0.2)]">
                     <span className="text-white font-bold text-4xl drop-shadow-[0_4px_15px_black]">
-                      {(user.firstname?.charAt(0) || "U").toUpperCase()}
+                      {(user.name?.charAt(0) || "U").toUpperCase()}
                     </span>
                   </div>
                   <div className="absolute -bottom-2 -right-2">
@@ -359,15 +372,34 @@ const UserDetailsPage = () => {
                     </span>
                   </div>
                 </div>
-                
-                <h3 className="text-2xl font-bold text-white mb-1">{fullName}</h3>
-                <span className={`mt-2 px-5 py-1.5 text-xs font-bold rounded-full border
-                  ${isAdmin 
-                    ? "bg-purple-500/20 text-purple-300 border-purple-500/50 shadow-[0_0_20px_rgba(168,85,247,0.3)]" 
-                    : "bg-blue-500/20 text-blue-300 border-blue-500/50 shadow-[0_0_20px_rgba(59,130,246,0.2)]"}`}>
-                  {user.role?.toUpperCase() || "USER"}
-                </span>
-                
+
+                <h3 className="text-2xl font-bold text-white mb-1">{user.name}</h3>
+                <div className="mt-2">
+                  {isEditing ? (
+                    <select
+                      name="role"
+                      value={formData.role}
+                      onChange={handleChange}
+                      className="bg-black/50 border border-white/20 rounded-lg px-3 py-2 text-white"
+                    >
+                      <option value="user">User</option>
+                      <option value="admin">Admin</option>
+                      <option value="subadmin">SubAdmin</option>
+
+                    </select>
+                  ) : (
+                    <span
+                      className={`px-5 py-1.5 text-xs font-bold rounded-full border
+        ${user.role === "admin"
+                          ? "bg-purple-500/20 text-purple-300 border-purple-500/50 shadow-[0_0_20px_rgba(168,85,247,0.3)]"
+                          : "bg-blue-500/20 text-blue-300 border-blue-500/50 shadow-[0_0_20px_rgba(59,130,246,0.2)]"
+                        }`}
+                    >
+                      {user.role?.toUpperCase()}
+                    </span>
+                  )}
+                </div>
+
                 <div className="w-full mt-4 pt-4 border-t border-white/10">
                   <p className="text-white/40 text-xs">Member since</p>
                   <p className="text-white/80 text-sm">
@@ -388,13 +420,7 @@ const UserDetailsPage = () => {
                   Account Information
                 </h4>
                 <div className="space-y-4">
-                  <div className="flex items-start gap-3 text-sm">
-                    <MdEmail className="text-white/40 mt-0.5" size={16} />
-                    <div className="flex-1">
-                      <span className="text-white/40 text-xs">Email Address</span>
-                      <p className="text-white font-mono text-sm break-all">{user.email || "N/A"}</p>
-                    </div>
-                  </div>
+
                   <div className="flex items-start gap-3 text-sm">
                     <MdPhone className="text-white/40 mt-0.5" size={16} />
                     <div className="flex-1">
@@ -402,15 +428,7 @@ const UserDetailsPage = () => {
                       <p className="text-white text-sm">{user.mobile || "N/A"}</p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-3 text-sm">
-                    <MdVerified className="text-white/40 mt-0.5" size={16} />
-                    <div className="flex-1">
-                      <span className="text-white/40 text-xs">Verification Status</span>
-                      <p className={`${user.is_verified ? "text-emerald-400" : "text-yellow-400"} font-medium`}>
-                        {user.is_verified ? "Verified Account" : "Pending Verification"}
-                      </p>
-                    </div>
-                  </div>
+
                   <div className="flex items-start gap-3 text-sm">
                     <MdDateRange className="text-white/40 mt-0.5" size={16} />
                     <div className="flex-1">
@@ -438,7 +456,7 @@ const UserDetailsPage = () => {
                     <div className="bg-black/30 p-3 rounded-xl border border-white/5">
                       <span className="text-white/40 text-xs">Country</span>
                       <p className="text-white font-medium">
-                        {user.country_name || "N/A"} 
+                        {user.country_name || "N/A"}
                         {user.country_code && <span className="text-white/40 ml-1">({user.country_code})</span>}
                       </p>
                     </div>
@@ -476,7 +494,7 @@ const UserDetailsPage = () => {
                     <span className="text-white/40 text-xs">Referral Code</span>
                     <div className="mt-2 flex items-center gap-2">
                       <span className="text-white font-mono text-lg font-bold tracking-wider">
-                        {user.referral_code || "N/A"}
+                        {user.myInviteCode || "N/A"}
                       </span>
                     </div>
                   </div>
@@ -506,7 +524,7 @@ const UserDetailsPage = () => {
                               opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-500/20 rounded-full blur-3xl 
                               group-hover:bg-amber-500/30 transition-all duration-500" />
-                
+
                 <div className="relative z-10">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-amber-300 font-semibold flex items-center gap-2">
@@ -519,11 +537,19 @@ const UserDetailsPage = () => {
                   </div>
                   <div className="flex items-baseline justify-between">
                     <span className="text-4xl font-bold text-amber-400 drop-shadow-[0_0_20px_rgba(251,191,36,0.4)]">
-                      ₹{(user.credit || 0).toLocaleString('en-IN', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                      })}
-                    </span>
+                      {isEditing ? (
+                        <input
+                          type="number"
+                          name="credit"
+                          value={formData.credit}
+                          onChange={handleChange}
+                          className="w-full bg-black/50 border border-amber-500/30 rounded-lg px-3 py-2 text-amber-300"
+                        />
+                      ) : (
+                        <span className="text-4xl font-bold text-amber-400">
+                          ₹{(user.credit || 0).toLocaleString("en-IN")}
+                        </span>
+                      )}                    </span>
                     <span className="text-amber-400/60 text-sm">INR</span>
                   </div>
                   <div className="mt-3 flex items-center gap-2 text-amber-400/60 text-xs">
@@ -534,6 +560,19 @@ const UserDetailsPage = () => {
               </div>
             </div>
           </div>
+          {isEditing && (
+            <div className="mt-4">
+              <label className="text-white/50 text-xs">New Password</label>
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Enter new password"
+                className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white mt-1"
+              />
+            </div>
+          )}
 
           {/* Additional Info Row */}
           <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -561,16 +600,16 @@ const UserDetailsPage = () => {
               User since: {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"}
             </span>
           </div>
-          
+
           <div className="flex gap-3">
-            <button 
-              onClick={handleGoBack} 
+            <button
+              onClick={handleGoBack}
               className={buttonGradientClass}
             >
               <MdArrowBack size={16} />
               Back to Users
             </button>
-            
+
             {!isAdmin && (
               <button
                 onClick={() => setShowDeletePopup(true)}
@@ -581,6 +620,25 @@ const UserDetailsPage = () => {
               </button>
             )}
           </div>
+          <button
+            onClick={() => setIsEditing(!isEditing)}
+            className={buttonGradientClass}
+          >
+            {isEditing ? "Cancel Edit" : "Edit User"}
+          </button>
+
+          {isEditing && (
+            <button
+              onClick={handleUpdate}
+              disabled={updateLoading}
+              className="px-4 py-2.5 bg-gradient-to-br from-emerald-500/20 to-emerald-900/30
+               rounded-xl text-emerald-300 border border-emerald-500/30
+               hover:border-emerald-500/50 transition"
+            >
+              {updateLoading ? "Saving..." : "Save Changes"}
+            </button>
+          )}
+
         </div>
       </div>
 
@@ -592,6 +650,7 @@ const UserDetailsPage = () => {
         userName={fullName}
         isLoading={deleteLoading}
       />
+
 
       {/* Global animations */}
       <style jsx global>{`

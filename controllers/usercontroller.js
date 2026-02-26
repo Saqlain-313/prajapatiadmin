@@ -1,4 +1,5 @@
 const User = require("../models/usermodel");
+const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const sendResetPasswordOTP = require("../utils/emailService");
@@ -187,6 +188,133 @@ const getProfile = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+const getUserById = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // 1️⃣ Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user ID",
+      });
+    }
+
+    // 2️⃣ Check authorization FIRST (optional optimization)
+    if (
+      req.user.role !== "admin" &&
+      req.user._id.toString() !== userId
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to access this user",
+      });
+    }
+
+    // 3️⃣ Fetch user (exclude sensitive fields)
+    const user = await User.findById(userId)
+      .select("-password -reset_otp -__v")
+      .lean(); // makes query faster
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: user,
+    });
+
+  } catch (error) {
+    console.error("Get User Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
+
+const updateUserById = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // 1️⃣ Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user ID",
+      });
+    }
+
+    // 2️⃣ Only Admin can update role & credit
+    if (req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Only admin can update these fields",
+      });
+    }
+
+    const updateData = {};
+
+    // 3️⃣ Allow Password Update (with hashing)
+    if (req.body.password) {
+      const hashedPassword = await bcrypt.hash(req.body.password, 10);
+      updateData.password = hashedPassword;
+    }
+
+    // 4️⃣ Allow Role Update
+    if (req.body.role) {
+      updateData.role = req.body.role;
+    }
+
+    // 5️⃣ Allow Credit Update
+    if (req.body.credit !== undefined) {
+      updateData.credit = req.body.credit;
+    }
+
+    // ❌ If nothing provided
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No valid fields provided to update",
+      });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    )
+      .select("-password -reset_otp -__v")
+      .lean();
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "User updated successfully",
+      data: updatedUser,
+    });
+
+  } catch (error) {
+    console.error("Update User Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
 
 /* =========================
    LOGOUT
@@ -383,5 +511,7 @@ module.exports = {
   verifyOTPAndReset,
   changePassword,
   deleteUser,
-  getAllUsers
+  getAllUsers,
+  getUserById,
+  updateUserById
 };

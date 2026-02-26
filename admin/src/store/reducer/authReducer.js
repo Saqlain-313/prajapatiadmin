@@ -35,6 +35,41 @@ export const loginUser = createAsyncThunk(
 );
 
 /* =============================================
+   🚀 GET USER BY ID
+============================================= */
+export const getUserById = createAsyncThunk(
+  "auth/getUserById",
+  async (userId, { rejectWithValue }) => {
+    try {
+      const res = await api.get(`/admin/users/${userId}`);
+      return res.data.data; // controller me data: user bheja tha
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.message || "Failed to load user"
+      );
+    }
+  }
+);
+
+export const updateUser = createAsyncThunk(
+  "auth/updateUser",
+  async ({ userId, updateData }, { rejectWithValue }) => {
+    try {
+      const res = await api.patch(
+        `/admin/users/${userId}`,
+        updateData
+      );
+
+      return res.data.data; // controller me data: updatedUser bheja tha
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.message || "Failed to update user"
+      );
+    }
+  }
+);
+
+/* =============================================
    🚀 LOGOUT
 ============================================= */
 export const logoutUser = createAsyncThunk(
@@ -111,6 +146,7 @@ const authSlice = createSlice({
     loading: false,
     error: null,
     users: [],
+    selectedUser: null, // ✅ ADD THIS
   },
 
   reducers: {
@@ -138,6 +174,41 @@ const authSlice = createSlice({
         state.user = null;
         state.token = null;
         state.isAuthenticated = false;
+        state.error = action.payload;
+      })
+
+      /* ---------------- GET USER BY ID ---------------- */
+      .addCase(getUserById.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getUserById.fulfilled, (state, action) => {
+        state.loading = false;
+        state.selectedUser = action.payload;
+      })
+      .addCase(getUserById.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      /* ---------------- UPDATE USER ---------------- */
+      .addCase(updateUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateUser.fulfilled, (state, action) => {
+        state.loading = false;
+
+        // Update selectedUser
+        state.selectedUser = action.payload;
+
+        // Update in users list if exists
+        state.users = state.users.map((u) =>
+          u._id === action.payload._id ? action.payload : u
+        );
+      })
+      .addCase(updateUser.rejected, (state, action) => {
+        state.loading = false;
         state.error = action.payload;
       })
 

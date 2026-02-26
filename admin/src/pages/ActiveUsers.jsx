@@ -444,7 +444,7 @@ export const UserDetailsPage = () => {
 -------------------------------------------------------- */
 const UserTableRow = ({ user, onView, onDelete }) => {
   const isAdmin = user.role === "admin";
-  const fullName = `${user.firstname || ""} ${user.lastname || ""}`.trim() || "Unknown";
+  const fullName = `${user.name || ""}`.trim() || "Unknown";
   const navigate = useNavigate();
 
   const handleView = () => {
@@ -459,7 +459,7 @@ const UserTableRow = ({ user, onView, onDelete }) => {
                         flex items-center justify-center border border-white/20
                         shadow-[0_0_15px_rgba(255,255,255,0.05)]">
             <span className="text-white font-bold text-sm">
-              {(user.firstname?.charAt(0) || "U").toUpperCase()}
+              {(user.name?.charAt(0) || "U").toUpperCase()}
             </span>
           </div>
           <div>
@@ -467,7 +467,7 @@ const UserTableRow = ({ user, onView, onDelete }) => {
               {fullName}
             </div>
             <div className="text-xs text-white/40">
-              {user.email || "N/A"} • {user.mobile || "N/A"}
+               {user.mobile || "N/A"}
             </div>
           </div>
         </div>

@@ -103,6 +103,64 @@ exports.getMyDeposits = async (req, res) => {
 
 
 
+exports.getTotalDepositStats = async (req, res) => {
+  try {
+    const result = await Deposit.aggregate([
+      {
+        $match: {
+          status: { $in: ["approved", "pending"] },
+        },
+      },
+      {
+        $group: {
+          _id: "$status",
+          totalAmount: { $sum: "$amount" },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    let approvedTotal = 0;
+    let pendingTotal = 0;
+    let approvedCount = 0;
+    let pendingCount = 0;
+
+    result.forEach((item) => {
+      if (item._id === "approved") {
+        approvedTotal = item.totalAmount;
+        approvedCount = item.count;
+      }
+      if (item._id === "pending") {
+        pendingTotal = item.totalAmount;
+        pendingCount = item.count;
+      }
+    });
+
+    res.json({
+      success: true,
+      data: {
+        approved: {
+          totalAmount: approvedTotal,
+          totalCount: approvedCount,
+        },
+        pending: {
+          totalAmount: pendingTotal,
+          totalCount: pendingCount,
+        },
+        grandTotal: approvedTotal + pendingTotal,
+      },
+    });
+  } catch (error) {
+    console.error("Deposit Stats Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to calculate deposit totals",
+    });
+  }
+};
+
+
+
 // ===============================
 // GET ALL RECHARGES (ADMIN)
 // ===============================

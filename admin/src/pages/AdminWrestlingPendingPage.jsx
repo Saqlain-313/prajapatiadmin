@@ -106,56 +106,96 @@ const inputStyleClasses =
 /* --------------------------------------------------------
    SETTLEMENT CONFIRMATION POPUP
 -------------------------------------------------------- */
-const SettlementConfirmationPopup = ({ isOpen, onClose, onConfirm, betDetails, result, isLoading }) => {
+const SettlementConfirmationPopup = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  betDetails,
+  result,
+  isLoading,
+}) => {
   if (!isOpen) return null;
 
-  const getResultConfig = () => {
-    switch (result) {
-      case 1:
-        return {
-          icon: <FiCheckCircle size={32} className="text-emerald-400" />,
-          title: "Mark as Won",
-          color: "emerald",
-          message: "User will receive profit amount"
-        };
-      case 2:
-        return {
-          icon: <FiXCircle size={32} className="text-red-400" />,
-          title: "Mark as Lost",
-          color: "red",
-          message: "Stake amount will be deducted"
-        };
-      case 0:
-        return {
-          icon: <MdCancel size={32} className="text-yellow-400" />,
-          title: "Reset to Pending",
-          color: "yellow",
-          message: "Bet will move back to pending"
-        };
-      default:
-        return {};
+  const getConfig = () => {
+    if (result === 1) {
+      return {
+        title: "Mark as Won",
+        icon: <FiCheckCircle size={26} className="text-emerald-400" />,
+        accent: "emerald",
+        message: "User will receive profit amount",
+      };
     }
+    if (result === 2) {
+      return {
+        title: "Mark as Lost",
+        icon: <FiXCircle size={26} className="text-red-400" />,
+        accent: "red",
+        message: "Stake amount will be deducted",
+      };
+    }
+    return {
+      title: "Reset to Pending",
+      icon: <MdCancel size={26} className="text-yellow-400" />,
+      accent: "yellow",
+      message: "Bet will move back to pending",
+    };
   };
 
-  const config = getResultConfig();
+  const config = getConfig();
+
+  const accentStyles = {
+    emerald: {
+      glow: "bg-emerald-500/10",
+      border: "border-emerald-500/30",
+      button:
+        "from-emerald-500/20 to-emerald-900/30 border-emerald-500/30 hover:from-emerald-500/30 hover:to-emerald-900/40",
+      text: "text-emerald-300",
+    },
+    red: {
+      glow: "bg-red-500/10",
+      border: "border-red-500/30",
+      button:
+        "from-red-500/20 to-red-900/30 border-red-500/30 hover:from-red-500/30 hover:to-red-900/40",
+      text: "text-red-300",
+    },
+    yellow: {
+      glow: "bg-yellow-500/10",
+      border: "border-yellow-500/30",
+      button:
+        "from-yellow-500/20 to-yellow-900/30 border-yellow-500/30 hover:from-yellow-500/30 hover:to-yellow-900/40",
+      text: "text-yellow-300",
+    },
+  };
+
+  const theme = accentStyles[config.accent];
+
+  const getResultText = () => {
+    if (result === 1) return "Won";
+    if (result === 2) return "Lost";
+    return "Pending";
+  };
 
   return (
-    <div className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-lg flex items-center justify-center z-50 p-4">
       <div className={`${gradientCardClass} w-full max-w-md relative overflow-hidden animate-scaleIn`}>
-        {/* Decorative glows */}
-        <div className={`absolute -top-40 -right-40 w-80 h-80 bg-${config.color}-500/10 rounded-full blur-3xl`} />
-        <div className={`absolute -bottom-40 -left-40 w-80 h-80 bg-${config.color}-500/10 rounded-full blur-3xl`} />
+
+        {/* Theme Glow */}
+        <div className={`absolute -top-32 -right-32 w-72 h-72 ${theme.glow} rounded-full blur-3xl`} />
+        <div className={`absolute -bottom-32 -left-32 w-72 h-72 ${theme.glow} rounded-full blur-3xl`} />
 
         {/* Header */}
         <div className="relative z-10 p-6 border-b border-white/10">
           <div className="flex items-center gap-4">
-            <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br from-${config.color}-500/30 to-${config.color}-900/40 
-                          flex items-center justify-center border border-${config.color}-500/50
-                          shadow-[0_0_30px_rgba(239,68,68,0.2)]`}>
+            <div
+              className={`w-12 h-12 rounded-2xl flex items-center justify-center 
+              bg-gradient-to-br ${theme.button} border ${theme.border}
+              shadow-[0_0_25px_rgba(255,255,255,0.08)]`}
+            >
               {config.icon}
             </div>
+
             <div>
-              <h2 className="text-2xl font-bold text-white drop-shadow-[0_2px_5px_black]">
+              <h2 className="text-xl font-bold text-white">
                 {config.title}
               </h2>
               <p className="text-white/40 text-sm">
@@ -163,47 +203,53 @@ const SettlementConfirmationPopup = ({ isOpen, onClose, onConfirm, betDetails, r
               </p>
             </div>
           </div>
+
           <button
             onClick={onClose}
-            className="absolute top-6 right-6 p-2 text-white/50 hover:text-white hover:bg-white/5 rounded-xl 
-                     border border-transparent hover:border-white/20 transition"
+            className="absolute top-6 right-6 p-2 text-white/40 hover:text-white hover:bg-white/5 rounded-xl transition"
           >
-            <MdClose size={22} />
+            <MdClose size={20} />
           </button>
         </div>
 
         {/* Content */}
         <div className="relative z-10 p-6">
           <div className="bg-black/40 rounded-2xl border border-white/10 p-5 backdrop-blur-sm">
-            <p className="text-white/90 text-center mb-3">
-              Are you sure you want to settle this bet?
+
+            <p className="text-white/90 text-center mb-4 text-sm">
+              Are you sure you want to proceed?
             </p>
 
             {betDetails && (
-              <div className="space-y-2 mt-3 bg-black/60 p-4 rounded-xl border border-white/10">
-                <div className="flex justify-between text-sm">
-                  <span className="text-white/40">Team:</span>
+              <div className="space-y-3 bg-black/60 p-4 rounded-xl border border-white/10 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-white/40">Team</span>
                   <span className="text-white font-medium">{betDetails.teamName}</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-white/40">Type:</span>
+
+                <div className="flex justify-between">
+                  <span className="text-white/40">Type</span>
                   <span className="text-white font-medium">{betDetails.btype}</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-white/40">Stake:</span>
-                  <span className="text-white font-bold">₹{betDetails.stake?.toLocaleString()}</span>
+
+                <div className="flex justify-between">
+                  <span className="text-white/40">Stake</span>
+                  <span className="text-amber-400 font-semibold">
+                    ₹{betDetails.stake?.toLocaleString()}
+                  </span>
                 </div>
               </div>
             )}
 
-            <p className={`text-${config.color}-400/80 text-xs text-center mt-4 flex items-center justify-center gap-1`}>
+            <div className={`mt-4 text-xs flex items-center justify-center gap-1 ${theme.text}`}>
               <MdInfo size={14} />
               {config.message}
-            </p>
+            </div>
+
           </div>
         </div>
 
-        {/* Footer actions */}
+        {/* Footer */}
         <div className="relative z-10 p-6 border-t border-white/10 flex justify-end gap-3">
           <button
             onClick={onClose}
@@ -212,13 +258,13 @@ const SettlementConfirmationPopup = ({ isOpen, onClose, onConfirm, betDetails, r
           >
             Cancel
           </button>
+
           <button
             onClick={onConfirm}
-            className={`flex items-center gap-2 px-5 py-2.5 bg-gradient-to-br from-${config.color}-500/20 to-${config.color}-900/30 
-                       rounded-xl text-${config.color}-300 font-medium text-sm border border-${config.color}-500/30
-                       hover:from-${config.color}-500/30 hover:to-${config.color}-900/40 hover:border-${config.color}-500/50
-                       hover:text-${config.color}-200 transition-all duration-300`}
             disabled={isLoading}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium
+              bg-gradient-to-br ${theme.button} border ${theme.border}
+              ${theme.text} transition-all duration-300`}
           >
             {isLoading ? (
               <>
@@ -227,15 +273,12 @@ const SettlementConfirmationPopup = ({ isOpen, onClose, onConfirm, betDetails, r
               </>
             ) : (
               <>
-                {result === 'WON' && <FiCheckCircle size={16} />}
-                {result === 'LOST' && <FiXCircle size={16} />}
-                {result === 'CANCELLED' && <MdCancel size={16} />}
-                Yes, {result === 1 ? "won" : result === 2 ? "lost" : "pending"}              </>
+                {config.icon}
+                Yes, Settled
+              </>
             )}
           </button>
         </div>
-
-
       </div>
     </div>
   );

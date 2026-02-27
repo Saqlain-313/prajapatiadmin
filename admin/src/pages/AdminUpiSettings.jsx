@@ -53,10 +53,9 @@ const AdminUpiSettings = () => {
 
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
-          <div className="p-3 bg-emerald-500/20 rounded-2xl shadow-lg">
-            <MdPayment className="text-3xl text-emerald-400" />
-          </div>
-          <div>
+          <div className="p-3 bg-black border border-yellow-500 rounded-2xl shadow-lg shadow-yellow-500/30 transition-all duration-300 hover:shadow-yellow-400/60">
+            <MdPayment className="text-3xl text-yellow-400" />
+          </div>          <div>
             <h2 className="text-2xl font-bold text-white tracking-wide">
               UPI Settings
             </h2>
@@ -119,7 +118,13 @@ const AdminUpiSettings = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full relative overflow-hidden bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-semibold py-3 rounded-xl shadow-lg transition-all duration-300 hover:shadow-emerald-500/40 disabled:opacity-60"
+            className="w-full relative overflow-hidden
+  bg-black border border-yellow-500
+  text-yellow-400 font-semibold py-3 rounded-xl
+  shadow-lg transition-all duration-300
+  hover:bg-gradient-to-r hover:from-yellow-500 hover:to-amber-500
+  hover:text-black hover:shadow-yellow-500/40
+  disabled:opacity-60"
           >
             {loading ? (
               <span className="animate-pulse">Updating...</span>

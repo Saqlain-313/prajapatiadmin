@@ -125,20 +125,7 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
           </button>
 
           {/* SEARCH — white glass with glow */}
-          <form className="relative hidden sm:block" onSubmit={(e) => e.preventDefault()}>
-            <MdSearch
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40"
-              size={18}
-            />
-            <input
-              type="search"
-              placeholder="Search here..."
-              className="w-64 pl-11 pr-5 py-2.5 bg-black/50 border border-white/10 rounded-xl text-white 
-              placeholder-white/30 focus:border-white/40 focus:ring-2 focus:ring-white/20 
-              outline-none transition-all backdrop-blur-sm shadow-[inset_0_2px_8px_rgba(0,0,0,0.6)] 
-              focus:shadow-[0_0_20px_rgba(255,255,255,0.1),inset_0_2px_8px_rgba(0,0,0,0.6)]"
-            />
-          </form>
+
         </div>
 
         {/* RIGHT SECTION */}
@@ -150,15 +137,9 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
             </button>
           </a>
 
-          {/* NOTIFICATION */}
-          <button className={buttonIconClass}>
-            <MdNotificationsNone size={20} />
-          </button>
+         
 
-          {/* SETTINGS */}
-          <button className={buttonIconClass}>
-            <MdSettings size={20} />
-          </button>
+        
 
           {/* USER DROPDOWN — GLOWING PROFILE */}
           <div className="relative" ref={userDropdownRef}>
@@ -208,17 +189,7 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
                   <span>My Profile</span>
                 </button>
                 
-                <button
-                  className="flex items-center gap-3 px-5 py-3 text-sm text-white/80 hover:bg-white/5 w-full transition group"
-                  onClick={() => {
-                    // Account settings navigation
-                    setUserDropdownOpen(false);
-                    navigate('/settings');
-                  }}
-                >
-                  <MdLock size={18} className="text-white/60 group-hover:text-white" />
-                  <span>Account Settings</span>
-                </button>
+                
 
                 <hr className="border-white/10 my-1" />
 
@@ -243,12 +214,7 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
             <div className="absolute -top-20 -right-20 w-64 h-64 bg-white/5 rounded-full blur-3xl" />
             <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-white/5 rounded-full blur-3xl" />
             
-            <button
-              className="absolute top-6 right-6 p-2 text-white/40 hover:text-white/80 hover:bg-white/5 rounded-xl transition border border-transparent hover:border-white/20 z-10"
-              onClick={() => setShowProfileModal(false)}
-            >
-              <MdClose size={22} />
-            </button>
+            
 
             <div className="flex flex-col items-center text-center mb-6 relative z-10">
               <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-white/30 to-white/5 flex items-center justify-center 
@@ -296,18 +262,7 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
                 <MdClose size={18} />
                 Close
               </button>
-              <button
-                className="flex-1 py-3 px-4 bg-white/10 hover:bg-white/15 border border-white/30 rounded-xl text-white 
-                           transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(255,255,255,0.1)]"
-                onClick={() => {
-                  // Edit profile action
-                  setShowProfileModal(false);
-                  navigate('/profile/edit');
-                }}
-              >
-                <MdAccountCircle size={18} />
-                Edit
-              </button>
+             
             </div>
           </div>
         </div>

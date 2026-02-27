@@ -23,6 +23,23 @@ export const getDeposits = createAsyncThunk(
 );
 
 /* =========================================
+   📊 GET DEPOSIT STATS
+========================================= */
+export const getDepositStats = createAsyncThunk(
+  "deposit/getDepositStats",
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await api.get("/deposits/total-deposits");
+      return res.data.data; // controller se data object aa raha hai
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to fetch deposit stats"
+      );
+    }
+  }
+);
+
+/* =========================================
    🔄 UPDATE DEPOSIT STATUS (Approve/Reject)
 ========================================= */
 export const updateDepositStatus = createAsyncThunk(
@@ -55,8 +72,14 @@ const depositSlice = createSlice({
   initialState: {
     loading: false,
     updateLoading: false,
+    statsLoading: false,   // ✅ new
     deposits: [],
     count: 0,
+    stats: {               // ✅ new
+      approved: { totalAmount: 0, totalCount: 0 },
+      pending: { totalAmount: 0, totalCount: 0 },
+      grandTotal: 0,
+    },
     success: false,
     error: null,
   },
@@ -67,8 +90,14 @@ const depositSlice = createSlice({
     resetDepositState: (state) => {
       state.loading = false;
       state.updateLoading = false;
+      state.statsLoading = false;
       state.deposits = [];
       state.count = 0;
+      state.stats = {
+        approved: { totalAmount: 0, totalCount: 0 },
+        pending: { totalAmount: 0, totalCount: 0 },
+        grandTotal: 0,
+      };
       state.success = false;
       state.error = null;
     },
@@ -94,6 +123,21 @@ const depositSlice = createSlice({
       })
       .addCase(getDeposits.rejected, (state, action) => {
         state.loading = false;
+        state.error = action.payload;
+      })
+
+      /* ===============================
+   GET DEPOSIT STATS
+=============================== */
+      .addCase(getDepositStats.pending, (state) => {
+        state.statsLoading = true;
+      })
+      .addCase(getDepositStats.fulfilled, (state, action) => {
+        state.statsLoading = false;
+        state.stats = action.payload;
+      })
+      .addCase(getDepositStats.rejected, (state, action) => {
+        state.statsLoading = false;
         state.error = action.payload;
       })
 

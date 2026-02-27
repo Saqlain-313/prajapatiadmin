@@ -1,3 +1,5 @@
+
+
 import React, { useEffect, useState, useMemo } from "react";
 import {
   FaUsers,
@@ -36,6 +38,9 @@ import {
 import {
   getAllWithdrawals,
 } from "../store/reducer/withdrawalReducer";
+import { getDepositStats } from "../store/reducer/depositSlice";
+
+
 
 
 /* --------------------------------------------------------
@@ -283,10 +288,10 @@ const RecentActivityCard = ({ activities = [] }) => {
                   {/* Amount */}
                   <span
                     className={`text-sm font-bold ${isDeposit
-                        ? "text-emerald-400"
-                        : isWithdrawal
-                          ? "text-red-400"
-                          : "text-blue-400"
+                      ? "text-emerald-400"
+                      : isWithdrawal
+                        ? "text-red-400"
+                        : "text-blue-400"
                       }`}
                   >
                     {isDeposit && "+"}
@@ -366,11 +371,23 @@ const Dashboard = () => {
   const { users = [], loading } = useSelector((state) => state.auth);
   const { withdrawals = [], error, successMessage } = useSelector(
     (state) => state.withdrawal
+
+
   );
 
   const { deposits = [], success, } = useSelector(
     (state) => state.adminDeposits
   );
+
+  const { stats = {}, statsLoading = false } = useSelector(
+    (state) => state.deposits || {}
+  );
+
+  const { approved = {}, today = {} } = stats;
+  
+
+
+
 
   const totalDepositCount = deposits.length;
 
@@ -396,27 +413,45 @@ const Dashboard = () => {
     dispatch(getAllUsers());
     dispatch(getAllDeposits());
     dispatch(getAllWithdrawals());
+    dispatch(getDepositStats());
+
   }, [dispatch]);
+
 
   // User Statistics
 
   const userStats = useMemo(() => {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const isToday = (date) => {
+      const d = new Date(date);
+      return d >= todayStart && d <= todayEnd;
+    };
+
+    /* ==============================
+       USER STATS
+    ============================== */
     const total = users.length;
-
-    const completed = users.filter((u) => u.profile_complete).length;
-    const notCompleted = users.filter((u) => !u.profile_complete).length;
-
-    const verified = users.filter((u) => u.is_verified).length;
-    const unverified = users.filter((u) => !u.is_verified).length;
-
     const admins = users.filter((u) => u.role === "admin").length;
     const regularUsers = total - admins;
 
-    // -------------------------
-    // Approved Deposits
-    // -------------------------
+    const activeToday = users.filter((u) =>
+      u.lastLogin && isToday(u.lastLogin)
+    ).length;
+
+    /* ==============================
+       DEPOSITS
+    ============================== */
     const approvedDeposits = deposits.filter(
       (d) => d.status === "approved"
+    );
+
+    const todayApprovedDeposits = approvedDeposits.filter((d) =>
+      isToday(d.createdAt)
     );
 
     const totalApprovedAmount = approvedDeposits.reduce(
@@ -424,11 +459,29 @@ const Dashboard = () => {
       0
     );
 
-    // -------------------------
-    // Approved Withdrawals
-    // -------------------------
+    const todayDepositAmount = todayApprovedDeposits.reduce(
+      (sum, d) => sum + Number(d.amount || 0),
+      0
+    );
+
+    const avgDeposit =
+      approvedDeposits.length > 0
+        ? totalApprovedAmount / approvedDeposits.length
+        : 0;
+
+    /* ==============================
+       WITHDRAWALS
+    ============================== */
     const approvedWithdrawals = withdrawals.filter(
       (w) => w.status === "approved"
+    );
+
+    const pendingWithdrawalsList = withdrawals.filter(
+      (w) => w.status === "pending"
+    );
+
+    const todayApprovedWithdrawals = approvedWithdrawals.filter((w) =>
+      isToday(w.createdAt)
     );
 
     const totalWithdrawals = approvedWithdrawals.reduce(
@@ -436,103 +489,87 @@ const Dashboard = () => {
       0
     );
 
-    // -------------------------
-    // Profit / Loss (Admin POV)
-    // -------------------------
-    const totalProfit =
-      totalApprovedAmount > totalWithdrawals
-        ? totalApprovedAmount - totalWithdrawals
-        : 0;
+    const todayWithdrawalAmount = todayApprovedWithdrawals.reduce(
+      (sum, w) => sum + Number(w.amount || 0),
+      0
+    );
 
-    const totalLoss =
-      totalWithdrawals > totalApprovedAmount
-        ? totalWithdrawals - totalApprovedAmount
-        : 0;
-
-    const netRevenue = totalApprovedAmount - totalWithdrawals;
-
-    // -------------------------
-    // Pending Withdrawals
-    // -------------------------
-    const pendingWithdrawals = withdrawals
-      .filter((w) => w.status === "pending")
-      .reduce((sum, w) => sum + Number(w.amount || 0), 0);
-
-    // -------------------------
-    // Averages
-    // -------------------------
-    const avgDeposit =
-      approvedDeposits.length > 0
-        ? totalApprovedAmount / approvedDeposits.length
-        : 0;
+    const pendingWithdrawals = pendingWithdrawalsList.reduce(
+      (sum, w) => sum + Number(w.amount || 0),
+      0
+    );
 
     const avgWithdrawal =
       approvedWithdrawals.length > 0
         ? totalWithdrawals / approvedWithdrawals.length
         : 0;
 
-    // -------------------------
-    // Conversion Rate
-    // (Users who deposited / total users)
-    // -------------------------
-    const usersWithDeposit = new Set(
-      approvedDeposits.map((d) => String(d.user))
-    ).size;
+    /* ==============================
+       PROFIT / LOSS
+    ============================== */
+    const totalProfit = totalApprovedAmount - totalWithdrawals;
+    const totalLoss = totalWithdrawals > totalApprovedAmount
+      ? totalWithdrawals - totalApprovedAmount
+      : 0;
 
+    const todayProfit = todayDepositAmount - todayWithdrawalAmount;
+
+    const netRevenue = totalProfit;
+
+    /* ==============================
+       CONVERSION RATE
+    ============================== */
     const conversionRate =
-      total > 0 ? (usersWithDeposit / total) * 100 : 0;
+      total > 0
+        ? (approvedDeposits.length / total) * 100
+        : 0;
 
-    // -------------------------
-    // Active Today
-    // -------------------------
-    const today = new Date().toDateString();
-
-    const activeToday = users.filter(
-      (u) =>
-        u.updatedAt &&
-        new Date(u.updatedAt).toDateString() === today
-    ).length;
-
-    // -------------------------
-    // Recent Activities
-    // -------------------------
+    /* ==============================
+       RECENT ACTIVITIES (Last 5)
+    ============================== */
     const recentActivities = [
-      ...approvedDeposits.slice(0, 2).map((d) => ({
+      ...approvedDeposits.slice(-3).map((d) => ({
+        _id: d._id,
         type: "deposit",
-        description: `User deposited`,
         amount: d.amount,
-        time: "Recently",
+        description: "Deposit Approved",
+        time: new Date(d.createdAt).toLocaleString(),
       })),
-      ...approvedWithdrawals.slice(0, 2).map((w) => ({
+      ...approvedWithdrawals.slice(-3).map((w) => ({
+        _id: w._id,
         type: "withdrawal",
-        description: `User withdrew`,
         amount: w.amount,
-        time: "Recently",
+        description: "Withdrawal Approved",
+        time: new Date(w.createdAt).toLocaleString(),
       })),
-    ];
-
-    // "anopp bhai  kaam kr lo yarrr"
+    ]
+      .sort((a, b) => new Date(b.time) - new Date(a.time))
+      .slice(0, 5);
 
     return {
       total,
-      completed,
-      notCompleted,
-      verified,
-      unverified,
       admins,
       regularUsers,
+      activeToday,
+
       totalApprovedAmount,
       totalWithdrawals,
       totalProfit,
       totalLoss,
       netRevenue,
-      pendingWithdrawals,
+
+      todayDepositAmount,
+      todayWithdrawalAmount,
+      todayProfit,
+
       avgDeposit,
       avgWithdrawal,
       conversionRate,
-      activeToday,
+
+      pendingWithdrawals,
       approvedDepositsCount: approvedDeposits.length,
       approvedWithdrawalsCount: approvedWithdrawals.length,
+
       recentActivities,
     };
   }, [users, deposits, withdrawals]);
@@ -562,7 +599,7 @@ const Dashboard = () => {
 
   return (
     <div className=" bg-gradient-to-br from-black via-[#0A0C0F] to-[#030405] ">
-      
+
       {/* Header Section */}
       <div className={`${gradientCardClass} p-5 md:p-6 mb-6`}>
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
@@ -585,6 +622,8 @@ const Dashboard = () => {
               </p>
             </div>
           </div>
+
+
 
           <div className="flex items-center gap-3">
             {/* <div className="flex items-center bg-black/40 rounded-xl border border-white/10 p-1">
@@ -616,6 +655,9 @@ const Dashboard = () => {
                 This Month
               </button>
             </div> */}
+
+
+
 
             <button
               onClick={handleRefresh}
@@ -687,7 +729,7 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-5">
           <FinancialStatCard
             title="Total Deposits"
-            amount={userStats.totalApprovedAmount}
+            amount={userStats.totalApprovedAmount + approved.totalAmount}
             icon={FaMoneyBillWave}
             link="/deposit"
             color="emerald"
@@ -701,7 +743,7 @@ const Dashboard = () => {
           />
           <FinancialStatCard
             title="Total Profit"
-            amount={userStats.totalProfit}
+            amount={userStats.totalProfit + approved?.totalAmount}
             icon={FaArrowUp}
             color="amber"
           />
@@ -710,6 +752,26 @@ const Dashboard = () => {
             amount={userStats.totalLoss}
             icon={FaArrowDown}
             color="red"
+          />
+          <FinancialStatCard
+            title="Today Deposits"
+            amount={userStats.todayDepositAmount + today?.totalAmount}
+            icon={FaMoneyBillWave}
+            color="emerald"
+          />
+
+          <FinancialStatCard
+            title="Today Withdrawals"
+            amount={userStats.todayWithdrawalAmount}
+            icon={FaCreditCard}
+            color="red"
+          />
+
+          <FinancialStatCard
+            title="Today Profit"
+            amount={userStats.todayProfit + today?.totalAmount}
+            icon={FaChartLine}
+            color="amber"
           />
         </div>
 

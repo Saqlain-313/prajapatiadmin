@@ -105,6 +105,14 @@ exports.getMyDeposits = async (req, res) => {
 
 exports.getTotalDepositStats = async (req, res) => {
   try {
+    // 🗓️ Today start & end time
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    // 📊 Status wise total
     const result = await Deposit.aggregate([
       {
         $match: {
@@ -114,6 +122,26 @@ exports.getTotalDepositStats = async (req, res) => {
       {
         $group: {
           _id: "$status",
+          totalAmount: { $sum: "$amount" },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // 📊 Today deposit total
+    const todayStats = await Deposit.aggregate([
+      {
+        $match: {
+          status: { $in: ["approved", "pending"] },
+          createdAt: {
+            $gte: todayStart,
+            $lte: todayEnd,
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
           totalAmount: { $sum: "$amount" },
           count: { $sum: 1 },
         },
@@ -136,6 +164,9 @@ exports.getTotalDepositStats = async (req, res) => {
       }
     });
 
+    const todayTotal = todayStats.length > 0 ? todayStats[0].totalAmount : 0;
+    const todayCount = todayStats.length > 0 ? todayStats[0].count : 0;
+
     res.json({
       success: true,
       data: {
@@ -146,6 +177,10 @@ exports.getTotalDepositStats = async (req, res) => {
         pending: {
           totalAmount: pendingTotal,
           totalCount: pendingCount,
+        },
+        today: {
+          totalAmount: todayTotal,
+          totalCount: todayCount,
         },
         grandTotal: approvedTotal + pendingTotal,
       },

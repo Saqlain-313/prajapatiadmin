@@ -43,7 +43,7 @@ const createWrestlingMatch = async (req, res) => {
       minbet,
       maxbet,
       betStatus,
-      disqualify, // ✅ NEW
+      gameType,
     } = req.body;
 
     /* ================= VALIDATIONS ================= */
@@ -69,19 +69,39 @@ const createWrestlingMatch = async (req, res) => {
       });
     }
 
-    /* ================= VALIDATE BET STATUS ================= */
+    /* ================= BET STATUS ================= */
     const validBetStatus = ["ACTIVE", "DEACTIVE"];
     const finalBetStatus = validBetStatus.includes(betStatus)
       ? betStatus
       : "ACTIVE";
 
-    /* ================= VALIDATE DISQUALIFY ================= */
-    const validDisqualify = ["NONE", "TEAM_A", "TEAM_B", "BOTH"];
-    const finalDisqualify = validDisqualify.includes(disqualify)
-      ? disqualify
-      : "NONE";
+    /* ================= GAME TYPE ================= */
+    const validGameTypes = ["ODD", "TIED_MATCH"];
+    let finalGameType = ["ODD"];
 
-    /* ================= SAFE PARSE FUNCTION ================= */
+    if (gameType) {
+      let parsed = [];
+
+      if (Array.isArray(gameType)) {
+        parsed = gameType;
+      } else {
+        try {
+          parsed = JSON.parse(gameType);
+        } catch {
+          parsed = [gameType];
+        }
+      }
+
+      finalGameType = parsed.filter((g) =>
+        validGameTypes.includes(g)
+      );
+
+      if (finalGameType.length === 0) {
+        finalGameType = ["ODD"];
+      }
+    }
+
+    /* ================= SAFE PARSE ================= */
     const safeParse = (value) => {
       try {
         return JSON.parse(value || "[]");
@@ -90,16 +110,15 @@ const createWrestlingMatch = async (req, res) => {
       }
     };
 
-    /* ================= PARSE MARKET ARRAYS ================= */
     const teamARates = safeParse(req.body.teamARates);
     const teamASizes = safeParse(req.body.teamASizes);
     const teamBRates = safeParse(req.body.teamBRates);
     const teamBSizes = safeParse(req.body.teamBSizes);
 
-    const disqualifyRates = safeParse(req.body.disqualifyRates);   // ✅ NEW
-    const disqualifySizes = safeParse(req.body.disqualifySizes);   // ✅ NEW
+    const tieRates = safeParse(req.body.tieRates);   // ✅ NEW
+    const tieSizes = safeParse(req.body.tieSizes);   // ✅ NEW
 
-    /* ================= IMAGE LOGIC ================= */
+    /* ================= IMAGE ================= */
     let imageUrl = null;
 
     if (req.file) {
@@ -110,41 +129,62 @@ const createWrestlingMatch = async (req, res) => {
       imageUrl = req.body.img;
     }
 
-    /* ================= AUTO IDS ================= */
+    /* ================= IDS ================= */
     const uniqueId = Date.now();
     const generateTid = () => Date.now() + Math.floor(Math.random() * 1000);
 
-    /* ================= AUTO EVENT NAME ================= */
     const eventName = `${teamAName.trim()} vs ${teamBName.trim()}`;
 
     /* ================= BOX CREATOR ================= */
     const createBoxes = (rates = [], sizes = []) => {
-      const backRate = Number(rates[0]) || 0;   
-      const layRate = Number(rates[1]) || 0;   
+      const backRate = Number(rates[0]) || 0;
+      const layRate = Number(rates[1]) || 0;
 
       const backSize = Number(sizes[0]) || 0;
       const laySize = Number(sizes[1]) || 0;
 
-      // BACK ladder
       const box2Back = backRate > 0 ? +(backRate - 0.01).toFixed(2) : 0;
       const box1Back = box2Back > 0 ? +(box2Back - 0.01).toFixed(2) : 0;
 
-      // LAY ladder
       const box5Lay = layRate > 0 ? +(layRate + 0.01).toFixed(2) : 0;
       const box6Lay = box5Lay > 0 ? +(box5Lay + 0.01).toFixed(2) : 0;
 
       return [
-        // BACK
         { boxId: 1, btype: "BACK", rate: box1Back, size: backSize },
         { boxId: 2, btype: "BACK", rate: box2Back, size: backSize },
         { boxId: 3, btype: "BACK", rate: backRate, size: backSize },
 
-        // LAY
         { boxId: 4, btype: "LAY", rate: layRate, size: laySize },
         { boxId: 5, btype: "LAY", rate: box5Lay, size: laySize },
         { boxId: 6, btype: "LAY", rate: box6Lay, size: laySize },
       ];
     };
+
+    /* ================= TEAMS ARRAY ================= */
+    const teams = [
+      {
+        tid: generateTid(),
+        tname: teamAName.trim(),
+        side: "A",
+        boxes: createBoxes(teamARates, teamASizes),
+      },
+      {
+        tid: generateTid(),
+        tname: teamBName.trim(),
+        side: "B",
+        boxes: createBoxes(teamBRates, teamBSizes),
+      },
+    ];
+
+    /* ================= ADD TIED MATCH MARKET ================= */
+    if (finalGameType.includes("TIED_MATCH")) {
+      teams.push({
+        tid: generateTid(),
+        tname: "Tied Match",
+        side: "T",
+        boxes: createBoxes(tieRates, tieSizes),
+      });
+    }
 
     /* ================= CREATE MATCH ================= */
     const match = await WrestlingMatch.create({
@@ -154,34 +194,11 @@ const createWrestlingMatch = async (req, res) => {
       minbet: Number(minbet) || 0,
       maxbet: Number(maxbet) || 0,
       status: "PENDING",
-
       betStatus: finalBetStatus,
-      disqualify: finalDisqualify, // ✅ SAVED
-
       img: imageUrl,
-      gameType: "ODD",
+      gameType: finalGameType,
       eventName,
-
-      teams: [
-        {
-          tid: generateTid(),
-          tname: teamAName.trim(),
-          side: "A",
-          boxes: createBoxes(teamARates, teamASizes),
-        },
-        {
-          tid: generateTid(),
-          tname: teamBName.trim(),
-          side: "B",
-          boxes: createBoxes(teamBRates, teamBSizes),
-        },
-        {
-          tid: generateTid(),
-          tname: "Disqualify",
-          side: "DQ", // ✅ THIRD MARKET
-          boxes: createBoxes(disqualifyRates, disqualifySizes),
-        },
-      ],
+      teams,
     });
 
     return res.status(201).json({
@@ -198,6 +215,152 @@ const createWrestlingMatch = async (req, res) => {
     });
   }
 };
+
+
+
+// const createWrestlingMatch = async (req, res) => {
+//   try {
+//     const {
+//       teamAName,
+//       teamBName,
+//       startTime,
+//       minbet,
+//       maxbet,
+//       betStatus,
+//     } = req.body;
+
+//     /* ================= VALIDATIONS ================= */
+//     if (!teamAName || !teamBName || !startTime) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "teamAName, teamBName and startTime are required",
+//       });
+//     }
+
+//     const parsedStartTime = new Date(startTime);
+//     if (isNaN(parsedStartTime.getTime())) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid startTime",
+//       });
+//     }
+
+//     if (Number(maxbet) < Number(minbet)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "maxbet cannot be less than minbet",
+//       });
+//     }
+
+//     /* ================= VALIDATE BET STATUS ================= */
+//     const validBetStatus = ["ACTIVE", "DEACTIVE"];
+//     const finalBetStatus = validBetStatus.includes(betStatus)
+//       ? betStatus
+//       : "ACTIVE";
+
+//     /* ================= SAFE PARSE FUNCTION ================= */
+//     const safeParse = (value) => {
+//       try {
+//         return JSON.parse(value || "[]");
+//       } catch {
+//         return [];
+//       }
+//     };
+
+//     /* ================= PARSE MARKET ARRAYS ================= */
+//     const teamARates = safeParse(req.body.teamARates);
+//     const teamASizes = safeParse(req.body.teamASizes);
+//     const teamBRates = safeParse(req.body.teamBRates);
+//     const teamBSizes = safeParse(req.body.teamBSizes);
+
+//     /* ================= IMAGE LOGIC ================= */
+//     let imageUrl = null;
+
+//     if (req.file) {
+//       imageUrl = await uploadToImgbb(req.file.buffer);
+//     }
+
+//     if (req.body.img) {
+//       imageUrl = req.body.img;
+//     }
+
+//     /* ================= AUTO IDS ================= */
+//     const uniqueId = Date.now();
+//     const generateTid = () => Date.now() + Math.floor(Math.random() * 1000);
+
+//     /* ================= AUTO EVENT NAME ================= */
+//     const eventName = `${teamAName.trim()} vs ${teamBName.trim()}`;
+
+//     /* ================= BOX CREATOR ================= */
+//     const createBoxes = (rates = [], sizes = []) => {
+//       const backRate = Number(rates[0]) || 0;
+//       const layRate = Number(rates[1]) || 0;
+//       const backSize = Number(sizes[0]) || 0;
+//       const laySize = Number(sizes[1]) || 0;
+
+//       // BACK ladder
+//       const box2Back = backRate > 0 ? +(backRate - 0.01).toFixed(2) : 0;
+//       const box1Back = box2Back > 0 ? +(box2Back - 0.01).toFixed(2) : 0;
+
+//       // LAY ladder
+//       const box5Lay = layRate > 0 ? +(layRate + 0.01).toFixed(2) : 0;
+//       const box6Lay = box5Lay > 0 ? +(box5Lay + 0.01).toFixed(2) : 0;
+
+//       return [
+//         // BACK
+//         { boxId: 1, btype: "BACK", rate: box1Back, size: backSize },
+//         { boxId: 2, btype: "BACK", rate: box2Back, size: backSize },
+//         { boxId: 3, btype: "BACK", rate: backRate, size: backSize },
+
+//         // LAY
+//         { boxId: 4, btype: "LAY", rate: layRate, size: laySize },
+//         { boxId: 5, btype: "LAY", rate: box5Lay, size: laySize },
+//         { boxId: 6, btype: "LAY", rate: box6Lay, size: laySize },
+//       ];
+//     };
+
+//     /* ================= CREATE MATCH ================= */
+//     const match = await WrestlingMatch.create({
+//       mid: uniqueId,
+//       gmid: uniqueId,
+//       startTime: parsedStartTime,
+//       minbet: Number(minbet) || 0,
+//       maxbet: Number(maxbet) || 0,
+//       status: "PENDING",
+//       betStatus: finalBetStatus,
+//       img: imageUrl,
+//       gameType: "ODD",
+//       eventName,
+
+//       teams: [
+//         {
+//           tid: generateTid(),
+//           tname: teamAName.trim(),
+//           side: "A",
+//           boxes: createBoxes(teamARates, teamASizes),
+//         },
+//         {
+//           tid: generateTid(),
+//           tname: teamBName.trim(),
+//           side: "B",
+//           boxes: createBoxes(teamBRates, teamBSizes),
+//         },
+//       ],
+//     });
+
+//     return res.status(201).json({
+//       success: true,
+//       message: "Match created successfully",
+//       data: match,
+//     });
+//   } catch (err) {
+//     console.error("CREATE MATCH ERROR:", err);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Internal Server Error",
+//     });
+//   }
+// };
 
 
 

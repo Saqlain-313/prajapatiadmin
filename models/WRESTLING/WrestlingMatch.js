@@ -40,7 +40,7 @@ const teamSchema = new mongoose.Schema(
     // ✅ UPDATED ENUM
     side: {
       type: String,
-      enum: ["A", "B", "DQ"], // ← ADDED DQ
+      enum: ["A", "B", "T"], // ← ADDED DQ
       required: true,
     },
 
@@ -108,9 +108,9 @@ const wrestlingMatchSchema = new mongoose.Schema(
     },
 
     gameType: {
-      type: String,
-      default: "ODD",
-      trim: true,
+      type: [String],
+      enum: ["ODD", "TIED_MATCH"],
+      default: ["ODD"],
       index: true,
     },
 

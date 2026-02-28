@@ -14,13 +14,13 @@ export const createWrestlingMatch = createAsyncThunk(
       minbet,
       maxbet,
       betStatus,
-      disqualify,          // ✅ NEW
+      gameType,          // ✅ NEW (Array)
       teamARates,
       teamASizes,
       teamBRates,
       teamBSizes,
-      disqualifyRates,     // ✅ NEW
-      disqualifySizes,     // ✅ NEW
+      tieRates,          // ✅ NEW (for TIED_MATCH)
+      tieSizes,          // ✅ NEW
       img,
     },
     { rejectWithValue }
@@ -40,25 +40,26 @@ export const createWrestlingMatch = createAsyncThunk(
       // ✅ Betting Status
       formData.append("betStatus", betStatus);
 
-      // ✅ Disqualify Status
-      formData.append("disqualify", disqualify);
+      // ✅ GAME TYPE (Array → JSON)
+      formData.append(
+        "gameType",
+        JSON.stringify(gameType || ["ODD"])
+      );
 
-      /* SEND ARRAYS AS JSON */
+      /* ================= TEAM MARKETS ================= */
+
       formData.append("teamARates", JSON.stringify(teamARates));
       formData.append("teamASizes", JSON.stringify(teamASizes));
       formData.append("teamBRates", JSON.stringify(teamBRates));
       formData.append("teamBSizes", JSON.stringify(teamBSizes));
 
-      // ✅ Disqualify Market
-      formData.append(
-        "disqualifyRates",
-        JSON.stringify(disqualifyRates)
-      );
-      formData.append(
-        "disqualifySizes",
-        JSON.stringify(disqualifySizes)
-      );
+      /* ================= TIED MATCH MARKET ================= */
+      if (gameType?.includes("TIED_MATCH")) {
+        formData.append("tieRates", JSON.stringify(tieRates || []));
+        formData.append("tieSizes", JSON.stringify(tieSizes || []));
+      }
 
+      /* ================= IMAGE ================= */
       if (img) {
         formData.append("img", img);
       }

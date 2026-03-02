@@ -72,7 +72,6 @@ const wrestlingBetSchema = new mongoose.Schema(
 /* =====================
    IMPORTANT INDEXES
 ===================== */
-wrestlingBetSchema.index({ user: 1, sid: 1 });
-wrestlingBetSchema.index({ sid: 1, result: 1 });
-
+wrestlingBetSchema.index({ userId: 1, sid: 1 });
+wrestlingBetSchema.index({ sid: 1, betResult: 1 });
 module.exports = mongoose.model("WrestlingBet", wrestlingBetSchema);

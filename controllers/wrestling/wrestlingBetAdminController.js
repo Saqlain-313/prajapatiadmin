@@ -1,5 +1,7 @@
 const WrestlingBet = require("../../models/WRESTLING/WrestlingBet");
 const WrestlingBetHistory = require("../../models/WRESTLING/WrestlingBetHistory");
+
+const GameModel = require("../../models/WRESTLING/WrestlingMatch");
 const User = require('../../models/usermodel')
 const mongoose = require("mongoose");
 
@@ -52,27 +54,40 @@ exports.getWrestlingBetById = async (req, res) => {
 };
 
 
-exports.updateResultOfBets = async (req, res) => {
-  const { gameType, marketName } = req.body;
 
-  if (!gameType || !marketName) {
+exports.updateResultOfBets = async (req, res) => {
+  const { eventName, winner, otype } = req.body;
+
+  if (!eventName || !winner || !otype) {
     return res.status(400).json({
       success: false,
-      message: "gameType and marketName are required",
+      message: "eventName, winner and otype are required",
     });
   }
 
-  let totalBetsProcessed = 0;
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
   try {
-    // Fetch all pending bets
+    const normalize = (val) =>
+      val?.toString().trim().toLowerCase();
+
+    const normalizedEvent = normalize(eventName);
+    const normalizedWinner = normalize(winner);
+    const normalizedOtype = normalize(otype);
+
+    let totalProcessed = 0;
+
+    // Get all pending bets of event
     const bets = await WrestlingBet.find({
       status: 0,
-      gameType,
-      marketName,
-    });
+      eventName: { $regex: new RegExp(`^${normalizedEvent}$`, "i") },
+    }).session(session);
 
     if (!bets.length) {
+      await session.commitTransaction();
+      session.endSession();
+
       return res.status(200).json({
         success: true,
         message: "No pending bets found",
@@ -80,79 +95,155 @@ exports.updateResultOfBets = async (req, res) => {
       });
     }
 
-    // Group bets by gameId
-    const groupedBets = bets.reduce((acc, bet) => {
-      if (!acc[bet.gameId]) acc[bet.gameId] = [];
-      acc[bet.gameId].push(bet);
-      return acc;
-    }, {});
+    for (const bet of bets) {
+      const user = await User.findById(bet.userId).session(session);
+      if (!user) continue;
 
-    for (const gameId of Object.keys(groupedBets)) {
+      const betTeam = normalize(bet.teamName);
+      const betOtype = normalize(bet.otype);
 
-      // ⚠️ Fetch game winner
-      const game = await GameModel.findById(gameId);
-      if (!game || !game.winner) continue;
+      let resultAmount = 0;
 
-      const winner = game.winner.trim().toLowerCase();
+      // ===============================
+      // 🔴 TIED MATCH SPECIAL LOGIC
+      // ===============================
+      if (normalizedWinner === "tied match") {
 
-      for (const bet of groupedBets[gameId]) {
-        try {
-          const user = await SubAdmin.findById(bet.userId);
-          if (!user) continue;
+        const isExactWinner =
+          betTeam === "tied match" &&
+          betOtype === normalizedOtype;
 
-          const betTeam = bet.teamName?.trim().toLowerCase();
-          const isWin = betTeam === winner;
+        if (isExactWinner) {
+          // WIN
+          resultAmount = bet.betAmount + bet.price;
 
-          let resultAmount = 0;
+          await User.updateOne(
+            { _id: user._id },
+            {
+              $inc: {
+                credit: resultAmount,
+                profitLoss: bet.price,
+              },
+            },
+            { session }
+          );
 
-          // ================= BACK =================
-          if (bet.otype === "back") {
-            if (isWin) {
-              resultAmount = bet.betAmount + bet.price;
-              user.credit += resultAmount;
-              user.profitLoss += bet.price;
-              bet.status = 1; // WIN
-            } else {
-              user.profitLoss -= bet.price;
-              bet.status = 2; // LOSS
-            }
-          }
+          bet.status = 1; // WIN
+        } else {
+          // LOSS
+          await User.updateOne(
+            { _id: user._id },
+            {
+              $inc: {
+                profitLoss: -bet.price,
+              },
+            },
+            { session }
+          );
 
-          // ================= LAY =================
-          else if (bet.otype === "lay") {
-            if (isWin) {
-              user.profitLoss -= bet.price;
-              bet.status = 2; // LOSS
-            } else {
-              resultAmount = bet.betAmount + bet.price;
-              user.credit += resultAmount;
-              user.profitLoss += bet.price;
-              bet.status = 1; // WIN
-            }
-          }
-
-          bet.resultAmount = resultAmount;
-          bet.betResult = game.winner;
-
-          await user.save();
-          await bet.save();
-
-          totalBetsProcessed++;
-
-        } catch (err) {
-          console.error("Bet processing error:", err);
+          bet.status = 2; // LOSS
         }
       }
+
+      // ===============================
+      // 🟢 NORMAL MATCH LOGIC
+      // ===============================
+      else {
+
+        const isWin = betTeam === normalizedWinner;
+
+        // -------- BACK --------
+        if (betOtype === "back") {
+
+          if (isWin) {
+            resultAmount = bet.betAmount + bet.price;
+
+            await User.updateOne(
+              { _id: user._id },
+              {
+                $inc: {
+                  credit: resultAmount,
+                  profitLoss: bet.price,
+                },
+              },
+              { session }
+            );
+
+            bet.status = 1; // WIN
+          } else {
+
+            await User.updateOne(
+              { _id: user._id },
+              {
+                $inc: {
+                  profitLoss: -bet.price,
+                },
+              },
+              { session }
+            );
+
+            bet.status = 2; // LOSS
+          }
+
+        }
+
+        // -------- LAY --------
+        else if (betOtype === "lay") {
+
+          if (isWin) {
+            // LAY loses if selected team wins
+            await User.updateOne(
+              { _id: user._id },
+              {
+                $inc: {
+                  profitLoss: -bet.price,
+                },
+              },
+              { session }
+            );
+
+            bet.status = 2; // LOSS
+          } else {
+            // LAY wins if selected team loses
+            resultAmount = bet.betAmount + bet.price;
+
+            await User.updateOne(
+              { _id: user._id },
+              {
+                $inc: {
+                  credit: resultAmount,
+                  profitLoss: bet.price,
+                },
+              },
+              { session }
+            );
+
+            bet.status = 1; // WIN
+          }
+        }
+
+      }
+
+      bet.resultAmount = resultAmount;
+      bet.betResult = winner;
+
+      await bet.save({ session });
+      totalProcessed++;
     }
+
+    await session.commitTransaction();
+    session.endSession();
 
     return res.status(200).json({
       success: true,
-      message: "All bets processed successfully",
-      totalProcessed: totalBetsProcessed,
+      message: "Settlement completed successfully",
+      totalProcessed,
     });
 
   } catch (error) {
-    console.error("Error in updateResultOfBets:", error);
+    await session.abortTransaction();
+    session.endSession();
+
     return res.status(500).json({
       success: false,
       message: "Server error",
@@ -163,62 +254,3 @@ exports.updateResultOfBets = async (req, res) => {
 
 
 
-exports.disqualifyWrestlingBets = async (req, res) => {
-  try {
-    const { team, type } = req.body;
-
-    if (!team || !type) {
-      return res.status(400).json({
-        success: false,
-        message: "Team and type required",
-      });
-    }
-
-    const pendingBets = await WrestlingBet.find({ status: 0 });
-
-    for (const bet of pendingBets) {
-      const user = await User.findById(bet.userId);
-      if (!user) continue;
-
-      let payout = 0;
-      let betResult = "LOSS";
-
-      if (bet.teamName === team && bet.otype === type) {
-        payout = bet.price + bet.betAmount;
-
-        user.credit += payout;
-
-        bet.status = 1;
-        bet.resultAmount = payout;
-        betResult = "REFUND";
-      } else {
-        bet.status = 2;
-        bet.resultAmount = 0;
-      }
-
-      await bet.save();
-      await user.save();
-
-      // 🔥 UPDATE HISTORY
-      await WrestlingBetHistory.findOneAndUpdate(
-        { userId: bet.userId, sid: bet.sid, gameId: bet.gameId, status: 0 },
-        {
-          status: bet.status,
-          resultAmount: bet.resultAmount,
-          betResult: betResult,
-        }
-      );
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: "Disqualified bets refunded & history updated",
-    });
-
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};

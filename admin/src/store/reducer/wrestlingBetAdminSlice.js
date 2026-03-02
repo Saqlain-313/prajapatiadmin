@@ -23,12 +23,17 @@ export const getAllBets = createAsyncThunk(
 ========================================= */
 export const settleBet = createAsyncThunk(
   "wrestlingBet/settle",
-  async ({ team, type }, { rejectWithValue }) => {
+  async ({ eventName, winner, otype }, { rejectWithValue }) => {
     try {
       const { data } = await api.put(
         `/admin/wrestling-bets/settle`,
-        { team, type }
+        {
+          eventName,
+          winner,     // jo team jeeti
+          otype,      // back / lay
+        }
       );
+
       return data;
     } catch (err) {
       return rejectWithValue(

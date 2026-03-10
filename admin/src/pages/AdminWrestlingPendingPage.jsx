@@ -68,9 +68,7 @@ const AdminWrestlingPendingPage = () => {
     }
   };
 
-  /* ----------------------------------------
-     DISQUALIFY
-  ---------------------------------------- */
+
   const handleDisqualifyBet = async () => {
     const { eventName, team, type } = settlementPopup;
 

@@ -166,12 +166,14 @@ const createWrestlingMatch = async (req, res) => {
         tid: generateTid(),
         tname: teamAName.trim(),
         side: "A",
+        status: "ACTIVE",   // Team A active
         boxes: createBoxes(teamARates, teamASizes),
       },
       {
         tid: generateTid(),
         tname: teamBName.trim(),
         side: "B",
+        status: "SUSPENDED",  // ✅ Team B auto suspend
         boxes: createBoxes(teamBRates, teamBSizes),
       },
     ];

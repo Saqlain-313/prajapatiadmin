@@ -9,8 +9,8 @@ export const api = axios.create({
   },
 });
 
-// export const host = "http://localhost:4444";
-export const host = "/";
+export const host = "http://localhost:5200";
+// export const host = "/";
 
 
 api.interceptors.request.use((config) => {

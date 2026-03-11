@@ -18,13 +18,22 @@ import {
 } from "react-icons/fa";
 import { MdDashboard, MdRefresh } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
-import { getAllUsers } from "../store/reducer/authReducer";
+import {
+  getAllUsers,
+  getUserStats,
+} from "../store/reducer/authReducer";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { FiAlertCircle, FiCheckCircle, FiXCircle } from "react-icons/fi";
 import { getAllDeposits } from "../store/reducer/depositAdminSlice";
-import { getAllWithdrawals } from "../store/reducer/withdrawalReducer";
-import { getDepositStats } from "../store/reducer/depositSlice";
+import {
+  getAllWithdrawals,
+  getWithdrawalStats,
+  clearWithdrawalState,
+} from "../store/reducer/withdrawalReducer";
+import {
+  getDepositStats,
+} from "../store/reducer/depositSlice";
 
 /* --------------------------------------------------------
    TOAST CONFIG — consistent with dark theme
@@ -38,6 +47,7 @@ const showToast = (message, type = "success") => {
 
   try {
     toast[type](message, {
+      id: message,
       icon: icons[type],
       style: {
         background: "#0F1115",
@@ -52,7 +62,7 @@ const showToast = (message, type = "success") => {
       },
       duration: 4000,
     });
-  } catch (e) {}
+  } catch (e) { }
 };
 
 const gradientCardClass =
@@ -210,8 +220,8 @@ const RecentActivityCard = ({ activities = [] }) => {
                         ${isDeposit
                           ? "bg-emerald-500/20 text-emerald-400"
                           : isWithdrawal
-                          ? "bg-red-500/20 text-red-400"
-                          : "bg-blue-500/20 text-blue-400"
+                            ? "bg-red-500/20 text-red-400"
+                            : "bg-blue-500/20 text-blue-400"
                         }`}
                     >
                       {isDeposit ? (
@@ -231,8 +241,8 @@ const RecentActivityCard = ({ activities = [] }) => {
                     className={`text-sm font-bold ${isDeposit
                       ? "text-emerald-400"
                       : isWithdrawal
-                      ? "text-red-400"
-                      : "text-blue-400"
+                        ? "text-red-400"
+                        : "text-blue-400"
                       }`}
                   >
                     {isDeposit && "+"}
@@ -318,10 +328,11 @@ const Dashboard = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const { users = [], loading } = useSelector((state) => state.auth || {});
+  const { users = [], stats: authStats = {}, loading } = useSelector((state) => state.auth || {});
   const { withdrawals = [] } = useSelector((state) => state.withdrawal || {});
   const { deposits = [] } = useSelector((state) => state.adminDeposits || {});
   const { stats = {} } = useSelector((state) => state.deposits || {});
+  const { stats: withdrawalStats = {} } = useSelector((state) => state.withdrawal || {});
 
   const { approved = {}, today = {} } = stats;
 
@@ -330,12 +341,14 @@ const Dashboard = () => {
 
   useEffect(() => {
     dispatch(getAllUsers());
+    dispatch(getUserStats());
     dispatch(getAllDeposits());
     dispatch(getAllWithdrawals());
     dispatch(getDepositStats());
+    dispatch(getWithdrawalStats());
   }, [dispatch]);
 
-  // UseMemo user statistics block (fixed: check that all referenced data exist and are arrays)
+  // UseMemo user statistics block (Fixed: Using consolidated stats from backend and total user counts correctly)
   const userStats = useMemo(() => {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
@@ -349,29 +362,27 @@ const Dashboard = () => {
     };
 
     const userList = Array.isArray(users) ? users : [];
-    const depositList = Array.isArray(deposits) ? deposits : [];
-    const withdrawalList = Array.isArray(withdrawals) ? withdrawals : [];
 
-    const total = userList.length;
-    const admins = userList.filter((u) => u.role === "admin").length;
-    const regularUsers = total - admins;
-    const activeToday = userList.filter((u) => u.lastLogin && isToday(u.lastLogin)).length;
+    // Stats from Redux (Backend Aggregated)
+    const depositStats = stats || {}; // from getDepositStats
 
-    // Deposits
-    const approvedDeposits = depositList.filter((d) => d.status === "approved");
-    const todayApprovedDeposits = approvedDeposits.filter((d) => isToday(d.createdAt));
-    const totalApprovedAmount = approvedDeposits.reduce((sum, d) => sum + Number(d.amount || 0), 0);
-    const todayDepositAmount = todayApprovedDeposits.reduce((sum, d) => sum + Number(d.amount || 0), 0);
-    const avgDeposit = approvedDeposits.length > 0 ? totalApprovedAmount / approvedDeposits.length : 0;
+    const total = authStats.total || 0;
+    const admins = authStats.admins || 0;
+    const regularUsers = authStats.regular || 0;
+    const activeToday = authStats.activeToday || 0;
 
-    // Withdrawals
-    const approvedWithdrawals = withdrawalList.filter((w) => w.status === "approved");
-    const pendingWithdrawalsList = withdrawalList.filter((w) => w.status === "pending");
-    const todayApprovedWithdrawals = approvedWithdrawals.filter((w) => isToday(w.createdAt));
-    const totalWithdrawals = approvedWithdrawals.reduce((sum, w) => sum + Number(w.amount || 0), 0);
-    const todayWithdrawalAmount = todayApprovedWithdrawals.reduce((sum, w) => sum + Number(w.amount || 0), 0);
-    const pendingWithdrawals = pendingWithdrawalsList.reduce((sum, w) => sum + Number(w.amount || 0), 0);
-    const avgWithdrawal = approvedWithdrawals.length > 0 ? totalWithdrawals / approvedWithdrawals.length : 0;
+    // Deposits (Use accurate backend stats)
+    const totalApprovedAmount = (depositStats.approved?.totalAmount || 0);
+    const todayDepositAmount = (depositStats.today?.totalAmount || 0);
+    const approvedDepositsCount = (depositStats.approved?.totalCount || 0);
+    const avgDeposit = approvedDepositsCount > 0 ? totalApprovedAmount / approvedDepositsCount : 0;
+
+    // Withdrawals (Use accurate backend stats)
+    const totalWithdrawals = (withdrawalStats.approved?.totalAmount || 0);
+    const todayWithdrawalAmount = (withdrawalStats.today?.totalAmount || 0);
+    const pendingWithdrawals = (withdrawalStats.pending?.totalAmount || 0);
+    const approvedWithdrawalsCount = (withdrawalStats.approved?.totalCount || 0);
+    const avgWithdrawal = approvedWithdrawalsCount > 0 ? totalWithdrawals / approvedWithdrawalsCount : 0;
 
     // Profit/Loss
     const totalProfit = totalApprovedAmount - totalWithdrawals;
@@ -380,10 +391,13 @@ const Dashboard = () => {
     const netRevenue = totalProfit;
 
     // Conversion Rate
-    const conversionRate = total > 0 ? (approvedDeposits.length / total) * 100 : 0;
+    const conversionRate = total > 0 ? (approvedDepositsCount / total) * 100 : 0;
 
-    // Recent Activities
-    const recentDeposits = approvedDeposits.slice(-3).map((d) => ({
+    // Recent Activities (Calculated from what's available in state, which is fine for "Recent")
+    const depositList = Array.isArray(deposits) ? deposits : [];
+    const withdrawalList = Array.isArray(withdrawals) ? withdrawals : [];
+
+    const recentDeposits = depositList.slice(0, 5).filter(d => d.status === "approved").map((d) => ({
       _id: d._id,
       type: "deposit",
       amount: d.amount,
@@ -391,7 +405,7 @@ const Dashboard = () => {
       time: new Date(d.createdAt).toLocaleString(),
       timeRaw: d.createdAt,
     }));
-    const recentWithdrawals = approvedWithdrawals.slice(-3).map((w) => ({
+    const recentWithdrawals = withdrawalList.slice(0, 5).filter(w => w.status === "approved").map((w) => ({
       _id: w._id,
       type: "withdrawal",
       amount: w.amount,
@@ -400,7 +414,6 @@ const Dashboard = () => {
       timeRaw: w.createdAt,
     }));
 
-    // sort by actual timestamp (not formatted string, for correct ordering)
     const recentActivities = [...recentDeposits, ...recentWithdrawals]
       .sort((a, b) => new Date(b.timeRaw) - new Date(a.timeRaw))
       .slice(0, 5);
@@ -422,22 +435,29 @@ const Dashboard = () => {
       avgWithdrawal,
       conversionRate,
       pendingWithdrawals,
-      approvedDepositsCount: approvedDeposits.length,
-      approvedWithdrawalsCount: approvedWithdrawals.length,
+      approvedDepositsCount,
+      approvedWithdrawalsCount,
       recentActivities,
     };
-  }, [users, deposits, withdrawals]);
+  }, [authStats, deposits, withdrawals, stats, withdrawalStats]);
 
   const handleRefresh = async () => {
     setRefreshLoading(true);
-    await dispatch(getAllUsers());
+    await Promise.all([
+      dispatch(getAllUsers()),
+      dispatch(getUserStats()),
+      dispatch(getAllDeposits()),
+      dispatch(getAllWithdrawals()),
+      dispatch(getDepositStats()),
+      dispatch(getWithdrawalStats()),
+    ]);
     showToast("Dashboard refreshed", "success");
     setRefreshLoading(false);
   };
 
-  if (loading) {
+  if (loading && users.length === 0) {
     return (
-      <div className=" bg-gradient-to-br from-black via-[#0A0C0F] to-[#030405]  flex items-center justify-center">
+      <div className="min-h-[80vh] bg-gradient-to-br from-black via-[#0A0C0F] to-[#030405] flex items-center justify-center">
         <div className="flex flex-col items-center justify-center">
           <div className="relative">
             <div className="w-16 h-16 border-2 border-white/20 border-t-white rounded-full animate-spin" />
@@ -534,17 +554,14 @@ const Dashboard = () => {
             {timeFilter === "today"
               ? "Today's"
               : timeFilter === "week"
-              ? "This Week's"
-              : "This Month's"} Stats
+                ? "This Week's"
+                : "This Month's"} Stats
           </span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-5">
           <FinancialStatCard
             title="Total Deposits"
-            amount={
-              getAmount(userStats.totalApprovedAmount) +
-              getAmount(approved.totalAmount)
-            }
+            amount={getAmount(userStats.totalApprovedAmount)}
             icon={FaMoneyBillWave}
             link="/deposit"
             color="emerald"
@@ -558,10 +575,7 @@ const Dashboard = () => {
           />
           <FinancialStatCard
             title="Total Profit"
-            amount={
-              getAmount(userStats.totalProfit) +
-              getAmount(approved.totalAmount)
-            }
+            amount={getAmount(userStats.totalProfit)}
             icon={FaArrowUp}
             color="amber"
           />
@@ -573,10 +587,7 @@ const Dashboard = () => {
           />
           <FinancialStatCard
             title="Today Deposits"
-            amount={
-              getAmount(userStats.todayDepositAmount) +
-              getAmount(today.totalAmount)
-            }
+            amount={getAmount(userStats.todayDepositAmount)}
             icon={FaMoneyBillWave}
             color="emerald"
           />
@@ -588,9 +599,7 @@ const Dashboard = () => {
           />
           <FinancialStatCard
             title="Today Profit"
-            amount={
-              getAmount(userStats.todayProfit) + getAmount(today.totalAmount)
-            }
+            amount={getAmount(userStats.todayProfit)}
             icon={FaChartLine}
             color="amber"
           />

@@ -1,16 +1,16 @@
 import axios from "axios";
 
 export const api = axios.create({
-  baseURL: "http://localhost:5200/api",
-  // baseURL: `/api`,
+  // baseURL: "http://localhost:5200/api",
+  baseURL: `/api`,
   withCredentials: true,
   headers: {
     Accept: "application/json",
   },
 });
 
-export const host = "http://localhost:5200";
-// export const host = "/";
+// export const host = "http://localhost:5200";
+export const host = "/";
 
 
 api.interceptors.request.use((config) => {
